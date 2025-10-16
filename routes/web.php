@@ -1,10 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', function () {
-    return view('client.home');
-})->name('client.home');
+Route::get('/', [HomeController::class, 'index'])->name('client.home');
 
 Route::prefix('admin')->group(function () {
 
