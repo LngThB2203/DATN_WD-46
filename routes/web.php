@@ -6,16 +6,22 @@ Route::get('/', function () {
     return view('client.home');
 })->name('client.home');
 
+
 Route::prefix('admin')->group(function () {
 
     Route::get('/', fn() => view('admin.dashboard'))->name('admin.dashboard');
 
     Route::prefix('products')->group(function () {
-        Route::get('/list', fn() => view('admin.products.list'))->name('products.index');
+        Route::get('/list', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
         Route::get('/grid', fn() => view('admin.products.grid'))->name('products.grid');
-        Route::get('/show', fn() => view('admin.products.show'))->name('products.show');
-        Route::get('/edit', fn() => view('admin.products.edit'))->name('products.edit');
-        Route::get('/add', fn() => view('admin.products.add'))->name('products.add');
+        Route::get('/add', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
+        Route::post('/add', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
+        Route::get('/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
+        Route::get('/{product}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
+        Route::put('/{product}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
+        Route::delete('/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
+        Route::delete('/gallery/{gallery}', [App\Http\Controllers\ProductController::class, 'deleteImage'])->name('products.delete-image');
+        Route::post('/gallery/{gallery}/set-primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
     });
 
     Route::prefix('categories')->group(function () {
