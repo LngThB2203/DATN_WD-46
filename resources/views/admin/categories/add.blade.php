@@ -1,177 +1,84 @@
 @extends('admin.layouts.admin')
 
-@section('title', 'Category List')
+@section('title', 'Thêm danh mục')
 
 @section('content')
 <div class="page-content">
     <div class="container-xxl">
+        <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
 
-        <div class="row">
-            <div class="col-xl-3 col-lg-4">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="bg-light text-center rounded bg-light">
-                            <img src="{{asset('assets/admin/images/product/p-1.png')}}" alt="" class="avatar-xxl">
+            <div class="row">
+                <div class="col-xl-3 col-lg-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <div class="bg-light rounded p-3">
+                                <img src="{{ asset('assets/admin/images/categories/cate_1.jpg') }}" alt="Preview"
+                                     class="avatar-xxl" id="preview-img">
+                            </div>
+                            <div class="mt-3">
+                                <h4>Thêm danh mục mới</h4>
+                            </div>
                         </div>
-                        <div class="mt-3">
-                            <h4>Fashion Men , Women & Kid's</h4>
+                        <div class="card-footer border-top">
+                            <div class="row g-2">
+                                <div class="col-lg-6">
+                                    <button type="submit" class="btn btn-primary w-100">Lưu</button>
+                                </div>
+                                <div class="col-lg-6">
+                                    <a href="{{ route('admin.categories.list') }}" class="btn btn-outline-secondary w-100">Hủy</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-9 col-lg-8">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4 class="card-title">Thông tin danh mục</h4>
+                        </div>
+                        <div class="card-body">
                             <div class="row">
-                                <div class="col-lg-4 col-4">
-                                    <p class="mb-1 mt-2">Created By :</p>
-                                    <h5 class="mb-0">Seller</h5>
+                                <div class="col-lg-6 mb-3">
+                                    <label for="category_name" class="form-label">Tên danh mục</label>
+                                    <input type="text" name="category_name" id="category_name"
+                                           class="form-control @error('category_name') is-invalid @enderror"
+                                           placeholder="Nhập tên danh mục"
+                                           value="{{ old('category_name') }}">
+                                    @error('category_name')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                                <div class="col-lg-4 col-4">
-                                    <p class="mb-1 mt-2">Stock :</p>
-                                    <h5 class="mb-0">46233</h5>
-                                </div>
-                                <div class="col-lg-4 col-4">
-                                    <p class="mb-1 mt-2">ID :</p>
-                                    <h5 class="mb-0">FS16276</h5>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer border-top">
-                        <div class="row g-2">
-                            <div class="col-lg-6">
-                                <a href="category-add.html#!" class="btn btn-outline-secondary w-100">Create
-                                    Category</a>
-                            </div>
-                            <div class="col-lg-6">
-                                <a href="category-add.html#!" class="btn btn-primary w-100">Cancel</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="col-xl-9 col-lg-8 ">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">Add Thumbnail Photo</h4>
-                    </div>
-                    <div class="card-body">
-                        <!-- File Upload -->
-                        <form action="https://techzaa.in/" method="post" class="dropzone" id="myAwesomeDropzone"
-                            data-plugin="dropzone" data-previews-container="#file-previews"
-                            data-upload-preview-template="#uploadPreviewTemplate">
-                            <div class="fallback">
-                                <input name="file" type="file" multiple />
-                            </div>
-                            <div class="dz-message needsclick">
-                                <i class="bx bx-cloud-upload fs-48 text-primary"></i>
-                                <h3 class="mt-4">Drop your images here, or <span class="text-primary">click to
-                                        browse</span>
-                                </h3>
-                                <span class="text-muted fs-13">
-                                    1600 x 1200 (4:3) recommended. PNG, JPG and GIF files are allowed
-                                </span>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">General Information</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <form>
-                                    <div class="mb-3">
-                                        <label for="category-title" class="form-label">Category Title</label>
-                                        <input type="text" id="category-title" class="form-control"
-                                            placeholder="Enter Title">
-                                    </div>
-                                </form>
-                            </div>
-
-                            <div class="col-lg-6">
-                                <form>
-                                    <label for="crater" class="form-label">Created By</label>
-                                    <select class="form-control" id="crater" data-choices data-choices-groups
-                                        data-placeholder="Select Crater">
-                                        <option value="">Select Crater</option>
-                                        <option value="Seller">Seller</option>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Other">Other</option>
+                                <div class="col-lg-6 mb-3">
+                                    <label for="parent_id" class="form-label">Danh mục cha</label>
+                                    <select name="parent_id" id="parent_id" class="form-control">
+                                        <option value="">-- Không có --</option>
+                                        @foreach($parents as $parent)
+                                            <option value="{{ $parent->id }}" {{ old('parent_id') == $parent->id ? 'selected' : '' }}>
+                                                {{ $parent->category_name }}
+                                            </option>
+                                        @endforeach
                                     </select>
-                                </form>
-                            </div>
-                            <div class="col-lg-6">
-                                <form>
-                                    <div class="mb-3">
-                                        <label for="product-stock" class="form-label">Stock</label>
-                                        <input type="number" id="product-stock" class="form-control"
-                                            placeholder="Quantity">
-                                    </div>
+                                </div>
+                                <div class="col-lg-12 mb-3">
+                                    <label for="description" class="form-label">Mô tả</label>
+                                    <textarea name="description" id="description" class="form-control"
+                                              rows="4" placeholder="Nhập mô tả">{{ old('description') }}</textarea>
+                                </div>
 
-                                </form>
-                            </div>
-                            <div class="col-lg-6">
-                                <form>
-                                    <div class="mb-3">
-                                        <label for="product-id" class="form-label">Tag ID</label>
-                                        <input type="number" id="product-id" class="form-control" placeholder="#******">
-                                    </div>
-
-                                </form>
-                            </div>
-                            <div class="col-lg-12">
-                                <div class="mb-0">
-                                    <label for="description" class="form-label">Description</label>
-                                    <textarea class="form-control bg-light-subtle" id="description" rows="7"
-                                        placeholder="Type description"></textarea>
+                                <div class="col-lg-12 mb-3">
+                                    <label for="image" class="form-label">Ảnh danh mục (nếu có)</label>
+                                    <input type="file" name="image" id="image" class="form-control" accept="image/*"
+                                           onchange="document.getElementById('preview-img').src = window.URL.createObjectURL(this.files[0])">
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">Meta Options</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <form>
-                                    <div class="mb-3">
-                                        <label for="meta-title" class="form-label">Meta Title</label>
-                                        <input type="text" id="meta-title" class="form-control"
-                                            placeholder="Enter Title">
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="col-lg-6">
-                                <form>
-                                    <div class="mb-3">
-                                        <label for="meta-tag" class="form-label">Meta Tag Keyword</label>
-                                        <input type="text" id="meta-tag" class="form-control" placeholder="Enter word">
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="col-lg-12">
-                                <div class="mb-0">
-                                    <label for="description" class="form-label">Description</label>
-                                    <textarea class="form-control bg-light-subtle" id="description" rows="4"
-                                        placeholder="Type description"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-3 bg-light mb-3 rounded">
-                    <div class="row justify-content-end g-2">
-                        <div class="col-lg-2">
-                            <a href="category-add.html#!" class="btn btn-outline-secondary w-100">Save Change</a>
-                        </div>
-                        <div class="col-lg-2">
-                            <a href="category-add.html#!" class="btn btn-primary w-100">Cancel</a>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 @endsection
