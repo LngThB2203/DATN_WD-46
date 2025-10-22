@@ -1,0 +1,102 @@
+<?php
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Category;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+class CategoryController extends Controller
+{
+    public function index()
+    {
+        $categories = Category::with('parent')->paginate(10);
+        return view('admin.categories.list', compact('categories'));
+    }
+
+    public function create()
+    {
+        $parents = Category::all();
+        return view('admin.categories.add', compact('parents'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'category_name' => 'required|max:150',
+            'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+        ]);
+
+        $imagePath = null;
+
+        if ($request->hasFile('image')) {
+            $file     = $request->file('image');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $path     = 'uploads/categories/';
+            $file->move(public_path($path), $filename);
+
+            $imagePath = $path . $filename;
+        }
+
+        Category::create([
+            'category_name' => $request->category_name,
+            'slug'          => Str::slug($request->category_name),
+            'description'   => $request->description,
+            'parent_id'     => $request->parent_id,
+            'image'         => $imagePath,
+        ]);
+
+        return redirect()->route('admin.categories.list')->with('success', 'Thêm danh mục thành công!');
+    }
+
+    public function edit($id)
+    {
+        $category = Category::findOrFail($id);
+        $parents  = Category::where('id', '!=', $id)->get();
+        return view('admin.categories.edit', compact('category', 'parents'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'category_name' => 'required|max:150',
+            'image'         => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+        ]);
+
+        $category = Category::findOrFail($id);
+        $data     = [
+            'category_name' => $request->category_name,
+            'slug'          => Str::slug($request->category_name),
+            'description'   => $request->description,
+            'parent_id'     => $request->parent_id,
+        ];
+
+        if ($request->hasFile('image')) {
+            if ($category->image && file_exists(public_path($category->image))) {
+                unlink(public_path($category->image));
+            }
+
+            $file     = $request->file('image');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $path     = 'uploads/categories/';
+            $file->move(public_path($path), $filename);
+            $data['image'] = $path . $filename;
+        }
+
+        $category->update($data);
+
+        return redirect()->route('admin.categories.list')->with('success', 'Cập nhật danh mục thành công!');
+    }
+
+    public function destroy($id)
+    {
+        $category = Category::findOrFail($id);
+
+        if ($category->image && file_exists(public_path($category->image))) {
+            unlink(public_path($category->image));
+        }
+
+        $category->delete();
+        return redirect()->route('admin.categories.list')->with('success', 'Xóa danh mục thành công!');
+    }
+}

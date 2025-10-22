@@ -9,10 +9,10 @@
                     </button>
                 </div>
 
-                <!-- Menu Toggle Button -->
+                {{-- <!-- Menu Toggle Button -->
                 <div class="topbar-item">
                     <h4 class="fw-bold topbar-button pe-none text-uppercase mb-0">Categories List</h4>
-                </div>
+                </div> --}}
             </div>
 
             <div class="d-flex align-items-center gap-1">
