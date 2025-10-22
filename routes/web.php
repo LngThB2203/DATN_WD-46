@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,10 +19,13 @@ Route::prefix('admin')->group(function () {
         Route::get('/add', fn() => view('admin.products.add'))->name('products.add');
     });
 
-    Route::prefix('categories')->group(function () {
-        Route::get('/list', fn() => view('admin.categories.list'))->name('categories.list');
-        Route::get('/edit', fn() => view('admin.categories.edit'))->name('categories.edit');
-        Route::get('/add', fn() => view('admin.categories.add'))->name('categories.add');
+    Route::prefix('categories')->name('admin.categories.')->group(function () {
+        Route::get('/', [AdminCategoryController::class, 'index'])->name('list');
+        Route::get('/create', [AdminCategoryController::class, 'create'])->name('create');
+        Route::post('/store', [AdminCategoryController::class, 'store'])->name('store');
+        Route::get('/edit/{id}', [AdminCategoryController::class, 'edit'])->name('edit');
+        Route::put('/update/{id}', [AdminCategoryController::class, 'update'])->name('update');
+        Route::delete('/delete/{id}', [AdminCategoryController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('inventories')->group(function () {
