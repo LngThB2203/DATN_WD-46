@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id(); // user_id
+            $table->id();
             $table->string('name', 150);
             $table->string('avatar')->nullable();
             $table->string('address')->nullable();
@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('password');
             $table->unsignedBigInteger('role_id')->nullable();
             $table->enum('gender', ['male', 'female', 'other'])->nullable();
+            $table->timestamp('email_verified_at')->nullable(); // 🧩 xác thực email
+            $table->rememberToken(); // 🧩 token để remember login
             $table->timestamps();
 
             $table->foreign('role_id')->references('id')->on('roles')->onDelete('set null');
