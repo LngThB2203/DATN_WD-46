@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{-- <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
@@ -25,4 +25,4 @@
     <script src="{{ asset('assets/client/vendor/drift-zoom/Drift.min.js') }}"></script>
     <script src="{{ asset('assets/client/js/main.js') }}"></script>
 </body>
-</html>
+</html> --}}

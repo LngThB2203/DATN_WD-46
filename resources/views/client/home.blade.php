@@ -13,7 +13,7 @@
                 <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
             </div>
             <div class="col-lg-6">
-                <img class="img-fluid rounded" src="{{ asset('assets/client/img/product/product-1.webp') }}" alt="Hero">
+                <img class="img-fluid rounded" src="{{ asset('assets/client/img/product/product-1.jpg') }}" alt="Hero">
             </div>
         </div>
     </div>
@@ -102,7 +102,7 @@
         </div>
     </section><!-- /Hero Section -->
 
-    <!-- Info Cards Section -->
+    {{-- <!-- Info Cards Section -->
     <section id="info-cards" class="info-cards section light-background">
 
         <div class="container" data-aos="fade-up" data-aos-delay="100">
@@ -159,7 +159,7 @@
 
         </div>
 
-    </section><!-- /Info Cards Section -->
+    </section><!-- /Info Cards Section --> --}}
 
     <!-- Category Cards Section -->
     <section id="category-cards" class="category-cards section">

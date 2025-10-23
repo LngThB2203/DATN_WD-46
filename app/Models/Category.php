@@ -1,11 +1,12 @@
 <?php
-
 namespace App\Models;
 
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
@@ -15,7 +16,9 @@ class Category extends Model
         'category_name',
         'slug',
         'description',
-        'parent_id'
+        'parent_id',
+        'image',
+        'status',
     ];
 
     /**
@@ -56,5 +59,41 @@ class Category extends Model
     public function scopeChildren($query)
     {
         return $query->whereNotNull('parent_id');
+    }
+
+    /**
+     * Handle slug creation and updating.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($category) {
+            if (empty($category->slug)) {
+                $category->slug = Str::slug($category->category_name);
+            }
+
+            $original = $category->slug;
+            $count    = 1;
+            while (Category::where('slug', $category->slug)->exists()) {
+                $category->slug = "{$original}-{$count}";
+                $count++;
+            }
+        });
+
+        static::updating(function ($category) {
+            if ($category->isDirty('category_name')) {
+                $category->slug = Str::slug($category->category_name);
+
+                $original = $category->slug;
+                $count    = 1;
+                while (
+                    Category::where('slug', $category->slug)
+                    ->where('id', '!=', $category->id)
+                    ->exists()
+                ) {
+                    $category->slug = "{$original}-{$count}";
+                    $count++;
+                }
+            }
+        });
     }
 }
