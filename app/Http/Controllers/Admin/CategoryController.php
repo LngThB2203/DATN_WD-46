@@ -8,10 +8,21 @@ use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $categories = Category::with('parent')->paginate(10);
+        $query      = Category::with('parent');
+
+        if ($request->has('search') && ! empty($request->search)) {
+            $search = $request->search;
+            $query->where('category_name', 'like', "%{$search}%");
+        }
+
+        $categories = $query->orderByDesc('id')->paginate(10);
+
+        $categories->appends(['search' => $request->search]);
         return view('admin.categories.list', compact('categories'));
+
     }
 
     public function create()
@@ -99,4 +110,13 @@ class CategoryController extends Controller
         $category->delete();
         return redirect()->route('admin.categories.list')->with('success', 'Xóa danh mục thành công!');
     }
+    public function toggleStatus($id)
+    {
+        $category         = Category::findOrFail($id);
+        $category->status = $category->status ? 0 : 1;
+        $category->save();
+
+        return back()->with('success', 'Cập nhật trạng thái thành công!');
+    }
+
 }

@@ -1,12 +1,28 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+use Illuminate\Support\Facades\Route;
+
+// ========================
+// AUTH
+// ========================
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
-// Client routes
+
+Route::get('/register', function () {
+    return view('auth.register');
+})->name('register');
+
+Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+// ========================
+// CLIENT ROUTES
+// ========================
 Route::get('/', function () {
     return view('client.home');
 })->name('home');
@@ -90,52 +106,30 @@ Route::get('/support', function () {
     return view('client.support');
 })->name('support.index');
 
-// Admin sample route (tạm giữ)
-Route::get('/admin/category', function () {
-    return view('admin.categories.list');
-})->name('admin.categories.index');
-
-// Auth routes
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');
-
-Route::post('/register', [AuthController::class, 'register'])->name('register.post');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
-
-
+// ========================
+// ADMIN ROUTES
+// ========================
 Route::prefix('admin')->group(function () {
 
     Route::get('/', fn() => view('admin.dashboard'))->name('admin.dashboard');
 
+    // Products
     Route::prefix('products')->group(function () {
-        Route::get('/list', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
+        Route::get('/list', [ProductController::class, 'index'])->name('products.index');
         Route::get('/grid', fn() => view('admin.products.grid'))->name('products.grid');
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-        Route::get('/show', fn() => view('admin.products.show'))->name('products.show');
-        Route::get('/edit', fn() => view('admin.products.edit'))->name('products.edit');
-        Route::get('/add', fn() => view('admin.products.add'))->name('products.add');
-=======
->>>>>>> Stashed changes
-        Route::get('/add', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
-        Route::post('/add', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
-        Route::get('/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
-        Route::get('/{product}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
-        Route::put('/{product}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
-        Route::delete('/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
-        Route::delete('/gallery/{gallery}', [App\Http\Controllers\ProductController::class, 'deleteImage'])->name('products.delete-image');
-        Route::post('/gallery/{gallery}/set-primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
-<<<<<<< Updated upstream
-=======
-        Route::get('/export/excel', [App\Http\Controllers\ProductController::class, 'exportExcel'])->name('products.export-excel');
-        Route::get('/export/pdf', [App\Http\Controllers\ProductController::class, 'exportPdf'])->name('products.export-pdf');
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+        Route::get('/add', [ProductController::class, 'create'])->name('products.create');
+        Route::post('/add', [ProductController::class, 'store'])->name('products.store');
+        Route::get('/{product}', [ProductController::class, 'show'])->name('products.show');
+        Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+        Route::put('/{product}', [ProductController::class, 'update'])->name('products.update');
+        Route::delete('/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+        Route::delete('/gallery/{gallery}', [ProductController::class, 'deleteImage'])->name('products.delete-image');
+        Route::post('/gallery/{gallery}/set-primary', [ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
+        Route::get('/export/excel', [ProductController::class, 'exportExcel'])->name('products.export-excel');
+        Route::get('/export/pdf', [ProductController::class, 'exportPdf'])->name('products.export-pdf');
     });
 
+    // Categories
     Route::prefix('categories')->name('admin.categories.')->group(function () {
         Route::get('/', [AdminCategoryController::class, 'index'])->name('list');
         Route::get('/create', [AdminCategoryController::class, 'create'])->name('create');
@@ -143,13 +137,16 @@ Route::prefix('admin')->group(function () {
         Route::get('/edit/{id}', [AdminCategoryController::class, 'edit'])->name('edit');
         Route::put('/update/{id}', [AdminCategoryController::class, 'update'])->name('update');
         Route::delete('/delete/{id}', [AdminCategoryController::class, 'destroy'])->name('destroy');
+        Route::get('/toggle/{id}', [AdminCategoryController::class, 'toggleStatus'])->name('toggle');
     });
 
+    // Inventories
     Route::prefix('inventories')->group(function () {
         Route::get('/warehouse', fn() => view('admin.inventories.warehouse'))->name('inventories.warehouse');
         Route::get('/received-orders', fn() => view('admin.inventories.received-orders'))->name('inventories.received-orders');
     });
 
+    // Orders
     Route::prefix('orders')->group(function () {
         Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
         Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
@@ -157,34 +154,40 @@ Route::prefix('admin')->group(function () {
         Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('orders.checkout');
     });
 
+    // Purchases
     Route::prefix('purchases')->group(function () {
         Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
         Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
     });
 
+    // Attributes
     Route::prefix('attributes')->group(function () {
         Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
         Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
         Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
     });
 
+    // Invoices
     Route::prefix('invoices')->group(function () {
         Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
         Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
         Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
     });
 
+    // Roles
     Route::prefix('roles')->group(function () {
         Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
         Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
         Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
     });
 
+    // Customers
     Route::prefix('customers')->group(function () {
         Route::get('/list', fn() => view('admin.customers.list'))->name('customers.list');
         Route::get('/show', fn() => view('admin.customers.show'))->name('customers.show');
     });
 
+    // Sellers
     Route::prefix('sellers')->group(function () {
         Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
         Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
@@ -192,6 +195,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
     });
 
+    // Coupons
     Route::prefix('coupons')->group(function () {
         Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
         Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
