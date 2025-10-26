@@ -114,6 +114,23 @@
                                         @enderror
                                     </div>
                                 </div>
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+                                <div class="col-lg-6">
+                                    <div class="mb-3">
+                                        <label for="brand" class="form-label">Brand</label>
+                                        <input type="text" id="brand" name="brand" class="form-control @error('brand') is-invalid @enderror" 
+                                               placeholder="Product Brand" value="{{ old('brand', $product->brand) }}">
+                                        @error('brand')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+>>>>>>> Stashed changes
                                 <div class="col-lg-6">
                                     <div class="mb-3">
                                         <div class="form-check form-switch mt-4">
@@ -182,6 +199,10 @@
                             </div>
                             <div class="col-lg-2">
                                 <button type="submit" class="btn btn-primary w-100">Update Product</button>
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
                             </div>
                         </div>
                     </div>

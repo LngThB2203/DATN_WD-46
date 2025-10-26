@@ -88,9 +88,100 @@
                                              </div>
                                 <div class="col-lg-6">
                                                        <div class="mb-3">
+<<<<<<< Updated upstream
                                         <div class="form-check form-switch mt-4">
                                             <input class="form-check-input" type="checkbox" id="status" name="status" {{ old('status') ? 'checked' : '' }}>
                                             <label class="form-check-label" for="status">Active Status</label>
+=======
+<<<<<<< Updated upstream
+                                                            <label for="product-weight" class="form-label">Weight</label>
+                                                            <input type="text" id="product-weight" class="form-control" placeholder="In gm & kg">
+                                                       </div>
+                                                  </form>
+                                             </div>
+                                             <div class="col-lg-4">
+                                                  <form>
+                                                       <label for="gender" class="form-label">Gender</label>
+                                                       <select class="form-control" id="gender" data-choices data-choices-groups data-placeholder="Select Gender">
+                                                            <option value="">Select Gender</option>
+                                                            <option value="Men">Men</option>
+                                                            <option value="Women">Women</option>
+                                                            <option value="Other">Other</option>
+                                                       </select>
+                                                  </form>
+                                             </div>
+                                        </div>
+                                        <div class="row mb-4">
+                                             <div class="col-lg-4">
+                                                  <div class="mt-3">
+                                                       <h5 class="text-dark fw-medium">Size :</h5>
+                                                       <div class="d-flex flex-wrap gap-2" role="group" aria-label="Basic checkbox toggle button group">
+                                                            <input type="checkbox" class="btn-check" id="size-xs1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="size-xs1">XS</label>
+
+                                                            <input type="checkbox" class="btn-check" id="size-s1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="size-s1">S</label>
+
+                                                            <input type="checkbox" class="btn-check" id="size-m1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="size-m1">M</label>
+
+                                                            <input type="checkbox" class="btn-check" id="size-xl1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="size-xl1">Xl</label>
+
+                                                            <input type="checkbox" class="btn-check" id="size-xxl1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="size-xxl1">XXL</label>
+                                                            <input type="checkbox" class="btn-check" id="size-3xl1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="size-3xl1">3XL</label>
+
+                                                       </div>
+                                                  </div>
+                                             </div>
+                                             <div class="col-lg-5">
+                                                  <div class="mt-3">
+                                                       <h5 class="text-dark fw-medium">Colors :</h5>
+                                                       <div class="d-flex flex-wrap gap-2" role="group" aria-label="Basic checkbox toggle button group">
+                                                            <input type="checkbox" class="btn-check" id="color-dark1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-dark1"> <i class="bx bxs-circle fs-18 text-dark"></i></label>
+
+                                                            <input type="checkbox" class="btn-check" id="color-yellow1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-yellow1"> <i class="bx bxs-circle fs-18 text-warning"></i></label>
+
+                                                            <input type="checkbox" class="btn-check" id="color-white1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-white1"> <i class="bx bxs-circle fs-18 text-white"></i></label>
+
+                                                            <input type="checkbox" class="btn-check" id="color-red1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-red1"> <i class="bx bxs-circle fs-18 text-primary"></i></label>
+
+                                                            <input type="checkbox" class="btn-check" id="color-green1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-green1"> <i class="bx bxs-circle fs-18 text-success"></i></label>
+
+                                                            <input type="checkbox" class="btn-check" id="color-blue1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-blue1"> <i class="bx bxs-circle fs-18 text-danger"></i></label>
+
+                                                            <input type="checkbox" class="btn-check" id="color-sky1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-sky1"> <i class="bx bxs-circle fs-18 text-info"></i></label>
+
+                                                            <input type="checkbox" class="btn-check" id="color-gray1">
+                                                            <label class="btn btn-light avatar-sm rounded d-flex justify-content-center align-items-center" for="color-gray1"> <i class="bx bxs-circle fs-18 text-secondary"></i></label>
+
+=======
+                                        <label for="brand" class="form-label">Brand</label>
+                                        <input type="text" id="brand" name="brand" class="form-control @error('brand') is-invalid @enderror" 
+                                               placeholder="Product Brand" value="{{ old('brand') }}">
+                                        @error('brand')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                                       </div>
+                                             </div>
+                                        </div>
+                                        <div class="row">
+                                <div class="col-lg-6">
+                                                       <div class="mb-3">
+                                        <div class="form-check form-switch mt-4">
+                                            <input class="form-check-input" type="checkbox" id="status" name="status" {{ old('status') ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="status">Active Status</label>
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
                                                        </div>
                                                   </div>
                                              </div>
