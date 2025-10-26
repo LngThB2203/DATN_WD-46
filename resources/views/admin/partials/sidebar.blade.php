@@ -45,13 +45,7 @@
                             <a class="sub-nav-link" href="{{ route('products.index') }}">List</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('products.show') }}">Details</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('products.edit') }}">Edit</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('products.add') }}">Create</a>
+                            <a class="sub-nav-link" href="{{ route('products.create') }}">Create</a>
                         </li>
                     </ul>
                 </div>
