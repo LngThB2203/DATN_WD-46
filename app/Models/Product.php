@@ -20,6 +20,10 @@ class Product extends Model
         'slug',
         'description',
         'category_id',
+<<<<<<< Updated upstream
+=======
+        'brand',
+>>>>>>> Stashed changes
         'status'
     ];
 

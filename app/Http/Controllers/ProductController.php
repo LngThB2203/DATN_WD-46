@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+<<<<<<< Updated upstream
+=======
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductsExport;
+use Barryvdh\DomPDF\Facade\Pdf;
+>>>>>>> Stashed changes
 
 class ProductController extends Controller
 {
@@ -38,6 +44,14 @@ class ProductController extends Controller
             $query->where('status', $request->status);
         }
 
+<<<<<<< Updated upstream
+=======
+        // Filter by brand
+        if ($request->filled('brand')) {
+            $query->where('brand', 'like', "%{$request->brand}%");
+        }
+
+>>>>>>> Stashed changes
         // Filter by price range
         if ($request->filled('price_min')) {
             $query->where('price', '>=', $request->price_min);
@@ -92,6 +106,10 @@ class ProductController extends Controller
             'sale_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
+<<<<<<< Updated upstream
+=======
+            'brand' => 'nullable|string|max:100',
+>>>>>>> Stashed changes
             'status' => 'boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -107,6 +125,10 @@ class ProductController extends Controller
                 'slug' => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
+<<<<<<< Updated upstream
+=======
+                'brand' => $request->brand,
+>>>>>>> Stashed changes
                 'status' => $request->has('status'),
             ]);
 
@@ -173,6 +195,10 @@ class ProductController extends Controller
             'sale_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
+<<<<<<< Updated upstream
+=======
+            'brand' => 'nullable|string|max:100',
+>>>>>>> Stashed changes
             'status' => 'boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -188,6 +214,10 @@ class ProductController extends Controller
                 'slug' => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
+<<<<<<< Updated upstream
+=======
+                'brand' => $request->brand,
+>>>>>>> Stashed changes
                 'status' => $request->has('status'),
             ]);
 
@@ -331,4 +361,104 @@ class ProductController extends Controller
             throw $e;
         }
     }
+<<<<<<< Updated upstream
+=======
+
+    /**
+     * Export products to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        try {
+            $query = Product::with(['category', 'galleries']);
+
+            // Apply same filters as index method
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('sku', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('brand')) {
+                $query->where('brand', 'like', "%{$request->brand}%");
+            }
+
+            if ($request->filled('price_min')) {
+                $query->where('price', '>=', $request->price_min);
+            }
+            if ($request->filled('price_max')) {
+                $query->where('price', '<=', $request->price_max);
+            }
+
+            $products = $query->get();
+            
+            \Illuminate\Support\Facades\Log::info('Excel export started', ['products_count' => $products->count()]);
+            
+            return Excel::download(new ProductsExport($products), 'products_' . date('Y-m-d_H-i-s') . '.xlsx');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Excel export failed', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi xuất Excel: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export products to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        try {
+            $query = Product::with(['category', 'galleries']);
+
+            // Apply same filters as index method
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('sku', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('brand')) {
+                $query->where('brand', 'like', "%{$request->brand}%");
+            }
+
+            if ($request->filled('price_min')) {
+                $query->where('price', '>=', $request->price_min);
+            }
+            if ($request->filled('price_max')) {
+                $query->where('price', '<=', $request->price_max);
+            }
+
+            $products = $query->get();
+            
+            \Illuminate\Support\Facades\Log::info('PDF export started', ['products_count' => $products->count()]);
+            
+            $pdf = Pdf::loadView('admin.products.export-pdf', compact('products'));
+            $pdf->setPaper('A4', 'landscape');
+            
+            return $pdf->download('products_' . date('Y-m-d_H-i-s') . '.pdf');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('PDF export failed', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Có lỗi xảy ra khi xuất PDF: ' . $e->getMessage());
+        }
+    }
+>>>>>>> Stashed changes
 }

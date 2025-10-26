@@ -112,6 +112,14 @@ Route::prefix('admin')->group(function () {
     Route::prefix('products')->group(function () {
         Route::get('/list', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
         Route::get('/grid', fn() => view('admin.products.grid'))->name('products.grid');
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+        Route::get('/show', fn() => view('admin.products.show'))->name('products.show');
+        Route::get('/edit', fn() => view('admin.products.edit'))->name('products.edit');
+        Route::get('/add', fn() => view('admin.products.add'))->name('products.add');
+=======
+>>>>>>> Stashed changes
         Route::get('/add', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
         Route::post('/add', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
         Route::get('/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
@@ -120,6 +128,12 @@ Route::prefix('admin')->group(function () {
         Route::delete('/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
         Route::delete('/gallery/{gallery}', [App\Http\Controllers\ProductController::class, 'deleteImage'])->name('products.delete-image');
         Route::post('/gallery/{gallery}/set-primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
+<<<<<<< Updated upstream
+=======
+        Route::get('/export/excel', [App\Http\Controllers\ProductController::class, 'exportExcel'])->name('products.export-excel');
+        Route::get('/export/pdf', [App\Http\Controllers\ProductController::class, 'exportPdf'])->name('products.export-pdf');
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     });
 
     Route::prefix('categories')->name('admin.categories.')->group(function () {
