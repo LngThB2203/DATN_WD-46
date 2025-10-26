@@ -47,7 +47,98 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Filter and Search Form -->
+                    <div class="card-body border-bottom">
+                        <form method="GET" action="{{ route('products.index') }}" class="row g-3">
+                            <!-- Search -->
+                            <div class="col-md-3">
+                                <label for="search" class="form-label">Tìm kiếm</label>
+                                <input type="text" class="form-control" id="search" name="search" 
+                                       value="{{ request('search') }}" placeholder="Tên sản phẩm hoặc SKU...">
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div class="col-md-2">
+                                <label for="category_id" class="form-label">Danh mục</label>
+                                <select class="form-select" id="category_id" name="category_id">
+                                    <option value="">Tất cả danh mục</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                            {{ $category->category_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Status Filter -->
+                            <div class="col-md-2">
+                                <label for="status" class="form-label">Trạng thái</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Hoạt động</option>
+                                    <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Không hoạt động</option>
+                                </select>
+                            </div>
+
+                            <!-- Price Range -->
+                            <div class="col-md-2">
+                                <label for="price_min" class="form-label">Giá từ</label>
+                                <input type="number" class="form-control" id="price_min" name="price_min" 
+                                       value="{{ request('price_min') }}" placeholder="0" min="0">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label for="price_max" class="form-label">Giá đến</label>
+                                <input type="number" class="form-control" id="price_max" name="price_max" 
+                                       value="{{ request('price_max') }}" placeholder="1000000" min="0">
+                            </div>
+
+                            <!-- Sort -->
+                            <div class="col-md-1">
+                                <label for="sort_by" class="form-label">Sắp xếp</label>
+                                <select class="form-select" id="sort_by" name="sort_by">
+                                    <option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>Mới nhất</option>
+                                    <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Tên A-Z</option>
+                                    <option value="price" {{ request('sort_by') == 'price' ? 'selected' : '' }}>Giá</option>
+                                </select>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="col-md-12 d-flex gap-2 align-items-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bx bx-search"></i> Lọc
+                                </button>
+                                <a href="{{ route('products.index') }}" class="btn btn-outline-secondary">
+                                    <i class="bx bx-refresh"></i> Reset
+                                </a>
+                            </div>
+                        </form>
+                    </div>
                     <div>
+                        <!-- Results Summary -->
+                        @if(request()->hasAny(['search', 'category_id', 'status', 'price_min', 'price_max']))
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Hiển thị {{ $products->count() }} / {{ $products->total() }} sản phẩm
+                                    @if(request('search'))
+                                        | Tìm kiếm: "{{ request('search') }}"
+                                    @endif
+                                    @if(request('category_id'))
+                                        | Danh mục: {{ $categories->where('id', request('category_id'))->first()->category_name ?? 'N/A' }}
+                                    @endif
+                                    @if(request('status') !== null)
+                                        | Trạng thái: {{ request('status') ? 'Hoạt động' : 'Không hoạt động' }}
+                                    @endif
+                                </small>
+                                <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bx bx-x"></i> Xóa bộ lọc
+                                </a>
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="table-responsive">
                             <table class="table align-middle mb-0 table-hover table-centered">
                                 <thead class="bg-light-subtle">
@@ -58,11 +149,12 @@
                                                 <label class="form-check-label" for="customCheck1"></label>
                                             </div>
                                         </th>
-                                        <th>Product Name</th>
-                                        <th>Price</th>
-                                        <th>Category</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
+                                        <th>Tên sản phẩm</th>
+                                        <th>Giá</th>
+                                        <th>Danh mục</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -102,10 +194,15 @@
                                         <td>{{ $product->category->category_name ?? 'N/A' }}</td>
                                         <td>
                                             @if($product->status)
-                                                <span class="badge bg-success">Active</span>
+                                                <span class="badge bg-success">Hoạt động</span>
                                             @else
-                                                <span class="badge bg-danger">Inactive</span>
+                                                <span class="badge bg-danger">Không hoạt động</span>
                                             @endif
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ $product->created_at->format('d/m/Y H:i') }}
+                                            </small>
                                         </td>
                                         <td>
                                             <div class="d-flex gap-2">
@@ -127,11 +224,16 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-4">
+                                        <td colspan="7" class="text-center py-4">
                                             <div class="text-muted">
                                                 <i class="bx bx-package fs-48 mb-3"></i>
-                                                <p>Không có sản phẩm nào</p>
-                                                <a href="{{ route('products.create') }}" class="btn btn-primary">Thêm sản phẩm đầu tiên</a>
+                                                @if(request()->hasAny(['search', 'category_id', 'status', 'price_min', 'price_max']))
+                                                    <p>Không tìm thấy sản phẩm nào phù hợp với bộ lọc</p>
+                                                    <a href="{{ route('products.index') }}" class="btn btn-outline-primary me-2">Xóa bộ lọc</a>
+                                                @else
+                                                    <p>Không có sản phẩm nào</p>
+                                                @endif
+                                                <a href="{{ route('products.create') }}" class="btn btn-primary">Thêm sản phẩm</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -153,5 +255,47 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change
+    const filterForm = document.querySelector('form[method="GET"]');
+    const filterInputs = filterForm.querySelectorAll('select, input[type="number"]');
+    
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Add a small delay for search input
+            if (input.name === 'search') {
+                clearTimeout(window.searchTimeout);
+                window.searchTimeout = setTimeout(() => {
+                    filterForm.submit();
+                }, 500);
+            } else {
+                filterForm.submit();
+            }
+        });
+    });
+
+    // Handle search input with debounce
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(() => {
+                filterForm.submit();
+            }, 500);
+        });
+    }
+
+    // Clear filters button
+    const clearFiltersBtn = document.querySelector('a[href="{{ route("products.index") }}"]');
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '{{ route("products.index") }}';
+        });
+    }
+});
+</script>
 @endsection
 

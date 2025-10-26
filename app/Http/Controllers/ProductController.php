@@ -15,13 +15,51 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with(['category', 'galleries'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = Product::with(['category', 'galleries']);
 
-        return view('admin.products.list', compact('products'));
+        // Search by name or SKU
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by category
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by price range
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->price_min);
+        }
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->price_max);
+        }
+
+        // Sort
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        if (in_array($sortBy, ['name', 'price', 'created_at'])) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $products = $query->paginate(10)->withQueryString();
+        $categories = Category::all();
+
+        return view('admin.products.list', compact('products', 'categories'));
     }
 
     /**
@@ -39,7 +77,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         // Debug request data
-        \Log::info('Store request data:', [
+        \Illuminate\Support\Facades\Log::info('Store request data:', [
             'name' => $request->name,
             'has_images' => $request->hasFile('images'),
             'has_image' => $request->hasFile('image'),
@@ -72,17 +110,17 @@ class ProductController extends Controller
                 'status' => $request->has('status'),
             ]);
 
-            \Log::info('Product created:', ['product_id' => $product->id]);
+            \Illuminate\Support\Facades\Log::info('Product created:', ['product_id' => $product->id]);
 
             // Handle image upload
             if ($request->hasFile('images')) {
-                \Log::info('Processing multiple images...');
+                \Illuminate\Support\Facades\Log::info('Processing multiple images...');
                 $this->handleImageUpload($product, $request->file('images'));
             } elseif ($request->hasFile('image')) {
-                \Log::info('Processing single image...');
+                \Illuminate\Support\Facades\Log::info('Processing single image...');
                 $this->handleSingleImageUpload($product, $request->file('image'));
             } else {
-                \Log::info('No images to upload');
+                \Illuminate\Support\Facades\Log::info('No images to upload');
             }
 
             DB::commit();
@@ -99,7 +137,7 @@ class ProductController extends Controller
             return redirect()->route('products.index')->with('success', 'Sản phẩm đã được tạo thành công!');
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Store error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            \Illuminate\Support\Facades\Log::error('Store error:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Có lỗi xảy ra khi tạo sản phẩm: ' . $e->getMessage());
         }
     }
@@ -196,10 +234,10 @@ class ProductController extends Controller
      */
     private function handleImageUpload(Product $product, array $images)
     {
-        \Log::info('handleImageUpload called', ['product_id' => $product->id, 'images_count' => count($images)]);
+        \Illuminate\Support\Facades\Log::info('handleImageUpload called', ['product_id' => $product->id, 'images_count' => count($images)]);
         
         foreach ($images as $index => $image) {
-            \Log::info('Processing image', [
+            \Illuminate\Support\Facades\Log::info('Processing image', [
                 'index' => $index,
                 'original_name' => $image->getClientOriginalName(),
                 'size' => $image->getSize(),
@@ -210,7 +248,7 @@ class ProductController extends Controller
                 $filename = time() . '_' . $index . '.' . $image->getClientOriginalExtension();
                 $path = $image->storeAs('products', $filename, 'public');
                 
-                \Log::info('Image stored', ['path' => $path]);
+                \Illuminate\Support\Facades\Log::info('Image stored', ['path' => $path]);
 
                 ProductGallery::create([
                     'product_id' => $product->id,
@@ -219,9 +257,9 @@ class ProductController extends Controller
                     'is_primary' => $index === 0, // First image is primary
                 ]);
                 
-                \Log::info('Gallery record created');
+                \Illuminate\Support\Facades\Log::info('Gallery record created');
             } catch (\Exception $e) {
-                \Log::error('Image upload error', ['error' => $e->getMessage()]);
+                \Illuminate\Support\Facades\Log::error('Image upload error', ['error' => $e->getMessage()]);
                 throw $e;
             }
         }
@@ -269,7 +307,7 @@ class ProductController extends Controller
      */
     private function handleSingleImageUpload(Product $product, $image)
     {
-        \Log::info('handleSingleImageUpload called', [
+        \Illuminate\Support\Facades\Log::info('handleSingleImageUpload called', [
             'product_id' => $product->id,
             'original_name' => $image->getClientOriginalName(),
             'size' => $image->getSize(),
@@ -279,7 +317,7 @@ class ProductController extends Controller
         try {
             $filename = time() . '_single.' . $image->getClientOriginalExtension();
             $path = $image->storeAs('products', $filename, 'public');
-            \Log::info('Single image stored', ['path' => $path]);
+            \Illuminate\Support\Facades\Log::info('Single image stored', ['path' => $path]);
 
             ProductGallery::create([
                 'product_id' => $product->id,
@@ -287,9 +325,9 @@ class ProductController extends Controller
                 'alt_text' => $product->name,
                 'is_primary' => true,
             ]);
-            \Log::info('Single gallery record created');
+            \Illuminate\Support\Facades\Log::info('Single gallery record created');
         } catch (\Exception $e) {
-            \Log::error('Single image upload error', ['error' => $e->getMessage()]);
+            \Illuminate\Support\Facades\Log::error('Single image upload error', ['error' => $e->getMessage()]);
             throw $e;
         }
     }

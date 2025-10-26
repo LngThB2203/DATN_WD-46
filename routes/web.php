@@ -95,9 +95,7 @@ Route::get('/admin/category', function () {
     return view('admin.categories.list');
 })->name('admin.categories.index');
 
-// Fallback 404 - luôn đặt cuối cùng
-Route::fallback(function () {
-    return response()->view('client.404', [], 404);
+// Auth routes
 Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
@@ -105,11 +103,6 @@ Route::get('/register', function () {
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
-
-
-Route::get('/', function () {
-    return view('client.home');
-})->name('client.home');
 
 
 Route::prefix('admin')->group(function () {
@@ -189,4 +182,9 @@ Route::prefix('admin')->group(function () {
         Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
         Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
     });
+});
+
+// Fallback 404 - luôn đặt cuối cùng
+Route::fallback(function () {
+    return response()->view('client.404', [], 404);
 });
