@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,17 +19,16 @@ class Product extends Model
         'slug',
         'description',
         'category_id',
-<<<<<<< Updated upstream
-=======
+
         'brand',
->>>>>>> Stashed changes
-        'status'
+
+        'status',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'price'      => 'decimal:2',
         'sale_price' => 'decimal:2',
-        'status' => 'boolean',
+        'status'     => 'boolean',
     ];
 
     /**
@@ -94,10 +92,10 @@ class Product extends Model
      */
     public function getDiscountPercentageAttribute()
     {
-        if (!$this->sale_price || $this->sale_price >= $this->price) {
+        if (! $this->sale_price || $this->sale_price >= $this->price) {
             return 0;
         }
-        
+
         return round((($this->price - $this->sale_price) / $this->price) * 100);
     }
 }
