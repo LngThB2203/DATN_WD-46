@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
-use Illuminate\Support\Facades\Route;
+
 
 // ========================
 // AUTH
@@ -200,6 +202,17 @@ Route::prefix('admin')->group(function () {
         Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
         Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
     });
+    Route::prefix('banner')->group(function () {
+    Route::get('/', [BannerController::class, 'index'])->name('banner.index');
+    Route::get('/create', [BannerController::class, 'create'])->name('banner.create');
+    Route::post('/store', [BannerController::class, 'store'])->name('banner.store');
+    Route::get('/edit/{banner}', [BannerController::class, 'edit'])->name('banner.edit');
+    Route::post('/update/{banner}', [BannerController::class, 'update'])->name('banner.update');
+    Route::get('/delete/{banner}', [BannerController::class, 'destroy'])->name('banner.delete');
+    Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])
+    ->name('banner.toggleStatus');
+
+});
 });
 
 // Fallback 404 - luôn đặt cuối cùng
