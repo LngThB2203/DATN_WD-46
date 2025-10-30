@@ -3,7 +3,7 @@
         <div class="container-fluid container-xl py-4">
             <div class="row">
                 <div class="col-lg-4 mb-3">
-                    <h4 class="mb-3">eStore</h4>
+                    <h4 class="mb-3">46 Perfume</h4>
                     <p class="mb-1">Cửa hàng nước hoa trực tuyến.</p>
                     <p class="mb-0">Giao hàng nhanh, chính hãng.</p>
                 </div>
@@ -25,7 +25,7 @@
     </div>
     <div class="footer-bottom py-3 border-top">
         <div class="container-fluid container-xl d-flex justify-content-between">
-            <div>© <span id="year"></span> eStore. All rights reserved.</div>
+            <div>© <span id="year"></span> 46 Perfume. All rights reserved.</div>
             <div>
                 <a href="#" class="me-3">Privacy</a>
                 <a href="#">Terms</a>

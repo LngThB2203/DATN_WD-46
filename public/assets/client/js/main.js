@@ -25,19 +25,29 @@
   /**
    * Init swiper sliders
    */
-  function initSwiper() {
-    document.querySelectorAll(".init-swiper").forEach(function(swiperElement) {
-      let config = JSON.parse(
-        swiperElement.querySelector(".swiper-config").innerHTML.trim()
-      );
+function initSwiper() {
+  document.querySelectorAll(".init-swiper").forEach(function(swiperElement) {
+    const configEl = swiperElement.querySelector(".swiper-config");
 
-      if (swiperElement.classList.contains("swiper-tab")) {
-        initSwiperWithCustomPagination(swiperElement, config);
-      } else {
-        new Swiper(swiperElement, config);
-      }
-    });
-  }
+    // Nếu không tìm thấy .swiper-config thì bỏ qua
+    if (!configEl) return;
+
+    let config;
+    try {
+      config = JSON.parse(configEl.innerHTML.trim());
+    } catch (error) {
+      console.error("Invalid JSON in swiper-config:", error);
+      return;
+    }
+
+    if (swiperElement.classList.contains("swiper-tab")) {
+      initSwiperWithCustomPagination(swiperElement, config);
+    } else {
+      new Swiper(swiperElement, config);
+    }
+  });
+}
+
 
   window.addEventListener("load", initSwiper);
 

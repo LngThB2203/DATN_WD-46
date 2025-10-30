@@ -51,7 +51,7 @@
         <div class="container-fluid container-xl">
             <div class="d-flex py-3 align-items-center justify-content-between">
                 <a href="{{ route('home') }}" class="logo d-flex align-items-center">
-                    <h1 class="sitename mb-0">eStore</h1>
+                    <h1 class="sitename mb-0">46 Perfume</h1>
                 </a>
                 <form class="search-form desktop-search-form">
                     <div class="input-group">
