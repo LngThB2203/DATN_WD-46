@@ -1,7 +1,7 @@
 <?php
-
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,9 +23,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 // ========================
 // CLIENT ROUTES
 // ========================
-Route::get('/', function () {
-    return view('client.home');
-})->name('home');
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/category', function () {
     return view('client.category');
