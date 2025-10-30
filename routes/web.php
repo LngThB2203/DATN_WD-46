@@ -1,10 +1,11 @@
 <?php
 
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 
 
 // ========================
@@ -212,6 +213,17 @@ Route::prefix('admin')->group(function () {
     Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])
     ->name('banner.toggleStatus');
 
+});
+
+Route::prefix('brand')->group(function () {
+    Route::get('/', [BrandController::class, 'index'])->name('brand.index');
+    Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
+    Route::post('/store', [BrandController::class, 'store'])->name('brand.store');
+    Route::get('/edit/{brand}', [BrandController::class, 'edit'])->name('brand.edit');
+    Route::post('/update/{brand}', [BrandController::class, 'update'])->name('brand.update');
+    Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
+    Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
+    Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
 });
 });
 
