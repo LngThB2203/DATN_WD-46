@@ -59,7 +59,7 @@
                         <label for="remember" class="form-check-label">Ghi nhớ đăng nhập</label>
                     </div>
 
-                    {{-- Submit button --}}a
+                    {{-- Submit button --}}
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Đăng nhập</button>
                     </div>
