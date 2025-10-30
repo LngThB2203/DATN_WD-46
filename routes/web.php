@@ -1,7 +1,9 @@
 <?php
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
@@ -139,10 +141,18 @@ Route::prefix('admin')->group(function () {
         Route::get('/toggle/{id}', [AdminCategoryController::class, 'toggleStatus'])->name('toggle');
     });
 
-    // Inventories
-    Route::prefix('inventories')->group(function () {
-        Route::get('/warehouse', fn() => view('admin.inventories.warehouse'))->name('inventories.warehouse');
-        Route::get('/received-orders', fn() => view('admin.inventories.received-orders'))->name('inventories.received-orders');
+    Route::prefix('inventories')->name('inventories.')->group(function () {
+
+        // ===== Quản lý kho =====
+        Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
+        Route::get('/warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.add');
+        Route::post('/warehouse/store', [WarehouseController::class, 'store'])->name('warehouse.store');
+        Route::get('/warehouse/{warehouse}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
+        Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
+        Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
+
+        // ===== Quản lý tồn kho =====
+        Route::get('/received-orders', [WarehouseProductController::class, 'index'])->name('received-orders');
     });
 
     // Orders

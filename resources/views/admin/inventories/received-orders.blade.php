@@ -1,162 +1,87 @@
-
 @extends('admin.layouts.admin')
 
-@section('title', 'Received Orders')
+@section('title', 'Inventory Management')
 
 @section('content')
 <div class="page-content">
+    <div class="container-xxl">
 
-               <!-- Start Container Fluid -->
-               <div class="container-xxl">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h4 class="mb-3">Danh sách tồn kho</h4>
+            </div>
+        </div>
 
-                    <div class="row">
-                         <div class="col-md-6 col-xl-3">
-                              <div class="card">
-                                   <div class="card-body">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                             <div>
-                                                  <h4 class="card-title mb-2">Pending Review</h4>
-                                                  <p class="text-muted fw-medium fs-22 mb-0">210</p>
-                                             </div>
-                                             <div>
-                                                  <div class="avatar-md bg-primary bg-opacity-10 rounded">
-                                                       <iconify-icon icon="solar:clipboard-remove-broken" class="fs-32 text-primary avatar-title"></iconify-icon>
-                                                  </div>
-                                             </div>
+        {{-- Cảnh báo tồn kho thấp --}}
+        @if(isset($lowStockItems) && $lowStockItems->count() > 0)
+            <div class="alert alert-danger">
+                <h5><i class="bx bx-error-circle"></i> Cảnh báo tồn kho thấp!</h5>
+                <ul class="mb-0">
+                    @foreach($lowStockItems as $item)
+                        <li>
+                            <strong>{{ $item->product->name ?? 'Sản phẩm không xác định' }}</strong> tại
+                            <em>{{ $item->warehouse->warehouse_name ?? 'Kho không xác định' }}</em>
+                            chỉ còn <strong>{{ $item->quantity }}</strong> (ngưỡng tối thiểu: {{ $item->min_stock_threshold }})
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Tồn kho hiện tại</h5>
+                <a href="#" class="btn btn-sm btn-primary">Thêm mới</a>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 table-hover table-centered">
+                        <thead class="bg-light-subtle">
+                            <tr>
+                                <th>ID</th>
+                                <th>Sản phẩm</th>
+                                <th>Kho</th>
+                                <th>Số lượng</th>
+                                <th>Ngưỡng tối thiểu</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($inventories as $inventory)
+                                <tr>
+                                    <td>{{ $inventory->id }}</td>
+                                    <td>{{ $inventory->product->name ?? 'N/A' }}</td>
+                                    <td>{{ $inventory->warehouse->warehouse_name ?? 'N/A' }}</td>
+                                    <td>{{ $inventory->quantity }}</td>
+                                    <td>{{ $inventory->min_stock_threshold }}</td>
+                                    <td>
+                                        @if($inventory->quantity <= $inventory->min_stock_threshold)
+                                            <span class="badge bg-danger">Sắp hết hàng</span>
+                                        @else
+                                            <span class="badge bg-success">Đủ hàng</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="#" class="btn btn-light btn-sm"><iconify-icon icon="solar:eye-broken" class="align-middle fs-18"></iconify-icon></a>
+                                            <a href="#" class="btn btn-soft-primary btn-sm"><iconify-icon icon="solar:pen-2-broken" class="align-middle fs-18"></iconify-icon></a>
+                                            <a href="#" class="btn btn-soft-danger btn-sm"><iconify-icon icon="solar:trash-bin-minimalistic-2-broken" class="align-middle fs-18"></iconify-icon></a>
                                         </div>
-                                   </div>
-                              </div>
-                         </div>
-                         <div class="col-md-6 col-xl-3">
-                              <div class="card">
-                                   <div class="card-body">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                             <div>
-                                                  <h4 class="card-title mb-2">Pending Payment</h4>
-                                                  <p class="text-muted fw-medium fs-22 mb-0">608</p>
-                                             </div>
-                                             <div>
-                                                  <div class="avatar-md bg-primary bg-opacity-10 rounded">
-                                                       <iconify-icon icon="solar:clock-circle-broken" class="fs-32 text-primary avatar-title"></iconify-icon>
-                                                  </div>
-                                             </div>
-                                        </div>
-                                   </div>
-                              </div>
-                         </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
-                         <div class="col-md-6 col-xl-3">
-                              <div class="card">
-                                   <div class="card-body">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                             <div>
-                                                  <h4 class="card-title mb-2">Delivered</h4>
-                                                  <p class="text-muted fw-medium fs-22 mb-0">200</p>
-                                             </div>
-                                             <div>
-                                                  <div class="avatar-md bg-primary bg-opacity-10 rounded">
-                                                       <iconify-icon icon="solar:clipboard-check-broken" class="fs-32 text-primary avatar-title"></iconify-icon>
-                                                  </div>
-                                             </div>
-                                        </div>
-                                   </div>
-                              </div>
-                         </div>
-
-                         <div class="col-md-6 col-xl-3">
-                              <div class="card">
-                                   <div class="card-body">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                             <div>
-                                                  <h4 class="card-title mb-2">In Progress</h4>
-                                                  <p class="text-muted fw-medium fs-22 mb-0">656</p>
-                                             </div>
-                                             <div>
-                                                  <div class="avatar-md bg-primary bg-opacity-10 rounded">
-                                                       <iconify-icon icon="solar:inbox-line-broken" class="fs-32 text-primary avatar-title"></iconify-icon>
-                                                  </div>
-                                             </div>
-                                        </div>
-                                   </div>
-                              </div>
-                         </div>
-
-                    </div>
-
-                    <div class="row">
-                         <div class="col-xl-12">
-                              <div class="card">
-                                   <div class="d-flex card-header justify-content-between align-items-center">
-                                        <div>
-                                             <h4 class="card-title">All Received Order</h4>
-                                        </div>
-                                        <div class="dropdown">
-                                             <a href="inventory-received-orders.html#" class="dropdown-toggle btn btn-sm btn-outline-light rounded" data-bs-toggle="dropdown" aria-expanded="false">
-                                                  This Month
-                                             </a>
-                                             <div class="dropdown-menu dropdown-menu-end">
-                                                  <!-- item-->
-                                                  <a href="inventory-received-orders.html#!" class="dropdown-item">Download</a>
-                                                  <!-- item-->
-                                                  <a href="inventory-received-orders.html#!" class="dropdown-item">Export</a>
-                                                  <!-- item-->
-                                                  <a href="inventory-received-orders.html#!" class="dropdown-item">Import</a>
-                                             </div>
-                                        </div>
-                                   </div>
-
-                                   <div>
-                                        <div class="table-responsive">
-                                             <table class="table align-middle mb-0 table-hover table-centered">
-                                                  <thead class="bg-light-subtle">
-                                                       <tr>
-                                                            <th>Order ID</th>
-                                                            <th>Customer</th>
-                                                            <th>Items</th>
-                                                            <th>Amount</th>
-                                                            <th>Payment Status</th>
-                                                            <th>Received Status</th>
-                                                            <th>Action</th>
-                                                       </tr>
-                                                  </thead>
-                                                  <tbody>
-                                                       <tr>
-                                                            <td>#448226/80</td>
-                                                            <td>Leonie Meister</td>
-                                                            <td>06 </td>
-                                                            <td>$219.00</td>
-                                                            <td><span class="badge bg-warning text-white py-1 px-2">COD</span></td>
-                                                            <td><span class="badge bg-danger-subtle text-danger py-1 px-2">Failed</span></td>
-                                                            <td>
-                                                                 <div class="d-flex gap-2">
-                                                                      <a href="inventory-received-orders.html#!" class="btn btn-light btn-sm"><iconify-icon icon="solar:eye-broken" class="align-middle fs-18"></iconify-icon></a>
-                                                                      <a href="inventory-received-orders.html#!" class="btn btn-soft-primary btn-sm" data-bs-toggle="modal" data-bs-target="#staticBackdrop"><iconify-icon icon="solar:pen-2-broken" class="align-middle fs-18"></iconify-icon></a>
-                                                                      <a href="inventory-received-orders.html#!" class="btn btn-soft-danger btn-sm"><iconify-icon icon="solar:trash-bin-minimalistic-2-broken" class="align-middle fs-18"></iconify-icon></a>
-                                                                 </div>
-                                                            </td>
-                                                       </tr>
-                                                  </tbody>
-                                             </table>
-                                        </div>
-                                        <!-- end table-responsive -->
-                                   </div>
-                                   <div class="card-footer border-top">
-                                        <nav aria-label="Page navigation example">
-                                             <ul class="pagination justify-content-end mb-0">
-                                                  <li class="page-item"><a class="page-link" href="javascript:void(0);">Previous</a></li>
-                                                  <li class="page-item active"><a class="page-link" href="javascript:void(0);">1</a></li>
-                                                  <li class="page-item"><a class="page-link" href="javascript:void(0);">2</a></li>
-                                                  <li class="page-item"><a class="page-link" href="javascript:void(0);">3</a></li>
-                                                  <li class="page-item"><a class="page-link" href="javascript:void(0);">Next</a></li>
-                                             </ul>
-                                        </nav>
-                                   </div>
-                              </div>
-                         </div>
-
-                    </div>
-
-
-               </div>
+                {{-- Phân trang --}}
+                <div class="card-footer border-top">
+                    {{ $inventories->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

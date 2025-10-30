@@ -89,6 +89,9 @@
                             <a class="sub-nav-link" href="{{ route('inventories.warehouse') }}">Warehouse</a>
                         </li>
                         <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('inventories.warehouse.add') }}">Add Warehouse</a>
+                        </li>
+                        <li class="sub-nav-item">
                             <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Received Orders</a>
                         </li>
                     </ul>
