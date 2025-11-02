@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
@@ -30,7 +32,24 @@ Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkE
 
 Route::get('reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+// email xac thuc
+Route::middleware('auth')->group(function () {
 
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->back()->with('success', 'Email của bạn đã được xác thực!');
+    })->middleware(['signed'])->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('success', 'Email xác thực đã được gửi!');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+
+});
 
 Route::get('/', function () {
     return view('client.home');

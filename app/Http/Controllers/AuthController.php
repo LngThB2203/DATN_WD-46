@@ -29,7 +29,8 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
+        // gui email xac thuc
+      $user->sendEmailVerificationNotification();
         Auth::login($user);
 
         return redirect()->route('client.home')->with('success', 'Đăng ký thành công!');

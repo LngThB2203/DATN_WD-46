@@ -15,7 +15,23 @@
                 </div>
                 <div>
                     <p><strong>Họ và tên:</strong> {{ Auth::user()->name ?? 'Chưa có' }}</p>
-                    <p><strong>Email:</strong> {{ Auth::user()->email }}</p>
+                    {{-- Email với trạng thái xác thực --}}
+                    <div class="d-flex align-items-center flex-wrap mb-2">
+         <strong class="me-1">Email:</strong>
+    <span>{{ Auth::user()->email }}</span>
+
+    @if(Auth::user()->hasVerifiedEmail())
+        <span class="badge bg-success ms-2">✅ Đã xác thực</span>
+    @else
+        <form action="{{ route('verification.send') }}" method="POST" class="ms-2 d-inline">
+            @csrf
+            <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.8rem;">
+                 Xác thực email
+            </button>
+        </form>
+    @endif
+</div>
+
                     <p><strong>Giới tính:</strong>
     {{ Auth::user()->gender === 1 ? 'Nam' : (Auth::user()->gender === 0 ? 'Nữ' : 'Chưa có') }}
 </p>
