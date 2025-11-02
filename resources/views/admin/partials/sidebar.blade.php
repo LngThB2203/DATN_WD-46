@@ -45,13 +45,7 @@
                             <a class="sub-nav-link" href="{{ route('products.index') }}">List</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('products.show') }}">Details</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('products.edit') }}">Edit</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('products.add') }}">Create</a>
+                            <a class="sub-nav-link" href="{{ route('products.create') }}">Create</a>
                         </li>
                     </ul>
                 </div>
@@ -68,14 +62,36 @@
                 <div class="collapse" id="sidebarCategory">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('categories.list') }}">List</a>
+                            <a class="sub-nav-link" href="{{ route('admin.categories.list') }}">List</a>
+                        </li>
+                        {{-- <li class="sub-nav-item">
+                            <a href="{{ route('admin.categories.edit', $category->id) }}">Sửa</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('categories.edit') }}">Edit</a>
+                            <a class="sub-nav-link" href="{{ route('admin.categories.add') }}">Create</a> --}}
                         </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Banner </span>
+                </a>
+                <div class="collapse" id="sidebarInventory">
+                    <ul class="nav sub-navbar-nav">
+
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('categories.add') }}">Create</a>
-                        </li>
+                <a class="sub-nav-link" href="{{ route('banner.index') }}">Danh sách Banner</a>
+            </li>
+
+            <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('banner.create') }}">Thêm Banner mới</a>
+            </li>
                     </ul>
                 </div>
             </li>
@@ -471,3 +487,6 @@
         </ul>
     </div>
 </div>
+<style>
+    
+</style>
