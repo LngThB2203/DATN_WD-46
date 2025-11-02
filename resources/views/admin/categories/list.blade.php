@@ -4,163 +4,101 @@
 
 @section('content')
 <div class="page-content">
-
-    <!-- Start Container Fluid -->
     <div class="container-xxl">
+        <form method="GET" action="{{ route('admin.categories.list') }}" class="mb-3 d-flex gap-2">
+            <input type="text" name="search" value="{{ request('search') }}" class="form-control w-auto" placeholder="Tìm kiếm danh mục...">
+            <button class="btn btn-primary">Tìm</button>
+        </form>
 
         <div class="row">
-            <div class="col-md-6 col-xl-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <div
-                            class="rounded bg-secondary-subtle d-flex align-items-center justify-content-center mx-auto">
-                            <img src="{{asset('assets/admin/images/product/p-1.png')}}" alt="" class="avatar-xl">
+            @foreach($categories->take(4) as $cat)
+                <div class="col-md-6 col-xl-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="rounded bg-secondary-subtle d-flex align-items-center justify-content-center mx-auto" style="width:100px; height:100px;">
+                                <img src="{{ $cat->image ? asset($cat->image) : asset('assets/admin/images/default.png') }}"
+                                    alt="{{ $cat->category_name }}"
+                                    class="object-fit-contain"
+                                    style="max-width: 100%; max-height: 100%;">
+                            </div>
+                            <h4 class="mt-3 mb-1">{{ $cat->category_name }}</h4>
+                            <p class="text-muted mb-0">
+                                {{ $cat->parent?->category_name ? 'Thuộc: '.$cat->parent->category_name : 'Danh mục gốc' }}
+                            </p>
                         </div>
-                        <h4 class="mt-3 mb-0">Fashion Categories</h4>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-6 col-xl-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <div class="rounded bg-primary-subtle d-flex align-items-center justify-content-center mx-auto">
-                            <img src="{{asset('assets/admin/images/product/p-6.png')}}" alt="" class="avatar-xl">
-                        </div>
-                        <h4 class="mt-3 mb-0">Electronics Headphone</h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-xl-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <div class="rounded bg-warning-subtle d-flex align-items-center justify-content-center mx-auto">
-                            <img src="{{asset('assets/admin/images/product/p-7.png')}}" alt="" class="avatar-xl">
-                        </div>
-                        <h4 class="mt-3 mb-0">Foot Wares</h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-xl-3">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <div class="rounded bg-info-subtle d-flex align-items-center justify-content-center mx-auto">
-                            <img src="{{asset('assets/admin/images/product/p-9.png')}}" alt="" class="avatar-xl">
-                        </div>
-                        <h4 class="mt-3 mb-0">Eye Ware & Sunglass</h4>
-                    </div>
-                </div>
-            </div>
+            @endforeach
         </div>
 
-        <div class="row">
+        <div class="row mt-4">
             <div class="col-xl-12">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center gap-1">
-                        <h4 class="card-title flex-grow-1">All Categories List</h4>
+                        <h4 class="card-title flex-grow-1">Danh sách danh mục</h4>
 
-                        <a href="product-add.html" class="btn btn-sm btn-primary">
-                            Add Product
+                        <a href="{{ route('admin.categories.create') }}" class="btn btn-sm btn-primary">
+                            + Thêm danh mục
                         </a>
-
-                        <div class="dropdown">
-                            <a href="category-list.html#" class="dropdown-toggle btn btn-sm btn-outline-light"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                This Month
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end">
-                                <!-- item-->
-                                <a href="category-list.html#!" class="dropdown-item">Download</a>
-                                <!-- item-->
-                                <a href="category-list.html#!" class="dropdown-item">Export</a>
-                                <!-- item-->
-                                <a href="category-list.html#!" class="dropdown-item">Import</a>
-                            </div>
-                        </div>
                     </div>
-                    <div>
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0 table-hover table-centered">
-                                <thead class="bg-light-subtle">
-                                    <tr>
-                                        <th style="width: 20px;">
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" id="customCheck1">
-                                                <label class="form-check-label" for="customCheck1"></label>
-                                            </div>
-                                        </th>
-                                        <th>Categories</th>
-                                        <th>Starting Price</th>
-                                        <th>Create by</th>
-                                        <th>ID</th>
-                                        <th>Product Stock</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" id="customCheck2">
-                                                <label class="form-check-label" for="customCheck2">&nbsp;</label>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div
-                                                    class="rounded bg-light avatar-md d-flex align-items-center justify-content-center">
-                                                    <img src="{{asset('assets/admin/images/product/p-9.png')}}" alt=""
-                                                        class="avatar-md">
-                                                </div>
-                                                <div>
-                                                    <p class="text-dark fw-medium fs-15 mb-0">Eye Ware & Sunglass</p>
-                                                </div>
-                                            </div>
 
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover table-centered mb-0">
+                            <thead class="bg-light-subtle">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên danh mục</th>
+                                    <th>Danh mục cha</th>
+                                    <th>Mô tả</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($categories as $cat)
+                                    <tr>
+                                        <td>{{ $cat->id }}</td>
+                                        <td>{{ $cat->category_name }}</td>
+                                        <td>{{ $cat->parent?->category_name ?? '—' }}</td>
+                                        <td>{{ Str::limit($cat->description, 50) }}</td>
+                                        <td>
+                                            <a href="{{ route('admin.categories.toggle', $cat->id) }}"
+                                               class="badge {{ $cat->status ? 'bg-success' : 'bg-secondary' }}">
+                                                {{ $cat->status ? 'Hiển thị' : 'Ẩn' }}
+                                            </a>
                                         </td>
-                                        <td>$70 to $500</td>
-                                        <td>Admin</td>
-                                        <td>EG37878</td>
-                                        <td>1900</td>
+                                        <td>{{ $cat->created_at->format('d/m/Y') }}</td>
                                         <td>
                                             <div class="d-flex gap-2">
-                                                <a href="category-list.html#!" class="btn btn-light btn-sm">
-                                                    <iconify-icon icon="solar:eye-broken" class="align-middle fs-18">
-                                                    </iconify-icon>
+                                                <a href="{{ route('admin.categories.edit', $cat->id) }}" class="btn btn-sm btn-soft-primary">
+                                                    <i class="bi bi-pencil"></i>
                                                 </a>
-                                                <a href="category-list.html#!" class="btn btn-soft-primary btn-sm">
-                                                    <iconify-icon icon="solar:pen-2-broken" class="align-middle fs-18">
-                                                    </iconify-icon>
-                                                </a>
-                                                <a href="category-list.html#!" class="btn btn-soft-danger btn-sm">
-                                                    <iconify-icon icon="solar:trash-bin-minimalistic-2-broken"
-                                                        class="align-middle fs-18"></iconify-icon>
-                                                </a>
+                                                <form action="{{ route('admin.categories.destroy', $cat->id) }}" method="POST" onsubmit="return confirm('Xóa danh mục này?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-soft-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- end table-responsive -->
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">Không có danh mục nào.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
+
                     <div class="card-footer border-top">
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination justify-content-end mb-0">
-                                <li class="page-item"><a class="page-link" href="javascript:void(0);">Previous</a></li>
-                                <li class="page-item active"><a class="page-link" href="javascript:void(0);">1</a></li>
-                                <li class="page-item"><a class="page-link" href="javascript:void(0);">2</a></li>
-                                <li class="page-item"><a class="page-link" href="javascript:void(0);">3</a></li>
-                                <li class="page-item"><a class="page-link" href="javascript:void(0);">Next</a></li>
-                            </ul>
-                        </nav>
+                        {{ $categories->links('pagination::bootstrap-5') }}
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
-    <!-- End Container Fluid -->
 </div>
 @endsection

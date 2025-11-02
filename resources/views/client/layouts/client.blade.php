@@ -32,12 +32,12 @@
 </head>
 
 <body class="index-page">
-    <div>
+
         @include('client.partials.header')
             @yield('content')
 
         @include('client.partials.footer')
-    </div>
+
     <script src="{{asset ('assets/client/vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
   <script src="{{asset ('assets/client/vendor/php-email-form/validate.js')}}"></script>
   <script src="{{asset ('assets/client/vendor/swiper/swiper-bundle.min.js')}}"></script>
@@ -52,3 +52,8 @@
 </body>
 
 </html>
+<style>
+  body {
+    padding-top: 0;
+  }
+</style>
