@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
@@ -13,6 +14,13 @@ Route::get('/register', function () {
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+// profile
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [UserController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [UserController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [UserController::class, 'update'])->name('profile.update');
+});
 
 
 Route::get('/', function () {
