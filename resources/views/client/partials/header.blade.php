@@ -91,7 +91,7 @@
                     </div>
 
                     <div class="dropdown-body">
-                        <a class="dropdown-item d-flex align-items-center" href="#">
+                        <a class="dropdown-item d-flex align-items-center" href="{{ route('profile.show') }}">
                             <i class="bi bi-person-circle me-2"></i>
                             <span>My Profile</span>
                         </a>
@@ -121,7 +121,7 @@
                     </div>
 
                     <div class="dropdown-body">
-                        <a class="dropdown-item d-flex align-items-center" href="#">
+                        <a class="dropdown-item d-flex align-items-center" href="{{ route('profile.show') }}">
                             <i class="bi bi-person-circle me-2"></i>
                             <span>My Profile</span>
                         </a>
