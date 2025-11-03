@@ -58,3 +58,8 @@
 </body>
 
 </html>
+<style>
+    section {
+    padding-bottom: 100px;
+}
+</style>
