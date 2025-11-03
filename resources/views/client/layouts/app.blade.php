@@ -1,4 +1,4 @@
-{{-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
@@ -14,8 +14,9 @@
 </head>
 <body class="index-page">
     @include('client.partials.header')
-    <main>
+    <main style="margin-top: 150px;">
         @yield('content')
+
     </main>
     @include('client.partials.footer')
     <script src="{{ asset('assets/client/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -25,4 +26,4 @@
     <script src="{{ asset('assets/client/vendor/drift-zoom/Drift.min.js') }}"></script>
     <script src="{{ asset('assets/client/js/main.js') }}"></script>
 </body>
-</html> --}}
+</html>

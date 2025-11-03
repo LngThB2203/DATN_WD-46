@@ -31,10 +31,14 @@
     <link href="{{asset ('assets/client/css/main.css')}}" rel="stylesheet">
 </head>
 
-<body class="index-page">
+<body class="pt-5 mt-4">
 
         @include('client.partials.header')
-            @yield('content')
+
+       <main style="margin-top: 150px;">
+        @yield('content')
+
+    </main>
 
         @include('client.partials.footer')
 

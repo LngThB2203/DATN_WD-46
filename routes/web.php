@@ -1,10 +1,16 @@
 <?php
-
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Admin\BannerController;
 
 
 // ========================
@@ -21,13 +27,41 @@ Route::get('/register', function () {
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+// Account
+Route::middleware(['auth'])->group(function () {
+    Route::get('/account', [AccountController::class, 'show'])->name('account.show');
+    Route::get('/account/edit', [AccountController::class, 'edit'])->name('account.edit');
+    Route::post('/account/update', [AccountController::class, 'update'])->name('account.update');
+});
 
+// quen mk
+Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+
+Route::get('reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+// email xac thuc
+Route::middleware('auth')->group(function () {
+
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->back()->with('success', 'Email của bạn đã được xác thực!');
+    })->middleware(['signed'])->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('success', 'Email xác thực đã được gửi!');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+
+});
 // ========================
 // CLIENT ROUTES
 // ========================
-Route::get('/', function () {
-    return view('client.home');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/category', function () {
     return view('client.category');
@@ -65,9 +99,6 @@ Route::get('/tos', function () {
     return view('client.tos');
 })->name('tos.index');
 
-Route::get('/account', function () {
-    return view('client.account');
-})->name('account.index');
 
 // Blog
 Route::get('/blog', function () {
@@ -212,6 +243,17 @@ Route::prefix('admin')->group(function () {
     Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])
     ->name('banner.toggleStatus');
 
+});
+
+Route::prefix('brand')->group(function () {
+    Route::get('/', [BrandController::class, 'index'])->name('brand.index');
+    Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
+    Route::post('/store', [BrandController::class, 'store'])->name('brand.store');
+    Route::get('/edit/{brand}', [BrandController::class, 'edit'])->name('brand.edit');
+    Route::post('/update/{brand}', [BrandController::class, 'update'])->name('brand.update');
+    Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
+    Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
+    Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
 });
 });
 

@@ -51,7 +51,7 @@
         <div class="container-fluid container-xl">
             <div class="d-flex py-3 align-items-center justify-content-between">
                 <a href="{{ route('home') }}" class="logo d-flex align-items-center">
-                    <h1 class="sitename mb-0">eStore</h1>
+                    <h1 class="sitename mb-0">46 Perfume</h1>
                 </a>
                 <form class="search-form desktop-search-form">
                     <div class="input-group">
@@ -61,7 +61,82 @@
                         </button>
                     </div>
                 </form>
+
                 <div class="header-actions d-flex align-items-center justify-content-end">
+                   <!-- Account -->
+            <div class="dropdown account-dropdown">
+              <button class="header-action-btn" data-bs-toggle="dropdown">
+                <i class="bi bi-person"></i>
+              </button>
+              <div class="dropdown-menu">
+                @guest
+                    {{-- ==================== GIAO DIỆN KHI CHƯA ĐĂNG NHẬP ==================== --}}
+                    <div class="dropdown-header text-center">
+                        <h6>Chào mừng bạn tới <b class="sitename">46 Perfume</b></h6>
+                        <p class="mb-0">Truy cập tài khoản &amp; Quản lý đơn hàng</p>
+                    </div>
+
+                    <div class="dropdown-body">
+                        <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <span>Account</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center" href="#">
+                            <i class="bi bi-bag-check me-2"></i>
+                            <span>My Orders</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center" href="#">
+                            <i class="bi bi-heart me-2"></i>
+                            <span>My Wishlist</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center" href="#">
+                            <i class="bi bi-gear me-2"></i>
+                            <span>Settings</span>
+                        </a>
+                    </div>
+
+                    <div class="dropdown-footer">
+                        <a href="{{ route('login') }}" class="btn btn-primary w-100 mb-2">Sign In</a>
+                        <a href="{{ route('register') }}" class="btn btn-outline-primary w-100">Register</a>
+                    </div>
+                @else
+                    {{-- ==================== GIAO DIỆN KHI ĐÃ ĐĂNG NHẬP ==================== --}}
+                    <div class="dropdown-header text-center">
+                        <h6>Xin chào, <strong>{{ Auth::user()->name }}</strong> 👋</h6>
+                        <p class="mb-0">Chúc bạn mua sắm vui vẻ</p>
+                    </div>
+
+                    <div class="dropdown-body">
+                        <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <span>Account</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center" href="#">
+                            <i class="bi bi-bag-check me-2"></i>
+                            <span>My Orders</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center" href="#">
+                            <i class="bi bi-heart me-2"></i>
+                            <span>My Wishlist</span>
+                        </a>
+                        <a class="dropdown-item d-flex align-items-center" href="#">
+                            <i class="bi bi-gear me-2"></i>
+                            <span>Settings</span>
+                        </a>
+                    </div>
+
+                    <div class="dropdown-footer">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="btn btn-danger w-100">
+                                <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                @endguest
+            </div>
+        </div>
+                        <!-- End -->
                     <a href="#" class="header-action-btn d-none d-md-block">
                         <i class="bi bi-heart"></i>
                         <span class="badge">0</span>
@@ -84,7 +159,7 @@
                     <li><a href="{{ route('about') }}">About</a></li>
                     <li><a href="#">Blog</a></li>
                     <li><a href="{{ route('contact.index') }}">Contact</a></li>
-                    <li><a href="{{ route('account.index') }}">Account</a></li>
+                    <li><a href="{{ route('account.show') }}">Account</a></li>
                     <li><a href="{{ route('category.index') }}">Category</a></li>
                     <li><a href="{{ route('cart.index') }}">Cart</a></li>
                     <li><a href="{{ route('checkout.index') }}">Checkout</a></li>
