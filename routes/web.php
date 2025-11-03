@@ -1,16 +1,16 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 
 
 // ========================
@@ -27,12 +27,11 @@ Route::get('/register', function () {
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
-
-// profile
+// Account
 Route::middleware(['auth'])->group(function () {
-    Route::get('/profile', [UserController::class, 'show'])->name('profile.show');
-    Route::get('/profile/edit', [UserController::class, 'edit'])->name('profile.edit');
-    Route::post('/profile/update', [UserController::class, 'update'])->name('profile.update');
+    Route::get('/account', [AccountController::class, 'show'])->name('account.show');
+    Route::get('/account/edit', [AccountController::class, 'edit'])->name('account.edit');
+    Route::post('/account/update', [AccountController::class, 'update'])->name('account.update');
 });
 
 // quen mk
@@ -59,9 +58,10 @@ Route::middleware('auth')->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 
 });
-Route::get('/', function () {
-    return view('client.home');
-})->name('home');
+// ========================
+// CLIENT ROUTES
+// ========================
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/category', function () {
     return view('client.category');
@@ -99,9 +99,6 @@ Route::get('/tos', function () {
     return view('client.tos');
 })->name('tos.index');
 
-Route::get('/account', function () {
-    return view('client.account');
-})->name('account.index');
 
 // Blog
 Route::get('/blog', function () {

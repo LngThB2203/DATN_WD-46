@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class UserController extends Controller
+class AccountController extends Controller
 {
     public function show()
     {
@@ -37,6 +37,6 @@ class UserController extends Controller
 
     $user->save();
 
-    return redirect()->route('profile.show')->with('success', 'Cập nhật thông tin thành công!');
+    return redirect()->route('account.show')->with('success', 'Cập nhật thông tin thành công!');
 }
 }

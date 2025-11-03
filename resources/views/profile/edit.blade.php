@@ -20,7 +20,7 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-    <form action="{{ route('profile.update') }}" method="POST">
+    <form action="{{ route('account.update') }}" method="POST">
         @csrf
         <div class="mb-3">
             <label class="form-label">Họ và tên</label>
@@ -51,7 +51,7 @@
         </div>
 
         <button type="submit" class="btn btn-dark">Cập nhật</button>
-        <a href="{{ route('profile.show') }}" class="btn btn-outline-secondary">Hủy</a>
+        <a href="{{ route('account.show') }}" class="btn btn-outline-secondary">Hủy</a>
     </form>
 </div>
 @endsection
