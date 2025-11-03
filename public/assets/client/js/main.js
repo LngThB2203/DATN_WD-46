@@ -25,19 +25,18 @@
   /**
    * Init swiper sliders
    */
- function initSwiper() {
+  function initSwiper() {
   document.querySelectorAll(".init-swiper").forEach(function(swiperElement) {
-    const configElement = swiperElement.querySelector(".swiper-config");
-    if (!configElement) {
-      console.warn("⚠️ Missing .swiper-config inside", swiperElement);
-      return; // bỏ qua nếu không có .swiper-config
-    }
+    const configEl = swiperElement.querySelector(".swiper-config");
+
+    // Nếu không tìm thấy .swiper-config thì bỏ qua
+    if (!configEl) return;
 
     let config;
     try {
-      config = JSON.parse(configElement.innerHTML.trim());
+      config = JSON.parse(configEl.innerHTML.trim());
     } catch (e) {
-      console.error("❌ Invalid JSON in .swiper-config:", e);
+      console.error("Invalid JSON in swiper-config:", e);
       return;
     }
 

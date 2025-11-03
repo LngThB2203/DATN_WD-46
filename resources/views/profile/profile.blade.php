@@ -1,6 +1,6 @@
 @extends('client.layouts.client')
 
-@section('title', 'My Profile')
+@section('title', 'My account')
 
 @section('content')
 <div class="container my-5">
@@ -11,7 +11,7 @@
             <div class="border p-3 rounded">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0"><i class="bi bi-person"></i> THÔNG TIN TÀI KHOẢN</h5>
-                    <a href="{{ route('profile.edit') }}" class="text-decoration-none">Chỉnh sửa</a>
+                    <a href="{{ route('account.edit') }}" class="text-decoration-none">Chỉnh sửa</a>
                 </div>
                 <div>
                     <p><strong>Họ và tên:</strong> {{ Auth::user()->name ?? 'Chưa có' }}</p>

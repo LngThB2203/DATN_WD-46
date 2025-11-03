@@ -21,6 +21,15 @@
             <label>Nhập lại mật khẩu</label>
             <input type="password" name="password_confirmation" class="form-control" required>
         </div>
+        @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
         <button type="submit" class="btn btn-dark w-100">Cập nhật mật khẩu</button>
     </form>
 </div>
