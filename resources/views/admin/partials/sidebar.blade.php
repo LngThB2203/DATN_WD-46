@@ -339,20 +339,20 @@
             <li class="menu-title mt-2">Other</li>
 
             <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarCoupons" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarCoupons">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarDiscounts" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarDiscounts">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:leaf-bold-duotone"></iconify-icon>
                     </span>
-                    <span class="nav-text"> Coupons </span>
+                    <span class="nav-text"> Mã giảm giá </span>
                 </a>
-                <div class="collapse" id="sidebarCoupons">
+                <div class="collapse" id="sidebarDiscounts">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('coupons.list') }}">List</a>
+                            <a class="sub-nav-link" href="{{ route('admin.discounts.index') }}">Danh sách</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('coupons.add') }}">Add</a>
+                            <a class="sub-nav-link" href="{{ route('admin.discounts.create') }}">Thêm mới</a>
                         </li>
                     </ul>
                 </div>

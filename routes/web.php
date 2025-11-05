@@ -80,6 +80,9 @@ Route::get('/checkout', function () {
     return view('client.checkout');
 })->name('checkout.index');
 
+// API route để kiểm tra mã giảm giá khi thanh toán
+Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
+
 Route::get('/about', function () {
     return view('client.about');
 })->name('about');
@@ -231,10 +234,15 @@ Route::prefix('admin')->group(function () {
         Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
     });
 
-    // Coupons
-    Route::prefix('coupons')->group(function () {
-        Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
-        Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
+    // Discounts (Mã giảm giá)
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\DiscountController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\DiscountController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\DiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [App\Http\Controllers\DiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [App\Http\Controllers\DiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [App\Http\Controllers\DiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [App\Http\Controllers\DiscountController::class, 'destroy'])->name('destroy');
     });
     Route::prefix('banner')->group(function () {
     Route::get('/', [BannerController::class, 'index'])->name('banner.index');
