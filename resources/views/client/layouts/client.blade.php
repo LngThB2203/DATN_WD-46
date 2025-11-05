@@ -31,13 +31,17 @@
     <link href="{{asset ('assets/client/css/main.css')}}" rel="stylesheet">
 </head>
 
-<body class="index-page">
-    <div>
+<body class="pt-5 mt-4">
+
         @include('client.partials.header')
-            @yield('content')
+
+       <main style="margin-top: 150px;">
+        @yield('content')
+
+    </main>
 
         @include('client.partials.footer')
-    </div>
+
     <script src="{{asset ('assets/client/vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
   <script src="{{asset ('assets/client/vendor/php-email-form/validate.js')}}"></script>
   <script src="{{asset ('assets/client/vendor/swiper/swiper-bundle.min.js')}}"></script>
@@ -52,3 +56,8 @@
 </body>
 
 </html>
+<style>
+  body {
+    padding-top: 0;
+  }
+</style>

@@ -14,8 +14,9 @@
 </head>
 <body class="index-page">
     @include('client.partials.header')
-    <main>
+    <main style="margin-top: 150px;">
         @yield('content')
+
     </main>
     @include('client.partials.footer')
     <script src="{{ asset('assets/client/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>

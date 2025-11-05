@@ -29,10 +29,11 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
+        // gui email xac thuc
+      $user->sendEmailVerificationNotification();
         Auth::login($user);
 
-        return redirect()->route('client.home')->with('success', 'Đăng ký thành công!');
+        return redirect()->route('login.post')->with('success', 'Đăng ký thành công!');
     }
 
     // Đăng nhập
@@ -48,7 +49,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->route('client.home')->with('success', 'Đăng nhập thành công!');
+            return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
         }
 
         return back()->withErrors([
