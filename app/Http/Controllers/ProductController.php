@@ -10,7 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductsExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductController extends Controller
 {
@@ -93,9 +96,8 @@ class ProductController extends Controller
             'sale_price'  => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-            'brand'       => 'nullable|string|max:100',
-            'status'      => 'boolean',
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'boolean',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::beginTransaction();
@@ -108,8 +110,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-                'brand'       => $request->brand,
-                'status'      => $request->has('status'),
+                'status' => $request->has('status'),
             ]);
 
             if ($request->hasFile('images')) {
@@ -158,9 +159,8 @@ class ProductController extends Controller
             'sale_price'  => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-            'brand'       => 'nullable|string|max:100',
-            'status'      => 'boolean',
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'boolean',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::beginTransaction();
@@ -173,8 +173,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-                'brand'       => $request->brand,
-                'status'      => $request->has('status'),
+                'status' => $request->has('status'),
             ]);
 
             if ($request->hasFile('images')) {
@@ -268,6 +267,7 @@ class ProductController extends Controller
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
+    }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
