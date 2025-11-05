@@ -9,12 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-<<<<<<< Updated upstream
-=======
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExport;
 use Barryvdh\DomPDF\Facade\Pdf;
->>>>>>> Stashed changes
 
 class ProductController extends Controller
 {
@@ -44,14 +41,6 @@ class ProductController extends Controller
             $query->where('status', $request->status);
         }
 
-<<<<<<< Updated upstream
-=======
-        // Filter by brand
-        if ($request->filled('brand')) {
-            $query->where('brand', 'like', "%{$request->brand}%");
-        }
-
->>>>>>> Stashed changes
         // Filter by price range
         if ($request->filled('price_min')) {
             $query->where('price', '>=', $request->price_min);
@@ -106,10 +95,6 @@ class ProductController extends Controller
             'sale_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-<<<<<<< Updated upstream
-=======
-            'brand' => 'nullable|string|max:100',
->>>>>>> Stashed changes
             'status' => 'boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -125,10 +110,6 @@ class ProductController extends Controller
                 'slug' => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-<<<<<<< Updated upstream
-=======
-                'brand' => $request->brand,
->>>>>>> Stashed changes
                 'status' => $request->has('status'),
             ]);
 
@@ -195,10 +176,6 @@ class ProductController extends Controller
             'sale_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-<<<<<<< Updated upstream
-=======
-            'brand' => 'nullable|string|max:100',
->>>>>>> Stashed changes
             'status' => 'boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -214,10 +191,6 @@ class ProductController extends Controller
                 'slug' => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-<<<<<<< Updated upstream
-=======
-                'brand' => $request->brand,
->>>>>>> Stashed changes
                 'status' => $request->has('status'),
             ]);
 
@@ -361,8 +334,6 @@ class ProductController extends Controller
             throw $e;
         }
     }
-<<<<<<< Updated upstream
-=======
 
     /**
      * Export products to Excel
@@ -460,5 +431,4 @@ class ProductController extends Controller
             return redirect()->back()->with('error', 'Có lỗi xảy ra khi xuất PDF: ' . $e->getMessage());
         }
     }
->>>>>>> Stashed changes
 }
