@@ -27,6 +27,9 @@ Route::get('/checkout', function () {
     return view('client.checkout');
 })->name('checkout.index');
 
+// API route để kiểm tra mã giảm giá khi thanh toán
+Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
+
 Route::get('/about', function () {
     return view('client.about');
 })->name('about');
@@ -112,14 +115,6 @@ Route::prefix('admin')->group(function () {
     Route::prefix('products')->group(function () {
         Route::get('/list', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
         Route::get('/grid', fn() => view('admin.products.grid'))->name('products.grid');
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-        Route::get('/show', fn() => view('admin.products.show'))->name('products.show');
-        Route::get('/edit', fn() => view('admin.products.edit'))->name('products.edit');
-        Route::get('/add', fn() => view('admin.products.add'))->name('products.add');
-=======
->>>>>>> Stashed changes
         Route::get('/add', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
         Route::post('/add', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
         Route::get('/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
@@ -128,12 +123,8 @@ Route::prefix('admin')->group(function () {
         Route::delete('/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
         Route::delete('/gallery/{gallery}', [App\Http\Controllers\ProductController::class, 'deleteImage'])->name('products.delete-image');
         Route::post('/gallery/{gallery}/set-primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
-<<<<<<< Updated upstream
-=======
         Route::get('/export/excel', [App\Http\Controllers\ProductController::class, 'exportExcel'])->name('products.export-excel');
         Route::get('/export/pdf', [App\Http\Controllers\ProductController::class, 'exportPdf'])->name('products.export-pdf');
->>>>>>> Stashed changes
->>>>>>> Stashed changes
     });
 
     Route::prefix('categories')->name('admin.categories.')->group(function () {
@@ -192,9 +183,15 @@ Route::prefix('admin')->group(function () {
         Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
     });
 
-    Route::prefix('coupons')->group(function () {
-        Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
-        Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
+    // Discounts (Mã giảm giá)
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\DiscountController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\DiscountController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\DiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [App\Http\Controllers\DiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [App\Http\Controllers\DiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [App\Http\Controllers\DiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [App\Http\Controllers\DiscountController::class, 'destroy'])->name('destroy');
     });
 });
 
