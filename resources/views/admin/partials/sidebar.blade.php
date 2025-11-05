@@ -75,11 +75,58 @@
             </li>
 
             <li class="nav-item">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarBanner" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarBanner">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
+                    </span>
+<<<<<<< Updated upstream
+=======
+                    <span class="nav-text"> Banner </span>
+                </a>
+                <div class="collapse" id="sidebarBanner">
+                    <ul class="nav sub-navbar-nav">
+
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('banner.index') }}">Danh sách Banner</a>
+                        </li>
+
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('banner.create') }}">Thêm Banner mới</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarBrand" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarBrand">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Brand </span>
+                </a>
+                <div class="collapse" id="sidebarBrand">
+                    <ul class="nav sub-navbar-nav">
+
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('brand.index') }}">Danh sách Brand</a>
+                        </li>
+
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('brand.create') }}">Thêm Banner mới</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
                 <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
                     role="button" aria-expanded="false" aria-controls="sidebarInventory">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
                     </span>
+>>>>>>> Stashed changes
                     <span class="nav-text"> Inventory </span>
                 </a>
                 <div class="collapse" id="sidebarInventory">
@@ -89,10 +136,14 @@
                             <a class="sub-nav-link" href="{{ route('inventories.warehouse') }}">Warehouse</a>
                         </li>
                         <li class="sub-nav-item">
+<<<<<<< Updated upstream
                             <a class="sub-nav-link" href="{{ route('inventories.warehouse.add') }}">Add Warehouse</a>
                         </li>
                         <li class="sub-nav-item">
                             <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Received Orders</a>
+=======
+                            <a class="sub-nav-link" href="{{ route('inventories.stock') }}">Inventory</a>
+>>>>>>> Stashed changes
                         </li>
                     </ul>
                 </div>

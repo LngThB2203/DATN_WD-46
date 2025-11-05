@@ -1,0 +1,8 @@
+{
+    "dejavu sans": {
+        "bold": "dejavu_sans_bold_20a35ba1050fcfcdbda46612301443e6",
+        "bold_italic": "C:\\laragon\\www\\PHP3\\datn\\wd-46\\vendor\\dompdf\\dompdf\/lib\/fonts\/DejaVuSans-BoldOblique",
+        "italic": "C:\\laragon\\www\\PHP3\\datn\\wd-46\\vendor\\dompdf\\dompdf\/lib\/fonts\/DejaVuSans-Oblique",
+        "normal": "C:\\laragon\\www\\PHP3\\datn\\wd-46\\storage\\fonts\/dejavu_sans_normal_f9b6e74c1e5c44e562be147b85a479a8"
+    }
+}

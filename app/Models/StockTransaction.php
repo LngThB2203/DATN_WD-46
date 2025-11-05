@@ -4,19 +4,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class WarehouseProduct extends Model
+class StockTransaction extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'warehouse_id',
         'product_id',
+        'type',
         'quantity',
-<<<<<<< Updated upstream
-        'min_quantity',
-=======
-        'min_stock_threshold',
->>>>>>> Stashed changes
+        'note',
+        'user_id',
     ];
 
     public function warehouse()
@@ -29,9 +27,8 @@ class WarehouseProduct extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function isLowStock()
+    public function user()
     {
-        return $this->quantity < $this->min_quantity;
+        return $this->belongsTo(User::class);
     }
-
 }

@@ -1,10 +1,27 @@
 <?php
+<<<<<<< Updated upstream
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\ProductController;
+=======
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\ProductController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+>>>>>>> Stashed changes
 use Illuminate\Support\Facades\Route;
 
 // ========================
@@ -64,10 +81,13 @@ Route::get('/tos', function () {
     return view('client.tos');
 })->name('tos.index');
 
+<<<<<<< Updated upstream
 Route::get('/account', function () {
     return view('client.account');
 })->name('account.index');
 
+=======
+>>>>>>> Stashed changes
 // Blog
 Route::get('/blog', function () {
     return view('client.blog');
@@ -141,18 +161,43 @@ Route::prefix('admin')->group(function () {
         Route::get('/toggle/{id}', [AdminCategoryController::class, 'toggleStatus'])->name('toggle');
     });
 
+<<<<<<< Updated upstream
     Route::prefix('inventories')->name('inventories.')->group(function () {
 
         // ===== Quản lý kho =====
+=======
+    // Inventories
+    Route::prefix('inventories')->name('inventories.')->group(function () {
+        // Quản lý kho
+>>>>>>> Stashed changes
         Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
         Route::get('/warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.add');
         Route::post('/warehouse/store', [WarehouseController::class, 'store'])->name('warehouse.store');
         Route::get('/warehouse/{warehouse}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
         Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
         Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
+<<<<<<< Updated upstream
 
         // ===== Quản lý tồn kho =====
         Route::get('/received-orders', [WarehouseProductController::class, 'index'])->name('received-orders');
+=======
+        Route::get('/import', [StockTransactionController::class, 'createImport'])->name('import.create');
+        Route::post('/import', [StockTransactionController::class, 'storeImport'])->name('import.store');
+
+        // export
+        Route::get('/export', [StockTransactionController::class, 'createExport'])->name('export.create');
+        Route::post('/export', [StockTransactionController::class, 'storeExport'])->name('export.store');
+
+        // transaction log
+        Route::get('/transactions', [StockTransactionController::class, 'log'])->name('transactions');
+
+        // print invoice/phiếu
+        Route::get('/transactions/{id}/print', [StockTransactionController::class, 'printInvoice'])->name('transactions.print');
+
+        // Quản lý tồn kho
+        Route::get('/stock', [WarehouseProductController::class, 'index'])->name('stock');
+        Route::put('/stock/{id}', [WarehouseProductController::class, 'updateQuantity'])->name('updateQuantity');
+>>>>>>> Stashed changes
     });
 
     // Orders
@@ -209,6 +254,31 @@ Route::prefix('admin')->group(function () {
         Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
         Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
     });
+<<<<<<< Updated upstream
+=======
+    Route::prefix('banner')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('banner.index');
+        Route::get('/create', [BannerController::class, 'create'])->name('banner.create');
+        Route::post('/store', [BannerController::class, 'store'])->name('banner.store');
+        Route::get('/edit/{banner}', [BannerController::class, 'edit'])->name('banner.edit');
+        Route::post('/update/{banner}', [BannerController::class, 'update'])->name('banner.update');
+        Route::get('/delete/{banner}', [BannerController::class, 'destroy'])->name('banner.delete');
+        Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])
+            ->name('banner.toggleStatus');
+
+    });
+
+    Route::prefix('brand')->group(function () {
+        Route::get('/', [BrandController::class, 'index'])->name('brand.index');
+        Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
+        Route::post('/store', [BrandController::class, 'store'])->name('brand.store');
+        Route::get('/edit/{brand}', [BrandController::class, 'edit'])->name('brand.edit');
+        Route::post('/update/{brand}', [BrandController::class, 'update'])->name('brand.update');
+        Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
+        Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
+        Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
+    });
+>>>>>>> Stashed changes
 });
 
 // Fallback 404 - luôn đặt cuối cùng
