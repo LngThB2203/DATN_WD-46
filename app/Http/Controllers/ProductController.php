@@ -10,10 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ProductsExport;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductController extends Controller
 {
