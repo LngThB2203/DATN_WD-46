@@ -80,6 +80,50 @@
                     <span class="nav-icon">
                         <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
                     </span>
+                    <span class="nav-text"> Banner </span>
+                </a>
+                <div class="collapse" id="sidebarInventory">
+                    <ul class="nav sub-navbar-nav">
+
+                        <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('banner.index') }}">Danh sách Banner</a>
+            </li>
+
+            <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('banner.create') }}">Thêm Banner mới</a>
+            </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Brand </span>
+                </a>
+                <div class="collapse" id="sidebarInventory">
+                    <ul class="nav sub-navbar-nav">
+
+                        <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('brand.index') }}">Danh sách Brand</a>
+            </li>
+
+            <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('brand.create') }}">Thêm Banner mới</a>
+            </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
+                    </span>
                     <span class="nav-text"> Inventory </span>
                 </a>
                 <div class="collapse" id="sidebarInventory">
@@ -323,6 +367,15 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.contacts.index') }}">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:letter-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Liên hệ </span>
+                </a>
+            </li>
+
             <li class="menu-title mt-2">Other Apps</li>
 
             <li class="nav-item">
@@ -465,3 +518,6 @@
         </ul>
     </div>
 </div>
+<style>
+    
+</style>

@@ -33,20 +33,20 @@
                             <div id="current-images" class="mb-3">
                                 @forelse($product->galleries as $gallery)
                                     <div class="position-relative d-inline-block me-2 mb-2">
-                                        <img src="{{ asset('storage/' . $gallery->image_path) }}" alt="{{ $gallery->alt_text }}" 
+                                        <img src="{{ asset('storage/' . $gallery->image_path) }}" alt="{{ $gallery->alt_text }}"
                                              class="img-fluid rounded" style="width: 80px; height: 80px; object-fit: cover;">
                                         @if($gallery->is_primary)
                                             <span class="badge bg-primary position-absolute top-0 start-0">Primary</span>
                                         @endif
                                         <div class="position-absolute top-0 end-0">
-                                            <button type="button" class="btn btn-sm btn-danger" 
+                                            <button type="button" class="btn btn-sm btn-danger"
                                                     onclick="deleteImage({{ $gallery->id }})" title="Delete">
                                                 <i class="bx bx-x"></i>
                                             </button>
                                         </div>
                                         @if(!$gallery->is_primary)
                                             <div class="position-absolute bottom-0 start-0">
-                                                <button type="button" class="btn btn-sm btn-success" 
+                                                <button type="button" class="btn btn-sm btn-success"
                                                         onclick="setPrimary({{ $gallery->id }})" title="Set as Primary">
                                                     <i class="bx bx-star"></i>
                                                 </button>
@@ -57,13 +57,13 @@
                                     <p class="text-muted">No images</p>
                                 @endforelse
                             </div>
-                            
+
                             <div class="mt-3">
                                 <h5 class="text-dark fw-medium">Add New Images</h5>
                                 <input type="file" name="images[]" id="images" class="form-control" multiple accept="image/*">
                                 <small class="text-muted">Chọn nhiều ảnh (JPG, PNG, GIF)</small>
                             </div>
-                            
+
                             <div id="image-preview" class="mt-3"></div>
                         </div>
                     </div>
@@ -79,7 +79,7 @@
                                 <div class="col-lg-6">
                                     <div class="mb-3">
                                         <label for="name" class="form-label">Product Name <span class="text-danger">*</span></label>
-                                        <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" 
+                                        <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror"
                                                placeholder="Product Name" value="{{ old('name', $product->name) }}" required>
                                         @error('name')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -89,7 +89,7 @@
                                 <div class="col-lg-6">
                                     <div class="mb-3">
                                         <label for="sku" class="form-label">SKU</label>
-                                        <input type="text" id="sku" name="sku" class="form-control @error('sku') is-invalid @enderror" 
+                                        <input type="text" id="sku" name="sku" class="form-control @error('sku') is-invalid @enderror"
                                                placeholder="Product SKU" value="{{ old('sku', $product->sku) }}">
                                         @error('sku')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -114,14 +114,14 @@
                                         @enderror
                                     </div>
                                 </div>
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
+
+
+
+
                                 <div class="col-lg-6">
                                     <div class="mb-3">
                                         <label for="brand" class="form-label">Brand</label>
-                                        <input type="text" id="brand" name="brand" class="form-control @error('brand') is-invalid @enderror" 
+                                        <input type="text" id="brand" name="brand" class="form-control @error('brand') is-invalid @enderror"
                                                placeholder="Product Brand" value="{{ old('brand', $product->brand) }}">
                                         @error('brand')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -130,14 +130,14 @@
                                 </div>
                             </div>
                             <div class="row">
->>>>>>> Stashed changes
+                                {{-- Trạng thái --}}
                                 <div class="col-lg-6">
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch mt-4">
-                                            <input class="form-check-input" type="checkbox" id="status" name="status" 
-                                                   {{ old('status', $product->status) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="status">Active Status</label>
-                                        </div>
+                                    <div class="form-check form-switch mt-4">
+                                        <input type="hidden" name="status" value="0">
+
+                                        <input class="form-check-input" type="checkbox" id="status" name="status"
+                                            value="1" {{ old('status') ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="status">Kích hoạt sản phẩm</label>
                                     </div>
                                 </div>
                             </div>
@@ -145,7 +145,7 @@
                                 <div class="col-lg-12">
                                     <div class="mb-3">
                                         <label for="description" class="form-label">Description</label>
-                                        <textarea class="form-control @error('description') is-invalid @enderror" id="description" 
+                                        <textarea class="form-control @error('description') is-invalid @enderror" id="description"
                                                   name="description" rows="5" placeholder="Product description">{{ old('description', $product->description) }}</textarea>
                                         @error('description')
                                             <div class="invalid-feedback">{{ $message }}</div>
@@ -155,7 +155,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="card">
                         <div class="card-header">
                             <h4 class="card-title">Pricing Details</h4>
@@ -167,7 +167,7 @@
                                         <label for="price" class="form-label">Price <span class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text">VNĐ</span>
-                                            <input type="number" id="price" name="price" class="form-control @error('price') is-invalid @enderror" 
+                                            <input type="number" id="price" name="price" class="form-control @error('price') is-invalid @enderror"
                                                    placeholder="0" value="{{ old('price', $product->price) }}" required step="0.01" min="0">
                                         </div>
                                         @error('price')
@@ -180,7 +180,7 @@
                                         <label for="sale_price" class="form-label">Sale Price</label>
                                         <div class="input-group">
                                             <span class="input-group-text">VNĐ</span>
-                                            <input type="number" id="sale_price" name="sale_price" class="form-control @error('sale_price') is-invalid @enderror" 
+                                            <input type="number" id="sale_price" name="sale_price" class="form-control @error('sale_price') is-invalid @enderror"
                                                    placeholder="0" value="{{ old('sale_price', $product->sale_price) }}" step="0.01" min="0">
                                         </div>
                                         @error('sale_price')
@@ -191,7 +191,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="p-3 bg-light mb-3 rounded">
                         <div class="row justify-content-end g-2">
                             <div class="col-lg-2">
@@ -199,10 +199,10 @@
                             </div>
                             <div class="col-lg-2">
                                 <button type="submit" class="btn btn-primary w-100">Update Product</button>
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
+
+
+
                             </div>
                         </div>
                     </div>
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         img.style.height = '80px';
                         img.style.objectFit = 'cover';
                         img.title = file.name;
-                        
+
                         imagePreview.appendChild(img);
                     };
                     reader.readAsDataURL(file);
