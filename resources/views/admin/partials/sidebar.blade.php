@@ -367,6 +367,15 @@
                 </a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.contacts.index') }}">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:letter-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Liên hệ </span>
+                </a>
+            </li>
+
             <li class="menu-title mt-2">Other Apps</li>
 
             <li class="nav-item">

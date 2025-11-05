@@ -40,11 +40,6 @@ class ProductController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Filter by brand
-        if ($request->filled('brand')) {
-            $query->where('brand', 'like', "%{$request->brand}%");
-        }
-
         // Filter by price range
         if ($request->filled('price_min')) {
             $query->where('price', '>=', $request->price_min);

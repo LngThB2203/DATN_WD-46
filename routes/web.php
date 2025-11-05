@@ -1,3 +1,4 @@
+
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
@@ -83,9 +84,8 @@ Route::get('/about', function () {
     return view('client.about');
 })->name('about');
 
-Route::get('/contact', function () {
-    return view('client.contact');
-})->name('contact.index');
+Route::get('/contact', [App\Http\Controllers\ContactController::class, 'index'])->name('contact.index');
+Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
 
 Route::get('/faq', function () {
     return view('client.faq');
@@ -148,18 +148,18 @@ Route::prefix('admin')->group(function () {
 
     // Products
     Route::prefix('products')->group(function () {
-        Route::get('/list', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/list', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
         Route::get('/grid', fn() => view('admin.products.grid'))->name('products.grid');
-        Route::get('/add', [ProductController::class, 'create'])->name('products.create');
-        Route::post('/add', [ProductController::class, 'store'])->name('products.store');
-        Route::get('/{product}', [ProductController::class, 'show'])->name('products.show');
-        Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
-        Route::put('/{product}', [ProductController::class, 'update'])->name('products.update');
-        Route::delete('/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-        Route::delete('/gallery/{gallery}', [ProductController::class, 'deleteImage'])->name('products.delete-image');
-        Route::post('/gallery/{gallery}/set-primary', [ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
-        Route::get('/export/excel', [ProductController::class, 'exportExcel'])->name('products.export-excel');
-        Route::get('/export/pdf', [ProductController::class, 'exportPdf'])->name('products.export-pdf');
+        Route::get('/add', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
+        Route::post('/add', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
+        Route::get('/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
+        Route::get('/{product}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
+        Route::put('/{product}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
+        Route::delete('/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
+        Route::delete('/gallery/{gallery}', [App\Http\Controllers\ProductController::class, 'deleteImage'])->name('products.delete-image');
+        Route::post('/gallery/{gallery}/set-primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
+        Route::get('/export/excel', [App\Http\Controllers\ProductController::class, 'exportExcel'])->name('products.export-excel');
+        Route::get('/export/pdf', [App\Http\Controllers\ProductController::class, 'exportPdf'])->name('products.export-pdf');
     });
 
     // Categories
@@ -173,10 +173,13 @@ Route::prefix('admin')->group(function () {
         Route::get('/toggle/{id}', [AdminCategoryController::class, 'toggleStatus'])->name('toggle');
     });
 
-    // Inventories
-    Route::prefix('inventories')->group(function () {
-        Route::get('/warehouse', fn() => view('admin.inventories.warehouse'))->name('inventories.warehouse');
-        Route::get('/received-orders', fn() => view('admin.inventories.received-orders'))->name('inventories.received-orders');
+    // Contacts
+    Route::prefix('contacts')->name('admin.contacts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\ContactController::class, 'adminIndex'])->name('index');
+        Route::get('/{contact}', [App\Http\Controllers\ContactController::class, 'adminShow'])->name('show');
+        Route::post('/{contact}/update-status', [App\Http\Controllers\ContactController::class, 'adminUpdateStatus'])->name('update-status');
+        Route::post('/{contact}/update-notes', [App\Http\Controllers\ContactController::class, 'adminUpdateNotes'])->name('update-notes');
+        Route::delete('/{contact}', [App\Http\Controllers\ContactController::class, 'adminDestroy'])->name('destroy');
     });
 
     // Orders
