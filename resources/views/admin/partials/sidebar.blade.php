@@ -73,7 +73,28 @@
                     </ul>
                 </div>
             </li>
+<!-- quan li khachhang -->
+<li class="nav-item">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Customers </span>
+                </a>
+                <div class="collapse" id="sidebarInventory">
+                    <ul class="nav sub-navbar-nav">
 
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.customers.list') }}">Danh sách khách hàng</a>
+                        </li>
+
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.customers.create') }}">Thêm khách hàng</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
                     role="button" aria-expanded="false" aria-controls="sidebarInventory">
@@ -95,6 +116,7 @@
                     </ul>
                 </div>
             </li>
+
 
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
@@ -294,7 +316,7 @@
                 </a>
             </li>
 
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link menu-arrow" href="category-list.html#sidebarCustomers" data-bs-toggle="collapse"
                     role="button" aria-expanded="false" aria-controls="sidebarCustomers">
                     <span class="nav-icon">
@@ -313,7 +335,7 @@
                         </li>
                     </ul>
                 </div>
-            </li>
+            </li> --}}
 
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="category-list.html#sidebarSellers" data-bs-toggle="collapse"
