@@ -1,0 +1,51 @@
+@extends('admin.layouts.admin')
+
+@section('content')
+<div class="container mt-4">
+    <h2>Thêm bài viết</h2>
+
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form action="{{ route('post.store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+
+        <div class="mb-3">
+            <label>Tiêu đề</label>
+            <input type="text" name="title" class="form-control" value="{{ old('title') }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Danh mục</label>
+            <select name="category_id" class="form-select" required>
+                <option value="">-- Chọn danh mục --</option>
+                @foreach ($categories as $cat)
+                    <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label>Ảnh đại diện</label>
+            <input type="file" name="image" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label>Nội dung</label>
+            <textarea name="content" class="form-control" rows="5">{{ old('content') }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success">Lưu</button>
+        <a href="{{ route('post.index') }}" class="btn btn-secondary">Hủy</a>
+    </form>
+</div>
+@endsection

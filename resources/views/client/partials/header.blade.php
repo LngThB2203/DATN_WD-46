@@ -77,19 +77,43 @@
     </div>
 
     <div class="header-nav border-top">
-        <div class="container-fluid container-xl">
-            <nav id="navmenu" class="navmenu">
-                <ul class="d-flex flex-wrap justify-content-center gap-3 py-2 mb-0 list-unstyled">
-                    <li><a href="{{ route('home') }}" class="active">Home</a></li>
-                    <li><a href="{{ route('about') }}">About</a></li>
-                    <li><a href="#">Blog</a></li>
-                    <li><a href="{{ route('contact.index') }}">Contact</a></li>
-                    <li><a href="{{ route('account.index') }}">Account</a></li>
-                    <li><a href="{{ route('category.index') }}">Category</a></li>
-                    <li><a href="{{ route('cart.index') }}">Cart</a></li>
-                    <li><a href="{{ route('checkout.index') }}">Checkout</a></li>
-                </ul>
-            </nav>
-        </div>
+    <div class="container-fluid container-xl">
+        <nav id="navmenu" class="navmenu">
+            <ul class="d-flex flex-wrap justify-content-center gap-3 py-2 mb-0 list-unstyled">
+                <li>
+                    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">Home</a>
+                </li>
+                <li>
+                    <a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'active' : '' }}">About</a>
+                </li>
+                <li>
+                    <a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Blog</a>
+                </li>
+                <li>
+                    <a href="{{ route('contact.index') }}" class="{{ request()->routeIs('contact.*') ? 'active' : '' }}">Contact</a>
+                </li>
+                <li>
+                    <a href="{{ route('account.index') }}" class="{{ request()->routeIs('account.*') ? 'active' : '' }}">Account</a>
+                </li>
+                <li>
+                    <a href="{{ route('category.index') }}" class="{{ request()->routeIs('category.*') ? 'active' : '' }}">Category</a>
+                </li>
+                <li>
+                    <a href="{{ route('cart.index') }}" class="{{ request()->routeIs('cart.*') ? 'active' : '' }}">Cart</a>
+                </li>
+                <li>
+                    <a href="{{ route('checkout.index') }}" class="{{ request()->routeIs('checkout.*') ? 'active' : '' }}">Checkout</a>
+                </li>
+            </ul>
+        </nav>
     </div>
+</div>
+<style>
+    .header-nav ul li a.active {
+    color: #fff;
+    background-color: #007bff;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+</style>
 </header>
