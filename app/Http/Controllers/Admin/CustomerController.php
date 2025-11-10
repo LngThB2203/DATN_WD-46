@@ -5,19 +5,25 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Customer;
+use App\Exports\CustomersExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Schema;
 
 class CustomerController extends Controller
 {
-    /**
-     * Danh sách khách hàng
-     */
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $customers = Customer::when($search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+
+        $customers = Customer::query()
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
+                      ->orWhere('email', 'LIKE', "%{$search}%")
+                      ->orWhere('phone', 'LIKE', "%{$search}%")
+                      ->orWhere('address', 'LIKE', "%{$search}%")
+                      ->orWhere('membership_level', 'LIKE', "%{$search}%");
+                });
             })
             ->orderByDesc('id')
             ->paginate(10);
@@ -121,5 +127,13 @@ class CustomerController extends Controller
         $customer->save();
 
         return redirect()->back()->with('success', 'Cập nhật trạng thái thành công!');
+    }
+
+    /**
+     * ✅ Xuất danh sách khách hàng ra Excel
+     */
+    public function export()
+    {
+        return Excel::download(new CustomersExport, 'danh_sach_khach_hang.xlsx');
     }
 }
