@@ -18,6 +18,10 @@
                 <a href="{{ route('admin.customers.create') }}" class="btn btn-sm btn-primary">
                     + Thêm khách hàng
                 </a>
+                <a href="{{ route('admin.customers.export') }}" class="btn btn-sm btn-success">
+                    + Xuất danh sách khách hàng
+                </a>
+
             </div>
 
             <div class="table-responsive">

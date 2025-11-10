@@ -301,6 +301,8 @@
         Route::get('/edit/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'edit'])->name('edit');
         Route::put('/update/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('update');
         Route::delete('/delete/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('destroy');
+        Route::get('/export', [App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('export');
+
     });
 
         });
