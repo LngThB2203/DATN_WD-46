@@ -75,14 +75,15 @@
             </li>
 <!-- quan li khachhang -->
 <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                <a class="nav-link menu-arrow" href="customers-list.html#sidebarInventory" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarCustomers">
                     <span class="nav-icon">
-                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
+                       <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+
                     </span>
                     <span class="nav-text"> Customers </span>
                 </a>
-                <div class="collapse" id="sidebarInventory">
+                <div class="collapse" id="sidebarCustomers">
                     <ul class="nav sub-navbar-nav">
 
                         <li class="sub-nav-item">
@@ -95,6 +96,24 @@
                     </ul>
                 </div>
             </li>
+<!-- quan li newletter-->
+<li class="nav-item">
+    <a class="nav-link menu-arrow" href="#sidebarNewsletter" data-bs-toggle="collapse"
+        role="button" aria-expanded="false" aria-controls="sidebarNewsletter">
+        <span class="nav-icon">
+            <iconify-icon icon="solar:envelope-bold-duotone" style="color:black;"></iconify-icon>
+        </span>
+        <span class="nav-text"> Newsletter </span>
+    </a>
+    <div class="collapse" id="sidebarNewsletter">
+        <ul class="nav sub-navbar-nav">
+            <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('admin.newsletters.list') }}">Danh sách email</a>
+            </li>
+        </ul>
+    </div>
+</li>
+
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
                     role="button" aria-expanded="false" aria-controls="sidebarInventory">

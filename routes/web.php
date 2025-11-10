@@ -14,6 +14,8 @@
         use Illuminate\Foundation\Auth\EmailVerificationRequest;
         use Illuminate\Http\Request;
         use Illuminate\Support\Facades\Route;
+        use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 
         // ========================
         // AUTH
@@ -60,6 +62,8 @@
             })->middleware(['throttle:6,1'])->name('verification.send');
 
         });
+        //newsletter
+        Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
         // ========================
         // CLIENT ROUTES
         // ========================
@@ -303,7 +307,13 @@
         Route::delete('/delete/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('destroy');
         Route::get('/export', [App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('export');
 
+
     });
+        // Newsletters
+       Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
+    Route::get('/', [AdminNewsletterController::class, 'index'])->name('list'); // admin.newsletters.list
+    Route::delete('/{id}', [AdminNewsletterController::class, 'destroy'])->name('destroy'); // admin.newsletters.destroy
+});
 
         });
 
