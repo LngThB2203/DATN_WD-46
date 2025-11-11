@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Payment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
@@ -37,12 +38,14 @@ class CheckoutController extends Controller
             'shipping_ward' => ['nullable', 'string', 'max:120'],
             'shipping_address_line' => ['required', 'string', 'max:255'],
             'customer_note' => ['nullable', 'string', 'max:1000'],
+            'payment_method' => ['required', Rule::in(['cod', 'bank_transfer'])],
         ], [
             'customer_name.required' => 'Vui lòng nhập họ tên.',
             'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
             'shipping_province.required' => 'Vui lòng chọn tỉnh/thành phố.',
             'shipping_district.required' => 'Vui lòng chọn quận/huyện.',
             'shipping_address_line.required' => 'Vui lòng nhập địa chỉ chi tiết.',
+            'payment_method.required' => 'Vui lòng chọn phương thức thanh toán.',
         ]);
 
         $cart = $this->prepareCart($request);
@@ -77,7 +80,7 @@ class CheckoutController extends Controller
                 'subtotal' => $cart['subtotal'],
                 'discount_total' => $cart['discount_total'],
                 'grand_total' => $cart['grand_total'],
-                'payment_method' => $request->input('payment_method', 'cod'),
+                'payment_method' => $validated['payment_method'],
             ]);
 
             $orderDetailsPayload = collect($cart['items'])->map(function (array $item) use ($order) {
@@ -100,13 +103,26 @@ class CheckoutController extends Controller
                 OrderDetail::insert($orderDetailsPayload->all());
             }
 
+            Payment::create([
+                'order_id' => $order->id,
+                'payment_method' => $validated['payment_method'],
+                'transaction_code' => null,
+                'amount' => $cart['grand_total'],
+                'status' => $validated['payment_method'] === 'cod' ? 'pending' : 'pending',
+                'paid_at' => null,
+            ]);
+
             DB::commit();
 
             $request->session()->forget('cart');
 
+            $successMessage = $validated['payment_method'] === 'bank_transfer'
+                ? 'Đơn hàng đã được ghi nhận. Vui lòng chuyển khoản theo hướng dẫn để hoàn tất thanh toán.'
+                : 'Đơn hàng đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.';
+
             return redirect()
                 ->route('checkout.index')
-                ->with('success', 'Đơn hàng của bạn đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.');
+                ->with('success', $successMessage);
         } catch (\Throwable $exception) {
             DB::rollBack();
             report($exception);
