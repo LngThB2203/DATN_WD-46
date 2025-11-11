@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
@@ -112,13 +113,24 @@ class CheckoutController extends Controller
                 'paid_at' => null,
             ]);
 
+            $orderStatus = $validated['payment_method'] === 'cod' ? 'processing' : 'awaiting_payment';
+            $order->update(['order_status' => $orderStatus]);
+
+            if ($discountId) {
+                $discount = Discount::find($discountId);
+                if ($discount) {
+                    $discount->incrementUsage();
+                }
+            }
+
             DB::commit();
 
             $request->session()->forget('cart');
 
+            $orderCode = '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
             $successMessage = $validated['payment_method'] === 'bank_transfer'
-                ? 'Đơn hàng đã được ghi nhận. Vui lòng chuyển khoản theo hướng dẫn để hoàn tất thanh toán.'
-                : 'Đơn hàng đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.';
+                ? "Đơn hàng {$orderCode} đã được ghi nhận. Vui lòng chuyển khoản theo hướng dẫn để hoàn tất thanh toán."
+                : "Đơn hàng {$orderCode} đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.";
 
             return redirect()
                 ->route('checkout.index')
