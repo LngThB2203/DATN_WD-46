@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Exports\ProductsExport;
@@ -10,10 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ProductsExport;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductController extends Controller
 {
@@ -267,8 +265,6 @@ class ProductController extends Controller
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
-    }
-
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
