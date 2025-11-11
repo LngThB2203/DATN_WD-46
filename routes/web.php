@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\CheckoutController;
 
 
 // ========================
@@ -76,9 +77,8 @@ Route::get('/cart', function () {
     return view('client.cart');
 })->name('cart.index');
 
-Route::get('/checkout', function () {
-    return view('client.checkout');
-})->name('checkout.index');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
 // API route để kiểm tra mã giảm giá khi thanh toán
 Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
