@@ -195,7 +195,7 @@ class ProductController extends Controller
                     Storage::disk('public')->delete($gallery->image_path);
                 }
             }
-
+  
             $product->delete();
 
             DB::commit();
