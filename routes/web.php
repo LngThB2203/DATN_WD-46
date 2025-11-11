@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\ProductDetailController;
+use App\Http\Controllers\ReviewController;
 
 
 
@@ -65,6 +66,7 @@ Route::get('/category', function () {
 })->name('category.index');
 
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
+Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
 
 Route::get('/cart', function () {
     return view('client.cart');

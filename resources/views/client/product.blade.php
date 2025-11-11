@@ -73,6 +73,80 @@
             <h4 class="mb-3">Mô tả chi tiết</h4>
             <p>{{ $product->description }}</p>
         </div>
+        <div class="mt-5">
+            <h4 class="mb-3">Đánh giá</h4>
+            <div class="mb-3">
+                <strong>Điểm trung bình:</strong>
+                <span>{{ number_format($product->average_rating, 1) }}/5</span>
+                <span class="text-muted">({{ $product->reviews_count }} lượt)</span>
+            </div>
+            @if(isset($reviews) && $reviews->count())
+                <div class="list-group mb-4">
+                    @foreach($reviews as $review)
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ $review->user->name ?? 'Người dùng' }}</strong>
+                                    <span class="ms-2">{{ $review->rating }}/5</span>
+                                </div>
+                                <small class="text-muted">{{ $review->created_at->format('d/m/Y H:i') }}</small>
+                            </div>
+                            @if($review->comment)
+                                <div class="mt-2">{{ $review->comment }}</div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-muted">Chưa có đánh giá.</p>
+            @endif
+
+            @auth
+                <form action="{{ route('product.review.store', $product->slug) }}" method="POST" class="border p-3 rounded">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Chấm điểm (1-5)</label>
+                        <select id="rating" name="rating" class="form-select" required>
+                            <option value="">Chọn</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Nhận xét</label>
+                        <textarea id="comment" name="comment" class="form-control" rows="3" placeholder="Viết nhận xét (tuỳ chọn)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+                </form>
+            @else
+                <p class="mt-3">Vui lòng <a href="{{ route('login') }}">đăng nhập</a> để đánh giá.</p>
+            @endauth
+        </div>
+
+        @if(isset($relatedProducts) && $relatedProducts->count())
+            <div class="mt-5">
+                <h4 class="mb-3">Sản phẩm tương tự</h4>
+                <div class="row g-3">
+                    @foreach($relatedProducts as $item)
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <a href="{{ route('product.show', $item->slug) }}" class="text-decoration-none">
+                                <div class="card h-100">
+                                    @php $img = $item->primaryImage() ? asset('storage/'.$item->primaryImage()->image_path) : ($item->image ? asset('storage/'.$item->image) : asset('assets/client/img/product/product-1.webp')); @endphp
+                                    <img src="{{ $img }}" class="card-img-top" alt="{{ $item->name }}">
+                                    <div class="card-body">
+                                        <div class="fw-semibold text-dark">{{ $item->name }}</div>
+                                        <div class="small text-primary">{{ $item->formatted_sale_price ?? $item->formatted_price }}</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 </section>
 <script>
