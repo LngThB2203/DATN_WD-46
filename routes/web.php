@@ -136,7 +136,7 @@ Route::get('/support', function () {
 })->name('support.index');
 
 
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware('auth')->group(function () {
 
     Route::get('/', fn() => view('admin.dashboard'))->name('admin.dashboard');
 
@@ -226,6 +226,16 @@ Route::prefix('admin')->group(function () {
     Route::prefix('coupons')->group(function () {
         Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
         Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
+    });
+    
+    Route::prefix('reviews')->name('admin.reviews.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ReviewController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\ReviewController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\ReviewController::class, 'store'])->name('store');
+        Route::get('/{review}/edit', [\App\Http\Controllers\Admin\ReviewController::class, 'edit'])->name('edit');
+        Route::put('/{review}', [\App\Http\Controllers\Admin\ReviewController::class, 'update'])->name('update');
+        Route::delete('/{review}', [\App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('destroy');
+        Route::post('/{review}/toggle-status', [\App\Http\Controllers\Admin\ReviewController::class, 'toggleStatus'])->name('toggle');
     });
     Route::prefix('banner')->group(function () {
     Route::get('/', [BannerController::class, 'index'])->name('banner.index');

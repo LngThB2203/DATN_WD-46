@@ -12,7 +12,7 @@ class ProductDetailController extends Controller
     {
         $product = Product::with(['galleries', 'category', 'reviews.user'])->where('slug', $slug)->firstOrFail();
 
-        $reviews = $product->reviews()->latest()->get();
+        $reviews = $product->reviews()->where('status', 1)->latest()->get();
 
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
