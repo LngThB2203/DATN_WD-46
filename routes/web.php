@@ -1,39 +1,168 @@
 
 <?php
-    use App\Http\Controllers\AccountController;
-    use App\Http\Controllers\Admin\BannerController;
-    use App\Http\Controllers\Admin\BrandController;
-    use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-    use App\Http\Controllers\Admin\StockTransactionController;
-    use App\Http\Controllers\Admin\WarehouseController;
-    use App\Http\Controllers\Admin\WarehouseProductController;
-    use App\Http\Controllers\AuthController;
-    use App\Http\Controllers\Auth\ForgotPasswordController;
-    use App\Http\Controllers\Auth\ResetPasswordController;
-    use App\Http\Controllers\Client\HomeController;
-    use Illuminate\Foundation\Auth\EmailVerificationRequest;
-    use Illuminate\Http\Request;
-    use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\CheckoutController;
 
-    // ========================
-    // AUTH
-    // ========================
-    Route::get('/login', function () {
-        return view('auth.login');
-    })->name('login');
 
-    Route::get('/register', function () {
-        return view('auth.register');
-    })->name('register');
+// ========================
+// AUTH
+// ========================
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
 
-    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
-    // Account
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/account', [AccountController::class, 'show'])->name('account.show');
-        Route::get('/account/edit', [AccountController::class, 'edit'])->name('account.edit');
-        Route::post('/account/update', [AccountController::class, 'update'])->name('account.update');
+Route::get('/register', function () {
+    return view('auth.register');
+})->name('register');
+
+Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+// Account
+Route::middleware(['auth'])->group(function () {
+    Route::get('/account', [AccountController::class, 'show'])->name('account.show');
+    Route::get('/account/edit', [AccountController::class, 'edit'])->name('account.edit');
+    Route::post('/account/update', [AccountController::class, 'update'])->name('account.update');
+});
+
+// quen mk
+Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+
+Route::get('reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+// email xac thuc
+Route::middleware('auth')->group(function () {
+
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->back()->with('success', 'Email của bạn đã được xác thực!');
+    })->middleware(['signed'])->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('success', 'Email xác thực đã được gửi!');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+
+});
+// ========================
+// CLIENT ROUTES
+// ========================
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/category', function () {
+    return view('client.category');
+})->name('category.index');
+
+Route::get('/product/{slug}', function ($slug) {
+    return view('client.product', compact('slug'));
+})->name('product.show');
+
+Route::get('/cart', function () {
+    return view('client.cart');
+})->name('cart.index');
+
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
+// API route để kiểm tra mã giảm giá khi thanh toán
+Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
+
+Route::get('/about', function () {
+    return view('client.about');
+})->name('about');
+
+Route::get('/contact', [App\Http\Controllers\ContactController::class, 'index'])->name('contact.index');
+Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
+
+Route::get('/faq', function () {
+    return view('client.faq');
+})->name('faq.index');
+
+Route::get('/privacy', function () {
+    return view('client.privacy');
+})->name('privacy.index');
+
+Route::get('/tos', function () {
+    return view('client.tos');
+})->name('tos.index');
+
+
+// Blog
+Route::get('/blog', function () {
+    return view('client.blog');
+})->name('blog.index');
+
+Route::get('/blog/{slug}', function ($slug) {
+    return view('client.blog-details', compact('slug'));
+})->name('blog.show');
+
+// Auth (template trang kết hợp)
+Route::get('/login-register', function () {
+    return view('client.login-register');
+})->name('auth.index');
+
+// Khác
+Route::get('/order-confirmation', function () {
+    return view('client.order-confirmation');
+})->name('order.confirmation');
+
+Route::get('/payment-methods', function () {
+    return view('client.payment-methods');
+})->name('payment.methods');
+
+Route::get('/return-policy', function () {
+    return view('client.return-policy');
+})->name('return.policy');
+
+Route::get('/search', function () {
+    return view('client.search-results');
+})->name('search.results');
+
+Route::get('/shipping-info', function () {
+    return view('client.shipping-info');
+})->name('shipping.info');
+
+Route::get('/support', function () {
+    return view('client.support');
+})->name('support.index');
+
+// ========================
+// ADMIN ROUTES
+// ========================
+Route::prefix('admin')->group(function () {
+
+    Route::get('/', fn() => view('admin.dashboard'))->name('admin.dashboard');
+
+    // Products
+    Route::prefix('products')->group(function () {
+        Route::get('/list', [App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
+        Route::get('/grid', fn() => view('admin.products.grid'))->name('products.grid');
+        Route::get('/add', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
+        Route::post('/add', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
+        Route::get('/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
+        Route::get('/{product}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
+        Route::put('/{product}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
+        Route::delete('/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
+        Route::delete('/gallery/{gallery}', [App\Http\Controllers\ProductController::class, 'deleteImage'])->name('products.delete-image');
+        Route::post('/gallery/{gallery}/set-primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
+        Route::get('/export/excel', [App\Http\Controllers\ProductController::class, 'exportExcel'])->name('products.export-excel');
+        Route::get('/export/pdf', [App\Http\Controllers\ProductController::class, 'exportPdf'])->name('products.export-pdf');
     });
 
     // quen mk
