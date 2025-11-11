@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderConfirmationMail;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -9,6 +10,7 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
@@ -126,6 +128,12 @@ class CheckoutController extends Controller
             DB::commit();
 
             $request->session()->forget('cart');
+
+            $order->load(['details.product']);
+
+            if ($order->customer_email) {
+                Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+            }
 
             $orderCode = '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
             $successMessage = $validated['payment_method'] === 'bank_transfer'
