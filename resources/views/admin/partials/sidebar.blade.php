@@ -86,12 +86,12 @@
                     <ul class="nav sub-navbar-nav">
 
                         <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('banner.index') }}">Danh sách Banner</a>
-            </li>
+                            <a class="sub-nav-link" href="{{ route('banner.index') }}">Danh sách Banner</a>
+                        </li>
 
-            <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('banner.create') }}">Thêm Banner mới</a>
-            </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('banner.create') }}">Thêm Banner mới</a>
+                        </li>
                     </ul>
                 </div>
             </li>
@@ -108,24 +108,25 @@
                     <ul class="nav sub-navbar-nav">
 
                         <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('brand.index') }}">Danh sách Brand</a>
-            </li>
+                            <a class="sub-nav-link" href="{{ route('brand.index') }}">Danh sách Brand</a>
+                        </li>
 
-            <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('brand.create') }}">Thêm Banner mới</a>
-            </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('brand.create') }}">Thêm Banner mới</a>
+                        </li>
                     </ul>
                 </div>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                <a class="nav-link menu-arrow" href="#sidebarInventory" data-bs-toggle="collapse" role="button"
+                    aria-expanded="false" aria-controls="sidebarInventory">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
                     </span>
                     <span class="nav-text"> Inventory </span>
                 </a>
+
                 <div class="collapse" id="sidebarInventory">
                     <ul class="nav sub-navbar-nav">
 
@@ -133,11 +134,15 @@
                             <a class="sub-nav-link" href="{{ route('inventories.warehouse') }}">Warehouse</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Received Orders</a>
+                            <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Inventory</a>
+                        </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('inventories.transactions') }}">Transactions</a>
                         </li>
                     </ul>
                 </div>
             </li>
+
 
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="category-list.html#sidebarOrders" data-bs-toggle="collapse"
@@ -339,20 +344,20 @@
             <li class="menu-title mt-2">Other</li>
 
             <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarCoupons" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarCoupons">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarDiscounts" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarDiscounts">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:leaf-bold-duotone"></iconify-icon>
                     </span>
-                    <span class="nav-text"> Coupons </span>
+                    <span class="nav-text"> Mã giảm giá </span>
                 </a>
-                <div class="collapse" id="sidebarCoupons">
+                <div class="collapse" id="sidebarDiscounts">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('coupons.list') }}">List</a>
+                            <a class="sub-nav-link" href="{{ route('admin.discounts.index') }}">Danh sách</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('coupons.add') }}">Add</a>
+                            <a class="sub-nav-link" href="{{ route('admin.discounts.create') }}">Thêm mới</a>
                         </li>
                     </ul>
                 </div>
@@ -364,6 +369,15 @@
                         <iconify-icon icon="solar:chat-square-like-bold-duotone"></iconify-icon>
                     </span>
                     <span class="nav-text"> Reviews </span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.contacts.index') }}">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:letter-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Liên hệ </span>
                 </a>
             </li>
 
@@ -510,5 +524,5 @@
     </div>
 </div>
 <style>
-    
+
 </style>
