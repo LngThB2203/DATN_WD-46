@@ -13,8 +13,10 @@ class WarehouseProduct extends Model
     protected $fillable = [
         'warehouse_id',
         'product_id',
+        'variant_id',
         'quantity',
-        'min_stock_threshold'];
+        'min_stock_threshold',
+    ];
 
     public function warehouse()
     {
@@ -24,6 +26,11 @@ class WarehouseProduct extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
     public function isLowStock()
