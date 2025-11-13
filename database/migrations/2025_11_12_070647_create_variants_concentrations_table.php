@@ -6,17 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('variants_sizes', function (Blueprint $table) {
+        Schema::create('variants_concentrations', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100); // ví dụ: 30ml, 50ml, 100ml
+            $table->string('name', 100);
             $table->timestamps();
         });
-    }
 
+    }
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('variants_sizes');
+        Schema::dropIfExists('variants_concentrations');
     }
 };

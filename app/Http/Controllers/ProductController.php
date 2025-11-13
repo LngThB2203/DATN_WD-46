@@ -265,6 +265,7 @@ class ProductController extends Controller
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
