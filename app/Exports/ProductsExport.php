@@ -17,17 +17,13 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
         $this->products = $products;
     }
 
-    /**
-     * @return \Illuminate\Support\Collection
-     */
+
     public function collection()
     {
         return $this->products;
     }
 
-    /**
-     * @return array
-     */
+
     public function headings(): array
     {
         return [
@@ -43,10 +39,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
         ];
     }
 
-    /**
-     * @param mixed $product
-     * @return array
-     */
+
     public function map($product): array
     {
         static $index = 0;
@@ -65,10 +58,6 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
         ];
     }
 
-    /**
-     * @param Worksheet $sheet
-     * @return array
-     */
     public function styles(Worksheet $sheet)
     {
         return [

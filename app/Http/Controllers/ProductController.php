@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Exports\ProductsExport;
@@ -194,7 +195,7 @@ class ProductController extends Controller
                     Storage::disk('public')->delete($gallery->image_path);
                 }
             }
-
+  
             $product->delete();
 
             DB::commit();
