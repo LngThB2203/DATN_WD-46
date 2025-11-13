@@ -4,6 +4,7 @@
     use App\Http\Controllers\Admin\BannerController;
     use App\Http\Controllers\Admin\BrandController;
     use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+    use App\Http\Controllers\Admin\ProductVariantController;
     use App\Http\Controllers\Admin\StockTransactionController;
     use App\Http\Controllers\Admin\WarehouseController;
     use App\Http\Controllers\Admin\WarehouseProductController;
@@ -87,7 +88,6 @@
     Route::get('/about', function () {
         return view('client.about');
     })->name('about');
-
     Route::get('/contact', [App\Http\Controllers\ContactController::class, 'index'])->name('contact.index');
     Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
 
@@ -163,6 +163,16 @@
             Route::post('/gallery/{gallery}/set-primary', [App\Http\Controllers\ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
             Route::get('/export/excel', [App\Http\Controllers\ProductController::class, 'exportExcel'])->name('products.export-excel');
             Route::get('/export/pdf', [App\Http\Controllers\ProductController::class, 'exportPdf'])->name('products.export-pdf');
+        });
+
+        // Product Variants
+        Route::prefix('variants')->group(function () {
+            Route::get('/', [ProductVariantController::class, 'index'])->name('variants.index');
+            Route::get('/create', [ProductVariantController::class, 'create'])->name('variants.create');
+            Route::post('/', [ProductVariantController::class, 'store'])->name('variants.store');
+            Route::get('/{variant}/edit', [ProductVariantController::class, 'edit'])->name('variants.edit');
+            Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('variants.update');
+            Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('variants.destroy');
         });
 
         // Categories
