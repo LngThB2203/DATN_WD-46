@@ -1,10 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
-use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\StockTransactionController;
@@ -14,9 +11,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\ProductDetailController;
-use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductDetailController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -155,6 +153,55 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::post('/{contact}/update-status', [ContactController::class, 'adminUpdateStatus'])->name('update-status');
         Route::post('/{contact}/update-notes', [ContactController::class, 'adminUpdateNotes'])->name('update-notes');
         Route::delete('/{contact}', [ContactController::class, 'adminDestroy'])->name('destroy');
+    });
+
+    // Orders
+    Route::prefix('orders')->group(function () {
+        Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
+        Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
+        Route::get('/cart', fn() => view('admin.orders.cart'))->name('orders.cart');
+        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('orders.checkout');
+    });
+
+    // Purchases
+    Route::prefix('purchases')->group(function () {
+        Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
+        Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
+    });
+
+    // Attributes
+    Route::prefix('attributes')->group(function () {
+        Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
+        Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
+        Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
+    });
+
+    // Invoices
+    Route::prefix('invoices')->group(function () {
+        Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
+        Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
+        Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
+    });
+
+    // Roles
+    Route::prefix('roles')->group(function () {
+        Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
+        Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
+        Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
+    });
+
+    // Customers
+    Route::prefix('customers')->group(function () {
+        Route::get('/list', fn() => view('admin.customers.list'))->name('customers.list');
+        Route::get('/show', fn() => view('admin.customers.show'))->name('customers.show');
+    });
+
+    // Sellers
+    Route::prefix('sellers')->group(function () {
+        Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
+        Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
+        Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
+        Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
     });
 });
 
