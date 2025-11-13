@@ -80,7 +80,7 @@ class Product extends Model
     public function variants()
     {
         return $this->hasMany(\App\Models\ProductVariant::class, 'product_id');
-
+    }
     public function getAverageRatingAttribute()
     {
         return (float) ($this->reviews()->avg('rating') ?? 0);
