@@ -85,7 +85,7 @@
         <div class="container-fluid container-xl text-center">
             <h3 class="fw-bold mb-3">Liên hệ với chúng tôi</h3>
             <p class="text-muted mb-4">Nếu bạn có bất kỳ thắc mắc hoặc cần tư vấn thêm, hãy liên hệ với đội ngũ eStore.</p>
-            <a href="#" class="btn btn-dark px-4 py-2 rounded-pill">
+            <a href="{{ route('contact.index') }}" class="btn btn-dark px-4 py-2 rounded-pill">
                 Liên hệ ngay
             </a>
         </div>
