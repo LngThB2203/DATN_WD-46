@@ -83,12 +83,12 @@
                 </a>
                 <div class="collapse" id="sidebarVariants">
                     <ul class="nav sub-navbar-nav">
-                        {{-- <li class="sub-nav-item">
+                        <li class="sub-nav-item">
                             <a class="sub-nav-link" href="{{ route('variants.index') }}">List</a>
                         </li>
                         <li class="sub-nav-item">
                             <a class="sub-nav-link" href="{{ route('variants.create') }}">Add New</a>
-                        </li> --}}
+                        </li>
                     </ul>
                 </div>
             </li>
@@ -173,7 +173,6 @@
                 </a>
                 <div class="collapse" id="sidebarOrders">
                     <ul class="nav sub-navbar-nav">
-
                         <li class="sub-nav-item">
                             <a class="sub-nav-link" href="{{ route('orders.list') }}">List</a>
                         </li>
@@ -549,6 +548,3 @@
         </ul>
     </div>
 </div>
-<style>
-
-</style>
