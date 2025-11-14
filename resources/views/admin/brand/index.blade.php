@@ -14,6 +14,7 @@
             <tr>
                 <th>ID</th>
                 <th>Tên thương hiệu</th>
+                <th>Logo</th>
                 <th>Xuất xứ</th>
                 <th>Mô tả</th>
                 <th>Hành động</th>
@@ -24,6 +25,11 @@
             <tr>
                 <td>{{ $brand->id }}</td>
                 <td>{{ $brand->name }}</td>
+                <td>
+                    @if ($brand->image)
+                        <img src="{{ asset('storage/' . $brand->image) }}" width="60">
+                    @endif
+                </td>
                 <td>{{ $brand->origin }}</td>
                 <td>{{ $brand->description }}</td>
                 <td>
