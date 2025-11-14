@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\StockTransactionController;
@@ -179,56 +180,65 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
         Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
     });
-});
 
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\DiscountController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\DiscountController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\DiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [App\Http\Controllers\DiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [App\Http\Controllers\DiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [App\Http\Controllers\DiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [App\Http\Controllers\DiscountController::class, 'destroy'])->name('destroy');
+    });
 // Orders
-Route::prefix('orders')->group(function () {
-    Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
-    Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
-    Route::get('/cart', fn() => view('admin.orders.cart'))->name('orders.cart');
-    Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('orders.checkout');
-});
+    Route::prefix('orders')->name('admin.orders.')->middleware('auth')->group(function () {
+        Route::get('/list', [OrderController::class, 'index'])->name('list');
+        Route::get('/{id}/show', [OrderController::class, 'show'])->name('show');
+        Route::post('/{id}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{id}/update-shipment', [OrderController::class, 'updateShipment'])->name('update-shipment');
+    });
 
 // Purchases
-Route::prefix('purchases')->group(function () {
-    Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
-    Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
-});
+    Route::prefix('purchases')->group(function () {
+        Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
+        Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
+    });
 
 // Attributes
-Route::prefix('attributes')->group(function () {
-    Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
-    Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
-    Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
-});
+    Route::prefix('attributes')->group(function () {
+        Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
+        Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
+        Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
+    });
 
 // Invoices
-Route::prefix('invoices')->group(function () {
-    Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
-    Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
-    Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
-});
+    Route::prefix('invoices')->group(function () {
+        Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
+        Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
+        Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
+    });
 
 // Roles
-Route::prefix('roles')->group(function () {
-    Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
-    Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
-    Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
-});
+    Route::prefix('roles')->group(function () {
+        Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
+        Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
+        Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
+    });
 
 // Customers
-Route::prefix('customers')->group(function () {
-    Route::get('/list', fn() => view('admin.customers.list'))->name('customers.list');
-    Route::get('/show', fn() => view('admin.customers.show'))->name('customers.show');
-});
+    Route::prefix('customers')->group(function () {
+        Route::get('/list', fn() => view('admin.customers.list'))->name('customers.list');
+        Route::get('/show', fn() => view('admin.customers.show'))->name('customers.show');
+    });
 
 // Sellers
-Route::prefix('sellers')->group(function () {
-    Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
-    Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
-    Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
-    Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
-});
+    Route::prefix('sellers')->group(function () {
+        Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
+        Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
+        Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
+        Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
+    });
 
 // Fallback 404
-Route::fallback(fn() => response()->view('client.404', [], 404));
+    Route::fallback(fn() => response()->view('client.404', [], 404));
+});
