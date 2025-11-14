@@ -139,6 +139,15 @@
                                     Chuyển khoản ngân hàng
                                 </label>
                             </div>
+                            <div class="alert alert-secondary mt-3" id="bank_instructions" style="display: none;">
+                                <h6 class="fw-semibold mb-2">Thông tin chuyển khoản</h6>
+                                <ul class="mb-2 ps-3">
+                                    <li>Ngân hàng: Vietcombank</li>
+                                    <li>Số tài khoản: 0123456789</li>
+                                    <li>Chủ tài khoản: Công ty TNHH ABC</li>
+                                </ul>
+                                <p class="mb-0">Nội dung chuyển khoản: <strong>Thanh toán đơn hàng #{{ now()->format('His') }}</strong></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -197,4 +206,22 @@
         </form>
     </div>
 </section>
+
+@push('scripts')
+<script>
+    (function () {
+        const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
+        const bankBlock = document.getElementById('bank_instructions');
+
+        function toggleBankBlock() {
+            if (!bankBlock) return;
+            const selected = document.querySelector('input[name="payment_method"]:checked');
+            bankBlock.style.display = selected && selected.value === 'bank_transfer' ? 'block' : 'none';
+        }
+
+        paymentRadios.forEach(radio => radio.addEventListener('change', toggleBankBlock));
+        toggleBankBlock();
+    })();
+</script>
+@endpush
 @endsection
