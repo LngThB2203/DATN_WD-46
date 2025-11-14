@@ -1,8 +1,8 @@
 <?php
-
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Exports\ProductsExport;
+use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductGallery;
@@ -94,8 +94,8 @@ class ProductController extends Controller
             'sale_price'  => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-            'status' => 'boolean',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status'      => 'boolean',
+            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::beginTransaction();
@@ -108,7 +108,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-                'status' => $request->has('status'),
+                'status'      => $request->has('status'),
             ]);
 
             if ($request->hasFile('images')) {
@@ -157,8 +157,8 @@ class ProductController extends Controller
             'sale_price'  => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-            'status' => 'boolean',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status'      => 'boolean',
+            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::beginTransaction();
@@ -171,7 +171,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-                'status' => $request->has('status'),
+                'status'      => $request->has('status'),
             ]);
 
             if ($request->hasFile('images')) {
@@ -195,7 +195,7 @@ class ProductController extends Controller
                     Storage::disk('public')->delete($gallery->image_path);
                 }
             }
-  
+
             $product->delete();
 
             DB::commit();
