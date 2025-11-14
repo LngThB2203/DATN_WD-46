@@ -3,11 +3,16 @@
 @section('content')
 <div class="container">
     <h2>Thêm thương hiệu mới</h2>
-    <form action="{{ route('brand.store') }}" method="POST">
+    <form action="{{ route('brand.store') }}" method="POST"enctype="multipart/form-data">
         @csrf
         <div class="mb-3">
             <label>Tên thương hiệu</label>
             <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Logo thương hiệu</label>
+            <input type="file" name="image" class="form-control">
         </div>
 
         <div class="mb-3">
