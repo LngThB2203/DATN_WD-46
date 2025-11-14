@@ -39,6 +39,11 @@ class Product extends Model
         return $this->hasMany(ProductGallery::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function primaryImage()
     {
         return $this->galleries->where('is_primary', true)->first();
@@ -71,5 +76,15 @@ class Product extends Model
         }
 
         return round((($this->price - $this->sale_price) / $this->price) * 100);
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return (float) ($this->reviews()->avg('rating') ?? 0);
+    }
+
+    public function getReviewsCountAttribute()
+    {
+        return (int) ($this->reviews()->count());
     }
 }

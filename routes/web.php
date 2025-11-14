@@ -69,13 +69,18 @@ Route::get('/category', function () {
     return view('client.category');
 })->name('category.index');
 
-Route::get('/product/{slug}', function ($slug) {
-    return view('client.product', compact('slug'));
-})->name('product.show');
+Route::get('/product/{slug}', [App\Http\Controllers\Client\ProductDetailController::class, 'show'])->name('product.show');
+Route::post('/product/{slug}/review', [App\Http\Controllers\ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
 
-Route::get('/cart', function () {
-    return view('client.cart');
-})->name('cart.index');
+Route::get('/test-cart', function() {
+    return view('client.test-cart');
+})->name('test.cart');
+
+Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
@@ -198,17 +203,8 @@ Route::prefix('admin')->group(function () {
         return view('client.category');
     })->name('category.index');
 
-    Route::get('/product/{slug}', function ($slug) {
-        return view('client.product', compact('slug'));
-    })->name('product.show');
-
-    Route::get('/cart', function () {
-        return view('client.cart');
-    })->name('cart.index');
-
-    Route::get('/checkout', function () {
-        return view('client.checkout');
-    })->name('checkout.index');
+    // Product detail route đã được định nghĩa ở trên (dòng 72), không cần định nghĩa lại ở đây
+    // Cart và Checkout routes đã được định nghĩa ở trên, không cần định nghĩa lại ở đây
 
     // API route để kiểm tra mã giảm giá khi thanh toán
     Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
@@ -342,53 +338,53 @@ Route::prefix('admin')->group(function () {
         });
 
         // Orders
-        Route::prefix('orders')->group(function () {
-            Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
-            Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
-            Route::get('/cart', fn() => view('admin.orders.cart'))->name('orders.cart');
-            Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('orders.checkout');
-        });
+    Route::prefix('orders')->group(function () {
+        Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
+        Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
+        Route::get('/cart', fn() => view('admin.orders.cart'))->name('orders.cart');
+        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('orders.checkout');
+    });
 
         // Purchases
-        Route::prefix('purchases')->group(function () {
-            Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
-            Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
-        });
+    Route::prefix('purchases')->group(function () {
+        Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
+        Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
+    });
 
         // Attributes
-        Route::prefix('attributes')->group(function () {
-            Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
-            Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
-            Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
-        });
+    Route::prefix('attributes')->group(function () {
+        Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
+        Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
+        Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
+    });
 
         // Invoices
-        Route::prefix('invoices')->group(function () {
-            Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
-            Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
-            Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
-        });
+    Route::prefix('invoices')->group(function () {
+        Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
+        Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
+        Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
+    });
 
         // Roles
-        Route::prefix('roles')->group(function () {
-            Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
-            Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
-            Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
-        });
+    Route::prefix('roles')->group(function () {
+        Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
+        Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
+        Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
+    });
 
         // Customers
-        Route::prefix('customers')->group(function () {
-            Route::get('/list', fn() => view('admin.customers.list'))->name('customers.list');
-            Route::get('/show', fn() => view('admin.customers.show'))->name('customers.show');
-        });
+    Route::prefix('customers')->group(function () {
+        Route::get('/list', fn() => view('admin.customers.list'))->name('customers.list');
+        Route::get('/show', fn() => view('admin.customers.show'))->name('customers.show');
+    });
 
         // Sellers
-        Route::prefix('sellers')->group(function () {
-            Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
-            Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
-            Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
-            Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
-        });
+    Route::prefix('sellers')->group(function () {
+        Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
+        Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
+        Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
+        Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
+    });
 
         // Discounts (Mã giảm giá)
         Route::prefix('discounts')->name('admin.discounts.')->group(function () {
@@ -427,4 +423,5 @@ Route::prefix('admin')->group(function () {
     // Fallback 404 - luôn đặt cuối cùng
     Route::fallback(function () {
         return response()->view('client.404', [], 404);
+    });
 });
