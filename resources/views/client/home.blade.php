@@ -3,7 +3,7 @@
 @section('title', 'Trang chủ')
 
 @section('content')
-<main class="main" style="padding-top: 300px;">
+<main class="main">
     <!-- tránh header che -->
 
     <!-- Hero Section -->
