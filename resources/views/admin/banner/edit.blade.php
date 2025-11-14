@@ -6,11 +6,11 @@
 <div class="card shadow-sm border-0">
     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
         <h5 class="mb-0">✏️ Sửa Banner</h5>
-        <a href="{{ route('admin.banner.index') }}" class="btn btn-secondary btn-sm">Quay lại</a>
+        <a href="{{ route('banner.index') }}" class="btn btn-secondary btn-sm">Quay lại</a>
     </div>
 
     <div class="card-body">
-        <form action="{{ route('admin.banner.update', $banner->id) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('banner.update', $banner->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -38,7 +38,7 @@
                 </div>
             </div>
 
-            
+
 
             <div class="text-end">
                 <button type="submit" class="btn btn-primary">Cập nhật</button>

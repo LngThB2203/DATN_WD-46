@@ -174,17 +174,17 @@
                 <div class="collapse" id="sidebarOrders">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.list') }}">List</a>
+                            <a class="sub-nav-link" href="{{ route('admin.orders.list') }}">List</a>
+                        </li>
+                        {{-- <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.orders.show') }}">Details</a>
+                        </li> --}}
+                        {{-- <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.orders.cart') }}">Cart</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.show') }}">Details</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.cart') }}">Cart</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.checkout') }}">Check Out</a>
-                        </li>
+                            <a class="sub-nav-link" href="{{ route('admin.orders.checkout') }}">Check Out</a>
+                        </li> --}}
                     </ul>
                 </div>
             </li>
