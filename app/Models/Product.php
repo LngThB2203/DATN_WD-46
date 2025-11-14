@@ -77,10 +77,7 @@ class Product extends Model
 
         return round((($this->price - $this->sale_price) / $this->price) * 100);
     }
-    public function variants()
-    {
-        return $this->hasMany(\App\Models\ProductVariant::class, 'product_id');
-    }
+
     public function getAverageRatingAttribute()
     {
         return (float) ($this->reviews()->avg('rating') ?? 0);

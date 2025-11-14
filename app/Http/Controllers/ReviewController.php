@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Product;
@@ -10,20 +11,46 @@ class ReviewController extends Controller
 {
     public function store(Request $request, string $slug)
     {
-        $product = Product::where('slug', $slug)->firstOrFail();
+        // Tìm sản phẩm theo slug hoặc ID
+        $product = Product::where('slug', $slug)
+            ->orWhere('id', $slug)
+            ->firstOrFail();
 
-        $data = $request->validate([
-            'rating' => ['required', 'integer', 'min:1', 'max:5'],
-            'comment' => ['nullable', 'string'],
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ], [
+            'rating.required' => 'Vui lòng chọn điểm đánh giá.',
+            'rating.integer' => 'Điểm đánh giá phải là số nguyên.',
+            'rating.min' => 'Điểm đánh giá tối thiểu là 1.',
+            'rating.max' => 'Điểm đánh giá tối đa là 5.',
+            'comment.max' => 'Nhận xét không được vượt quá 1000 ký tự.',
         ]);
 
+        // Kiểm tra xem user đã đánh giá sản phẩm này chưa
+        $existingReview = Review::where('user_id', Auth::id())
+            ->where('product_id', $product->id)
+            ->first();
+
+        if ($existingReview) {
+            // Cập nhật đánh giá cũ
+            $existingReview->update([
+                'rating' => $request->rating,
+                'comment' => $request->comment,
+            ]);
+
+            return redirect()->back()->with('success', 'Đánh giá của bạn đã được cập nhật!');
+        }
+
+        // Tạo đánh giá mới
         Review::create([
-            'product_id' => $product->id,
             'user_id' => Auth::id(),
-            'rating' => $data['rating'],
-            'comment' => $data['comment'] ?? null,
+            'product_id' => $product->id,
+            'rating' => $request->rating,
+            'comment' => $request->comment,
         ]);
 
-        return back()->with('success', 'Đã gửi đánh giá của bạn.');
+        return redirect()->back()->with('success', 'Cảm ơn bạn đã đánh giá sản phẩm!');
     }
 }
+
