@@ -49,10 +49,19 @@
                                 <a href="{{ route('home') }}" class="btn btn-primary">Tiếp tục mua sắm</a>
                             </div>
                         @else
+                            <div class="mb-3">
+                                <label class="form-check-label">
+                                    <input type="checkbox" id="selectAll" class="form-check-input me-2">
+                                    <strong>Chọn tất cả</strong>
+                                </label>
+                            </div>
                             <div class="table-responsive">
                                 <table class="table">
                                     <thead>
                                         <tr>
+                                            <th width="40">
+                                                <input type="checkbox" id="selectAllHeader" class="form-check-input">
+                                            </th>
                                             <th>Sản phẩm</th>
                                             <th>Giá</th>
                                             <th>Số lượng</th>
@@ -62,7 +71,14 @@
                                     </thead>
                                     <tbody>
                                         @foreach($cart['items'] as $index => $item)
-                                            <tr>
+                                            <tr class="cart-item-row" data-index="{{ $index }}" data-price="{{ $item['price'] ?? 0 }}" data-quantity="{{ $item['quantity'] ?? 1 }}">
+                                                <td>
+                                                    <input type="checkbox" 
+                                                           name="selected_items[]" 
+                                                           value="{{ $index }}" 
+                                                           class="form-check-input item-checkbox" 
+                                                           checked>
+                                                </td>
                                                 <td>
                                                     <div class="d-flex align-items-center gap-3">
                                                         @if($item['image'] ?? null)
@@ -115,11 +131,11 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Tạm tính</span>
-                            <span>{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                            <span id="selectedSubtotal">{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }} VNĐ</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Phí vận chuyển</span>
-                            <span>{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                            <span id="selectedShipping">{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }} VNĐ</span>
                         </div>
                         @if(($cart['discount_total'] ?? 0) > 0)
                             <div class="d-flex justify-content-between mb-2 text-success">
@@ -130,10 +146,14 @@
                         <hr>
                         <div class="d-flex justify-content-between fw-semibold mb-3">
                             <span>Tổng cộng</span>
-                            <span class="text-primary fs-5">{{ number_format($cart['grand_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                            <span class="text-primary fs-5" id="selectedTotal">{{ number_format($cart['grand_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
                         </div>
                         @if(!empty($cart['items']))
-                            <a href="{{ route('checkout.index') }}" class="btn btn-primary w-100">Tiến hành thanh toán</a>
+                            <form method="POST" action="{{ route('checkout.index') }}" id="checkoutForm">
+                                @csrf
+                                <input type="hidden" name="selected_items" id="selectedItemsInput" value="">
+                                <button type="submit" class="btn btn-primary w-100" id="checkoutBtn">Tiến hành thanh toán</button>
+                            </form>
                         @else
                             <button class="btn btn-primary w-100" disabled>Tiến hành thanh toán</button>
                         @endif
@@ -146,7 +166,82 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Xử lý nút tăng/giảm số lượng trong giỏ hàng
+    const shippingFee = {{ $cart['shipping_fee'] ?? 30000 }};
+    const discountTotal = {{ $cart['discount_total'] ?? 0 }};
+
+    // Tính tổng tiền các sản phẩm được chọn
+    function calculateSelectedTotal() {
+        let subtotal = 0;
+        const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+        
+        selectedCheckboxes.forEach(checkbox => {
+            const row = checkbox.closest('.cart-item-row');
+            if (row) {
+                const price = parseFloat(row.dataset.price) || 0;
+                const quantity = parseInt(row.dataset.quantity) || 1;
+                subtotal += price * quantity;
+            }
+        });
+
+        const grandTotal = Math.max((subtotal + shippingFee) - discountTotal, 0);
+
+        // Cập nhật UI
+        document.getElementById('selectedSubtotal').textContent = subtotal.toLocaleString('vi-VN') + ' VNĐ';
+        document.getElementById('selectedShipping').textContent = shippingFee.toLocaleString('vi-VN') + ' VNĐ';
+        document.getElementById('selectedTotal').textContent = grandTotal.toLocaleString('vi-VN') + ' VNĐ';
+
+        // Enable/disable nút thanh toán
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        if (checkoutBtn) {
+            checkoutBtn.disabled = selectedCheckboxes.length === 0;
+        }
+
+        // Cập nhật selected items input
+        const selectedItems = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+        const selectedItemsInput = document.getElementById('selectedItemsInput');
+        if (selectedItemsInput) {
+            selectedItemsInput.value = selectedItems;
+        }
+    }
+
+    // Chọn tất cả / Bỏ chọn tất cả
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const selectAllHeader = document.getElementById('selectAllHeader');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+
+    function toggleSelectAll(checked) {
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        if (selectAllCheckbox) selectAllCheckbox.checked = checked;
+        if (selectAllHeader) selectAllHeader.checked = checked;
+        calculateSelectedTotal();
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            toggleSelectAll(this.checked);
+        });
+    }
+
+    if (selectAllHeader) {
+        selectAllHeader.addEventListener('change', function() {
+            toggleSelectAll(this.checked);
+        });
+    }
+
+    // Xử lý checkbox từng sản phẩm
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            calculateSelectedTotal();
+            // Cập nhật trạng thái "Chọn tất cả"
+            const allChecked = document.querySelectorAll('.item-checkbox:checked').length === itemCheckboxes.length;
+            if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
+            if (selectAllHeader) selectAllHeader.checked = allChecked;
+        });
+    });
+
+    // Xử lý nút tăng/giảm số lượng
     document.querySelectorAll('.quantity-increase').forEach(btn => {
         btn.addEventListener('click', function() {
             const input = this.previousElementSibling;
@@ -174,12 +269,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Tự động submit khi thay đổi số lượng
     document.querySelectorAll('.quantity-input').forEach(input => {
         input.addEventListener('change', function() {
+            const row = this.closest('.cart-item-row');
+            if (row) {
+                row.dataset.quantity = this.value;
+                calculateSelectedTotal();
+            }
             const form = this.closest('.cart-update-form');
             if (form) {
                 form.submit();
             }
         });
     });
+
+    // Xử lý form checkout
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                e.preventDefault();
+                alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán!');
+                return false;
+            }
+        });
+    }
+
+    // Tính tổng ban đầu
+    calculateSelectedTotal();
 });
 </script>
 @endsection
