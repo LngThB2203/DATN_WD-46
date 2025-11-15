@@ -141,10 +141,17 @@
                         <i class="bi bi-heart"></i>
                         <span class="badge">0</span>
                     </a>
-                    <a href="{{ route('cart.index') }}" class="header-action-btn">
-                        <i class="bi bi-cart3"></i>
-                        <span class="badge">0</span>
-                    </a>
+                              <a href="{{ route('cart.index') }}" class="header-action-btn position-relative">
+    <i class="bi bi-cart3 fs-4"></i>
+
+    <span id="cart-count"
+          class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill"
+          style="font-size: 10px; display: none;">
+        0
+    </span>
+</a>
+
+
                     <i class="mobile-nav-toggle d-xl-none bi bi-list me-0"></i>
                 </div>
             </div>

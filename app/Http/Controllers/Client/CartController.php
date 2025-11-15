@@ -68,7 +68,8 @@ class CartController extends Controller
             ]);
         }
 
-        return response()->json(['success' => true, 'message' => 'Đã thêm vào giỏ hàng!']);
+        return redirect()->back()->with('success', 'Đã thêm vào giỏ hàng!');
+
     }
 
     // cập nhật số lượng (AJAX)
@@ -109,4 +110,13 @@ class CartController extends Controller
 
         return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng');
     }
+    
+    public function count()
+{
+    $cart = $this->getUserCart();
+    $count = $cart ? $cart->items->sum('quantity') : 0;
+
+    return response()->json(['count' => $count]);
+}
+
 }
