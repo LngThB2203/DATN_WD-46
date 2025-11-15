@@ -21,15 +21,15 @@ use App\Http\Controllers\ProductDetailController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CartController;
-Route::get('/cart/count', [CartController::class, 'count'])->name('cart.count');
 
+use App\Http\Controllers\Client\CartController;
 
 //giỏ hàng
 Route::middleware('auth')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-    Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
+    Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
+    Route::get('/cart/count', [CartController::class, 'count'])->name('cart.count');
     Route::get('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
     Route::get('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
     

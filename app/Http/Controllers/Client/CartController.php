@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
@@ -95,12 +94,13 @@ class CartController extends Controller
     }
 
     // Xóa item
-    public function remove(Request $request)
-    {
-        CartItem::findOrFail($request->item_id)->delete();
+    public function remove($id)
+{
+    CartItem::findOrFail($id)->delete();
 
-        return response()->json(['success' => true]);
-    }
+    return redirect()->route('cart.index')->with('success', 'Đã xóa sản phẩm khỏi giỏ!');
+}
+
 
     // Xóa toàn bộ giỏ
     public function clear()
