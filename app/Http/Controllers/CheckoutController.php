@@ -16,7 +16,20 @@ class CheckoutController extends Controller
 {
     public function index(Request $request)
     {
-        $cart = $this->prepareCart($request);
+        // Lấy danh sách các sản phẩm được chọn
+        $selectedItems = $request->input('selected_items');
+        if (is_string($selectedItems)) {
+            $selectedItems = explode(',', $selectedItems);
+        }
+        $selectedItems = $selectedItems ? array_filter(array_map('intval', (array) $selectedItems)) : null;
+
+        $cart = $this->prepareCart($request, $selectedItems);
+
+        // Nếu không có sản phẩm nào được chọn, redirect về giỏ hàng
+        if (empty($cart['items'])) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+        }
 
         $defaultCustomer = [
             'name' => optional($request->user())->name,
@@ -27,6 +40,7 @@ class CheckoutController extends Controller
         return view('client.checkout', [
             'cart' => $cart,
             'defaultCustomer' => $defaultCustomer,
+            'selectedItems' => $selectedItems,
         ]);
     }
 
@@ -51,12 +65,19 @@ class CheckoutController extends Controller
             'payment_method.required' => 'Vui lòng chọn phương thức thanh toán.',
         ]);
 
-        $cart = $this->prepareCart($request);
+        // Lấy danh sách các sản phẩm được chọn
+        $selectedItems = $request->input('selected_items');
+        if (is_string($selectedItems)) {
+            $selectedItems = explode(',', $selectedItems);
+        }
+        $selectedItems = $selectedItems ? array_filter(array_map('intval', (array) $selectedItems)) : null;
+
+        $cart = $this->prepareCart($request, $selectedItems);
 
         if (empty($cart['items'])) {
             return back()
                 ->withInput()
-                ->withErrors(['cart' => 'Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán.']);
+                ->withErrors(['cart' => 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.']);
         }
 
         DB::beginTransaction();
@@ -153,7 +174,7 @@ class CheckoutController extends Controller
         }
     }
 
-    private function prepareCart(Request $request): array
+    private function prepareCart(Request $request, ?array $selectedItems = null): array
     {
         $rawCart = $request->session()->get('cart', [
             'items' => [],
@@ -161,7 +182,16 @@ class CheckoutController extends Controller
             'discount_total' => 0,
         ]);
 
-        $items = collect($rawCart['items'] ?? [])->map(function ($item) {
+        $allItems = collect($rawCart['items'] ?? []);
+
+        // Nếu có selected_items, chỉ lấy các sản phẩm được chọn
+        if ($selectedItems !== null && !empty($selectedItems)) {
+            $allItems = $allItems->filter(function ($item, $index) use ($selectedItems) {
+                return in_array($index, $selectedItems, true);
+            });
+        }
+
+        $items = $allItems->map(function ($item) {
             $quantity = max(1, (int) ($item['quantity'] ?? 1));
             $price = (float) ($item['price'] ?? 0);
             $item['quantity'] = $quantity;

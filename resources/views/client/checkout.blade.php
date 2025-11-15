@@ -32,13 +32,16 @@
 
         <form method="POST" action="{{ route('checkout.store') }}">
             @csrf
-            <div class="row g-4">
-                <div class="col-lg-7">
-                    <div class="card">
-                        <div class="card-header fw-semibold">Thông tin giao hàng</div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
+            @if(isset($selectedItems) && !empty($selectedItems))
+                <input type="hidden" name="selected_items" value="{{ implode(',', $selectedItems) }}">
+            @endif
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-header fw-semibold">Thông tin giao hàng</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
                                     <label class="form-label">Họ tên *</label>
                                     <input class="form-control @error('customer_name') is-invalid @enderror"
                                            name="customer_name"
@@ -55,8 +58,8 @@
                                     @error('customer_email')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div>
-                                <div class="col-md-6">
+                            </div>
+                            <div class="col-md-6">
                                     <label class="form-label">Số điện thoại *</label>
                                     <input class="form-control @error('customer_phone') is-invalid @enderror"
                                            name="customer_phone"
@@ -64,8 +67,8 @@
                                     @error('customer_phone')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div>
-                                <div class="col-12">
+                            </div>
+                            <div class="col-12">
                                     <label class="form-label">Địa chỉ chi tiết *</label>
                                     <input class="form-control @error('shipping_address_line') is-invalid @enderror"
                                            name="shipping_address_line"
@@ -100,7 +103,7 @@
                                     @error('shipping_province')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div>
+                            </div>
                                 <div class="col-12">
                                     <label class="form-label">Ghi chú cho đơn hàng</label>
                                     <textarea class="form-control @error('customer_note') is-invalid @enderror"
@@ -109,15 +112,15 @@
                                     @error('customer_note')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                </div>
+                            </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card mt-4">
-                        <div class="card-header fw-semibold">Phương thức thanh toán</div>
-                        <div class="card-body">
-                            <div class="form-check">
+                <div class="card mt-4">
+                    <div class="card-header fw-semibold">Phương thức thanh toán</div>
+                    <div class="card-body">
+                        <div class="form-check">
                                 <input class="form-check-input"
                                        type="radio"
                                        name="payment_method"
@@ -127,8 +130,8 @@
                                 <label class="form-check-label" for="payment_cod">
                                     Thanh toán khi nhận hàng (COD)
                                 </label>
-                            </div>
-                            <div class="form-check">
+                        </div>
+                        <div class="form-check">
                                 <input class="form-check-input"
                                        type="radio"
                                        name="payment_method"
@@ -148,11 +151,11 @@
                                 </ul>
                                 <p class="mb-0">Nội dung chuyển khoản: <strong>Thanh toán đơn hàng #{{ now()->format('His') }}</strong></p>
                             </div>
-                        </div>
                     </div>
                 </div>
-                <div class="col-lg-5">
-                    <div class="card">
+            </div>
+            <div class="col-lg-5">
+                <div class="card">
                         <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
                             <span>Đơn hàng</span>
                             <span class="badge bg-secondary">{{ count($cart['items']) }} sản phẩm</span>
@@ -183,13 +186,13 @@
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Giảm giá</span>
                                 <span>- {{ number_format($cart['discount_total'] ?? 0, 0, ',', '.') }} đ</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
                                 <span>Phí vận chuyển</span>
                                 <span>{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }} đ</span>
-                            </div>
-                            <hr>
-                            <div class="d-flex justify-content-between fw-semibold mb-3">
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-semibold mb-3">
                                 <span>Tổng cộng</span>
                                 <span>{{ number_format($cart['grand_total'] ?? 0, 0, ',', '.') }} đ</span>
                             </div>
