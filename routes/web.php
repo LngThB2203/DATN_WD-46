@@ -23,6 +23,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Client\CartController;
+// SEARCH
+
+
+Route::get('/search', [ProductController::class, 'search'])->name('search');
+
 
 //giỏ hàng
 Route::middleware('auth')->group(function () {
@@ -89,7 +94,7 @@ Route::get('/login-register', fn() => view('client.login-register'))->name('auth
 Route::get('/order-confirmation', fn() => view('client.order-confirmation'))->name('order.confirmation');
 Route::get('/payment-methods', fn() => view('client.payment-methods'))->name('payment.methods');
 Route::get('/return-policy', fn() => view('client.return-policy'))->name('return.policy');
-Route::get('/search', fn() => view('client.search-results'))->name('search.results');
+
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 

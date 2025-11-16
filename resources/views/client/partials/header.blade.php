@@ -53,14 +53,16 @@
                 <a href="{{ route('home') }}" class="logo d-flex align-items-center">
                     <h1 class="sitename mb-0">46 Perfume</h1>
                 </a>
-                <form class="search-form desktop-search-form">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Search for products">
-                        <button class="btn" type="submit">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                </form>
+                <form class="search-form desktop-search-form" action="{{ route('search') }}" method="GET">
+    <div class="input-group">
+        <input type="text" name="keyword" class="form-control" placeholder="Search for products" required>
+
+        <button class="btn" type="submit">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+</form>
+
 
                 <div class="header-actions d-flex align-items-center justify-content-end">
                    <!-- Account -->

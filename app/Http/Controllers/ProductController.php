@@ -326,4 +326,26 @@ class ProductController extends Controller
 
         return $pdf->download('products_' . date('Y-m-d_H-i-s') . '.pdf');
     }
+    //tim kiem
+    public function search(Request $request)
+{
+    $keyword = trim($request->keyword);
+    $type    = $request->type ?? 'relative'; // relative = tìm kiếm tương đối (LIKE), absolute = tuyệt đối (=)
+
+    $query = Product::with('galleries');
+
+    if ($type === 'absolute') {
+        // TÌM KIẾM TUYỆT ĐỐI
+        $query->where('name', $keyword)->orWhere('sku', $keyword);
+    } else {
+        // TÌM KIẾM TƯƠNG ĐỐI
+        $query->where('name', 'LIKE', "%$keyword%")
+              ->orWhere('sku', 'LIKE', "%$keyword%");
+    }
+
+    $products = $query->paginate(12);
+
+    return view('client.search-results', compact('products', 'keyword', 'type'));
+}
+
 }
