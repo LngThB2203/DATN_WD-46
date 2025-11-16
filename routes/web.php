@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\ProductDetailController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\StatisticController;
 
 
 
@@ -171,6 +172,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     Route::prefix('inventories')->group(function () {
         Route::get('/warehouse', fn() => view('admin.inventories.warehouse'))->name('inventories.warehouse');
         Route::get('/received-orders', fn() => view('admin.inventories.received-orders'))->name('inventories.received-orders');
+    });
+
+
+    Route::prefix('statistics')->name('admin.statistics.')->group(function () {
+        Route::get('/', [StatisticController::class, 'index'])->name('index');
+        Route::get('/revenue-data', [StatisticController::class, 'revenueData'])->name('revenue-data');
+        Route::get('/top-products', [StatisticController::class, 'topProducts'])->name('top-products');
+        Route::get('/export/excel', [StatisticController::class, 'exportExcel'])->name('export-excel');
+        Route::get('/export/pdf', [StatisticController::class, 'exportPdf'])->name('export-pdf');
     });
 
 
