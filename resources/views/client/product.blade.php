@@ -9,7 +9,7 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('category.index') }}">Danh mục</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ $product->name }}</li>
+                <li class="breadcrumb-item active" aria-current="page">{{ $product->name ?? 'Sản phẩm' }}</li>
             </ol>
         </nav>
     </div>
@@ -48,30 +48,37 @@
                 <h2 class="fw-bold mb-3 text-capitalize">{{ $product->name }}</h2>
                 <p class="text-muted">{{ $product->brand ? 'Thương hiệu: ' . $product->brand : '' }}</p>
                 <div class="d-flex align-items-center gap-3 mb-3">
-                    @if($product->formatted_sale_price)
-                        <span class="fs-3 fw-semibold text-primary">{{ $product->formatted_sale_price }}</span>
-                        <span class="text-decoration-line-through text-muted">{{ $product->formatted_price }}</span>
+                    @if($product->sale_price)
+                        <span class="fs-3 fw-semibold text-primary">{{ number_format($product->sale_price, 0, ',', '.') }} VNĐ</span>
+                        <span class="text-decoration-line-through text-muted">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
                         @if($product->discount_percentage)
                             <span class="badge bg-danger">-{{ $product->discount_percentage }}%</span>
                         @endif
                     @else
-                        <span class="fs-3 fw-semibold text-primary">{{ $product->formatted_price }}</span>
+                        <span class="fs-3 fw-semibold text-primary">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
                     @endif
                 </div>
-                <div class="d-flex gap-2 mb-4">
-                    <button class="btn btn-outline-secondary">-</button>
-                    <input type="number" class="form-control w-auto" value="1" min="1">
-                    <button class="btn btn-outline-secondary">+</button>
-                </div>
-                <div class="d-flex gap-3">
-                    <button class="btn btn-primary">Thêm vào giỏ</button>
-                    <button class="btn btn-outline-primary">Mua ngay</button>
-                </div>
+                <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}">
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <div class="d-flex gap-2 mb-4 align-items-center">
+                        <label class="form-label mb-0 me-2">Số lượng:</label>
+                        <button type="button" class="btn btn-outline-secondary quantity-decrease">-</button>
+                        <input type="number" name="quantity" id="productQuantity" class="form-control w-auto text-center" value="1" min="1" max="100" style="max-width: 80px;">
+                        <button type="button" class="btn btn-outline-secondary quantity-increase">+</button>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-primary" id="addToCartBtn">
+                            <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+                        </button>
+                        <a href="{{ route('checkout.index') }}" class="btn btn-outline-primary">Mua ngay</a>
+                    </div>
+                </form>
             </div>
         </div>
         <div class="mt-5">
             <h4 class="mb-3">Mô tả chi tiết</h4>
-            <p>{{ $product->description }}</p>
+            <p>{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
         </div>
         <div class="mt-5">
             <h4 class="mb-3">Đánh giá</h4>
@@ -102,7 +109,7 @@
             @endif
 
             @auth
-                <form action="{{ route('product.review.store', $product->slug) }}" method="POST" class="border p-3 rounded">
+                <form action="{{ route('product.review.store', $product->slug ?? $product->id) }}" method="POST" class="border p-3 rounded">
                     @csrf
                     <div class="mb-3">
                         <label for="rating" class="form-label">Chấm điểm (1-5)</label>
@@ -132,7 +139,7 @@
                 <div class="row g-3">
                     @foreach($relatedProducts as $item)
                         <div class="col-6 col-md-4 col-lg-3">
-                            <a href="{{ route('product.show', $item->slug) }}" class="text-decoration-none">
+                            <a href="{{ route('product.show', $item->slug ?? $item->id) }}" class="text-decoration-none">
                                 <div class="card h-100">
                                     @php $img = $item->primaryImage() ? asset('storage/'.$item->primaryImage()->image_path) : ($item->image ? asset('storage/'.$item->image) : asset('assets/client/img/product/product-1.webp')); @endphp
                                     <img src="{{ $img }}" class="card-img-top" alt="{{ $item->name }}">
@@ -151,9 +158,12 @@
 </section>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // GLightbox
         if (window.GLightbox) {
             GLightbox({ selector: '.glightbox' });
         }
+        
+        // Image gallery
         var mainImage = document.getElementById('mainImage');
         var thumbs = document.querySelectorAll('[data-gallery="product"][data-large]');
         thumbs.forEach(function (thumb) {
@@ -167,7 +177,42 @@
                 mainImage.setAttribute('src', large);
             });
         });
-    });
 
+        // Quantity controls
+        const quantityInput = document.getElementById('productQuantity');
+        const decreaseBtn = document.querySelector('.quantity-decrease');
+        const increaseBtn = document.querySelector('.quantity-increase');
+
+        if (decreaseBtn) {
+            decreaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                }
+            });
+        }
+
+        if (increaseBtn) {
+            increaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(quantityInput.value);
+                const max = parseInt(quantityInput.getAttribute('max')) || 100;
+                if (currentValue < max) {
+                    quantityInput.value = currentValue + 1;
+                }
+            });
+        }
+
+        // Add to cart form submission
+        const addToCartForm = document.getElementById('addToCartForm');
+        if (addToCartForm) {
+            addToCartForm.addEventListener('submit', function(e) {
+                const btn = document.getElementById('addToCartBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...';
+                }
+            });
+        }
+    });
 </script>
 @endsection
