@@ -3,7 +3,7 @@
 @section('title', 'Trang chủ')
 
 @section('content')
-<main class="main" style="padding-top: 300px;">
+<main class="main">
     <!-- tránh header che -->
 
     <!-- Hero Section -->
@@ -110,17 +110,40 @@
             @foreach($products as $product)
                 <div class="col-12 col-sm-6 col-lg-3">
                     <div class="card h-100">
-                        @if($product->primaryImage())
-                            <img src="{{ asset('storage/' . $product->primaryImage()->image_path) }}"
-                                 class="card-img-top" alt="{{ $product->name }}">
-                        @else
-                            <img src="{{ asset('assets/client/img/product/product-1.webp') }}"
-                                 class="card-img-top" alt="{{ $product->name }}">
-                        @endif
-                        <div class="card-body">
-                            <h5 class="card-title mb-1">{{ $product->name }}</h5>
-                            <p class="card-text text-muted mb-3">{{ number_format($product->price, 0, ',', '.') }} VNĐ</p>
-                            <a href="#" class="btn btn-outline-primary w-100">Xem chi tiết</a>
+                        <a href="{{ route('product.show', $product->slug ?? $product->id) }}" class="text-decoration-none">
+                            @if($product->primaryImage())
+                                <img src="{{ asset('storage/' . $product->primaryImage()->image_path) }}"
+                                     class="card-img-top" alt="{{ $product->name }}" style="height: 250px; object-fit: cover;">
+                            @else
+                                <img src="{{ asset('assets/client/img/product/product-1.webp') }}"
+                                     class="card-img-top" alt="{{ $product->name }}" style="height: 250px; object-fit: cover;">
+                            @endif
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-1">
+                                <a href="{{ route('product.show', $product->slug ?? $product->id) }}" class="text-dark text-decoration-none">
+                                    {{ $product->name }}
+                                </a>
+                            </h5>
+                            <div class="mb-3">
+                                @if($product->sale_price)
+                                    <span class="text-primary fw-bold fs-5">{{ number_format($product->sale_price, 0, ',', '.') }} VNĐ</span>
+                                    <span class="text-muted text-decoration-line-through ms-2">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
+                                @else
+                                    <span class="text-primary fw-bold fs-5">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
+                                @endif
+                            </div>
+                            <div class="mt-auto d-flex gap-2">
+                                <a href="{{ route('product.show', $product->slug ?? $product->id) }}" class="btn btn-outline-primary flex-fill">Xem chi tiết</a>
+                                <form method="POST" action="{{ route('cart.add') }}" class="d-inline flex-fill">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-primary w-100" title="Thêm vào giỏ hàng">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -140,18 +163,40 @@
             @foreach($products as $product)
                 <div class="col-md-6 col-lg-3">
                     <div class="product-card">
-                        <div class="product-image">
-                            @if($product->primaryImage())
-                                <img src="{{ asset('storage/' . $product->primaryImage()->image_path) }}"
-                                     class="img-fluid default-image" alt="{{ $product->name }}">
-                            @else
-                                <img src="{{ asset('assets/client/img/product/product-1.webp') }}"
-                                     class="img-fluid default-image" alt="{{ $product->name }}">
-                            @endif
-                        </div>
+                        <a href="{{ route('product.show', $product->slug ?? $product->id) }}">
+                            <div class="product-image">
+                                @if($product->primaryImage())
+                                    <img src="{{ asset('storage/' . $product->primaryImage()->image_path) }}"
+                                         class="img-fluid default-image" alt="{{ $product->name }}">
+                                @else
+                                    <img src="{{ asset('assets/client/img/product/product-1.webp') }}"
+                                         class="img-fluid default-image" alt="{{ $product->name }}">
+                                @endif
+                            </div>
+                        </a>
                         <div class="product-info">
-                            <h3 class="product-title"><a href="#">{{ $product->name }}</a></h3>
-                            <div class="product-price">{{ number_format($product->price, 0, ',', '.') }} VNĐ</div>
+                            <h3 class="product-title">
+                                <a href="{{ route('product.show', $product->slug ?? $product->id) }}">{{ $product->name }}</a>
+                            </h3>
+                            <div class="product-price">
+                                @if($product->sale_price)
+                                    <span class="text-primary fw-bold">{{ number_format($product->sale_price, 0, ',', '.') }} VNĐ</span>
+                                    <span class="text-muted text-decoration-line-through ms-2">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
+                                @else
+                                    <span class="text-primary fw-bold">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
+                                @endif
+                            </div>
+                            <div class="mt-2 d-flex gap-2">
+                                <a href="{{ route('product.show', $product->slug ?? $product->id) }}" class="btn btn-sm btn-outline-primary flex-fill">Chi tiết</a>
+                                <form method="POST" action="{{ route('cart.add') }}" class="d-inline">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-sm btn-primary" title="Thêm vào giỏ hàng">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -161,4 +206,38 @@
 </section>
 
 </main>
+
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999;">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <script>
+        setTimeout(function() {
+            document.querySelector('.alert-success')?.remove();
+        }, 3000);
+    </script>
+@endif
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cartForms = document.querySelectorAll('form[action*="cart/add"]');
+    cartForms.forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                setTimeout(function() {
+                    if (btn.disabled) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                }, 5000);
+            }
+        });
+    });
+});
+</script>
 @endsection
