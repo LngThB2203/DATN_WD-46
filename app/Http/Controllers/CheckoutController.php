@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
 {
@@ -148,12 +149,38 @@ class CheckoutController extends Controller
 
             DB::commit();
 
-            $request->session()->forget('cart');
+            // Chỉ xóa các sản phẩm đã thanh toán khỏi giỏ hàng, không xóa toàn bộ
+            if ($selectedItems !== null && !empty($selectedItems)) {
+                $cart = $request->session()->get('cart', ['items' => []]);
+                $remainingItems = [];
+                foreach ($cart['items'] ?? [] as $index => $item) {
+                    if (!in_array($index, $selectedItems, true)) {
+                        $remainingItems[] = $item;
+                    }
+                }
+                $cart['items'] = $remainingItems;
+                // Reset lại subtotal và grand_total
+                $cart['subtotal'] = 0;
+                $cart['grand_total'] = 0;
+                $cart['discount_total'] = 0;
+                $request->session()->put('cart', $cart);
+            } else {
+                // Nếu không có selected_items, xóa toàn bộ giỏ hàng (fallback)
+                $request->session()->forget('cart');
+            }
 
             $order->load(['details.product']);
 
             if ($order->customer_email) {
                 Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+            }
+
+            // Lưu thông tin customer vào session để có thể xem đơn hàng sau
+            if ($validated['customer_email']) {
+                $request->session()->put('last_order_email', $validated['customer_email']);
+            }
+            if ($validated['customer_phone']) {
+                $request->session()->put('last_order_phone', $validated['customer_phone']);
             }
 
             $orderCode = '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
@@ -162,15 +189,20 @@ class CheckoutController extends Controller
                 : "Đơn hàng {$orderCode} đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.";
 
             return redirect()
-                ->route('checkout.index')
+                ->route('orders.index')
                 ->with('success', $successMessage);
         } catch (\Throwable $exception) {
             DB::rollBack();
             report($exception);
 
+            Log::error('Checkout error: ' . $exception->getMessage(), [
+                'trace' => $exception->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+
             return back()
                 ->withInput()
-                ->with('error', 'Có lỗi xảy ra khi lưu đơn hàng. Vui lòng thử lại sau.');
+                ->with('error', 'Có lỗi xảy ra khi lưu đơn hàng: ' . $exception->getMessage() . '. Vui lòng thử lại sau.');
         }
     }
 

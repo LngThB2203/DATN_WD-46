@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
@@ -36,41 +39,54 @@ class CartController extends Controller
             $quantity = (int) $request->quantity;
             $price = $product->sale_price ?? $product->price;
 
-            $cart = $request->session()->get('cart', [
-                'items' => [],
-                'shipping_fee' => 30000,
-                'discount_total' => 0,
-            ]);
+            DB::beginTransaction();
 
-            // Kiểm tra sản phẩm đã có trong giỏ chưa
-            $existingIndex = collect($cart['items'])->search(function ($item) use ($request) {
-                return ($item['product_id'] ?? null) == $request->product_id;
-            });
+            try {
+                // Lấy hoặc tạo cart
+                $cart = $this->getOrCreateCart($request);
 
-            if ($existingIndex !== false) {
-                $cart['items'][$existingIndex]['quantity'] += $quantity;
-            } else {
-                $cart['items'][] = [
-                    'product_id' => $product->id,
-                    'variant_id' => null,
-                    'quantity' => $quantity,
-                    'price' => $price,
-                    'name' => $product->name,
-                    'image' => $product->primaryImage() ? $product->primaryImage()->image_path : null,
-                ];
+                // Kiểm tra sản phẩm đã có trong giỏ chưa
+                $existingItem = CartItem::where('cart_id', $cart->id)
+                    ->where('product_id', $product->id)
+                    ->whereNull('variant_id')
+                    ->first();
+
+                if ($existingItem) {
+                    // Cập nhật số lượng
+                    $existingItem->quantity += $quantity;
+                    $existingItem->save();
+                } else {
+                    // Tạo mới cart item
+                    CartItem::create([
+                        'cart_id' => $cart->id,
+                        'product_id' => $product->id,
+                        'variant_id' => null,
+                        'quantity' => $quantity,
+                        'price' => $price,
+                        'added_at' => now(),
+                    ]);
+                }
+
+                DB::commit();
+
+                // Đồng bộ với session để tương thích ngược
+                $this->syncCartToSession($request, $cart);
+
+                $cartCount = $cart->items()->count();
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Đã thêm sản phẩm vào giỏ hàng!',
+                        'cart_count' => $cartCount,
+                    ]);
+                }
+
+                return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-
-            $request->session()->put('cart', $cart);
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Đã thêm sản phẩm vào giỏ hàng!',
-                    'cart_count' => count($cart['items']),
-                ]);
-            }
-
-            return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
         } catch (\Illuminate\Validation\ValidationException $e) {
             if ($request->ajax()) {
                 return response()->json([
@@ -98,29 +114,42 @@ class CartController extends Controller
             'quantity' => 'required|integer|min:1|max:100',
         ]);
 
-        $cart = $request->session()->get('cart', ['items' => []]);
-        $index = (int) $request->index;
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $items = $cart->items()->with('product')->get();
+            $index = (int) $request->index;
 
-        if (!isset($cart['items'][$index])) {
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.']);
+            if (!isset($items[$index])) {
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.']);
+                }
+                return back()->with('error', 'Sản phẩm không tồn tại trong giỏ hàng.');
             }
-            return back()->with('error', 'Sản phẩm không tồn tại trong giỏ hàng.');
+
+            $item = $items[$index];
+            $item->quantity = (int) $request->quantity;
+            $item->save();
+
+            // Đồng bộ với session
+            $this->syncCartToSession($request, $cart);
+
+            if ($request->ajax()) {
+                $cartData = $this->prepareCart($request);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã cập nhật số lượng!',
+                    'cart' => $cartData,
+                ]);
+            }
+
+            return back()->with('success', 'Đã cập nhật số lượng!');
+        } catch (\Exception $e) {
+            Log::error('Cart update error: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi cập nhật.']);
+            }
+            return back()->with('error', 'Có lỗi xảy ra khi cập nhật.');
         }
-
-        $cart['items'][$index]['quantity'] = (int) $request->quantity;
-        $request->session()->put('cart', $cart);
-
-        if ($request->ajax()) {
-            $cart = $this->prepareCart($request);
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã cập nhật số lượng!',
-                'cart' => $cart,
-            ]);
-        }
-
-        return back()->with('success', 'Đã cập nhật số lượng!');
     }
 
     public function remove(Request $request)
@@ -129,71 +158,168 @@ class CartController extends Controller
             'index' => 'required|integer|min:0',
         ]);
 
-        $cart = $request->session()->get('cart', ['items' => []]);
-        $index = (int) $request->index;
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $items = $cart->items()->with('product')->get();
+            $index = (int) $request->index;
 
-        if (!isset($cart['items'][$index])) {
-            if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.']);
+            if (!isset($items[$index])) {
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.']);
+                }
+                return back()->with('error', 'Sản phẩm không tồn tại trong giỏ hàng.');
             }
-            return back()->with('error', 'Sản phẩm không tồn tại trong giỏ hàng.');
+
+            $item = $items[$index];
+            $item->delete();
+
+            // Đồng bộ với session
+            $this->syncCartToSession($request, $cart);
+
+            if ($request->ajax()) {
+                $cartData = $this->prepareCart($request);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
+                    'cart' => $cartData,
+                ]);
+            }
+
+            return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng!');
+        } catch (\Exception $e) {
+            Log::error('Cart remove error: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi xóa.']);
+            }
+            return back()->with('error', 'Có lỗi xảy ra khi xóa.');
         }
-
-        unset($cart['items'][$index]);
-        $cart['items'] = array_values($cart['items']);
-        $request->session()->put('cart', $cart);
-
-        if ($request->ajax()) {
-            $cart = $this->prepareCart($request);
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
-                'cart' => $cart,
-            ]);
-        }
-
-        return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng!');
     }
 
     public function clear(Request $request)
     {
-        $request->session()->forget('cart');
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $cart->items()->delete();
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã xóa toàn bộ giỏ hàng!',
-            ]);
+            // Xóa session cart
+            $request->session()->forget('cart');
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã xóa toàn bộ giỏ hàng!',
+                ]);
+            }
+
+            return redirect()->route('cart.index')->with('success', 'Đã xóa toàn bộ giỏ hàng!');
+        } catch (\Exception $e) {
+            Log::error('Cart clear error: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi xóa.']);
+            }
+            return back()->with('error', 'Có lỗi xảy ra khi xóa.');
         }
-
-        return redirect()->route('cart.index')->with('success', 'Đã xóa toàn bộ giỏ hàng!');
     }
 
-    private function prepareCart(Request $request): array
+    /**
+     * Lấy hoặc tạo cart từ database
+     */
+    private function getOrCreateCart(Request $request): Cart
     {
-        $rawCart = $request->session()->get('cart', [
-            'items' => [],
+        $user = $request->user();
+
+        if ($user) {
+            // User đã đăng nhập: lấy cart theo user_id
+            $cart = Cart::firstOrCreate(
+                ['user_id' => $user->id],
+                ['user_id' => $user->id]
+            );
+        } else {
+            // User chưa đăng nhập: lấy cart từ session hoặc tạo mới
+            $cartId = $request->session()->get('cart_id');
+            
+            if ($cartId) {
+                $cart = Cart::find($cartId);
+                if (!$cart) {
+                    $cartId = null;
+                }
+            }
+
+            if (!$cartId) {
+                $cart = Cart::create(['user_id' => null]);
+                $request->session()->put('cart_id', $cart->id);
+            } else {
+                $cart = Cart::find($cartId);
+            }
+        }
+
+        return $cart;
+    }
+
+    /**
+     * Đồng bộ cart từ database vào session để tương thích ngược
+     */
+    private function syncCartToSession(Request $request, Cart $cart): void
+    {
+        $items = $cart->items()->with('product')->get();
+        
+        $sessionItems = [];
+        foreach ($items as $item) {
+            $product = $item->product;
+            $sessionItems[] = [
+                'product_id' => $item->product_id,
+                'variant_id' => $item->variant_id,
+                'quantity' => $item->quantity,
+                'price' => (float) $item->price,
+                'name' => $product ? $product->name : 'Sản phẩm đã bị xóa',
+                'image' => $product && $product->primaryImage() ? $product->primaryImage()->image_path : null,
+            ];
+        }
+
+        $request->session()->put('cart', [
+            'items' => $sessionItems,
             'shipping_fee' => 30000,
             'discount_total' => 0,
         ]);
+    }
 
-        $items = collect($rawCart['items'] ?? [])->map(function ($item) {
-            $quantity = max(1, (int) ($item['quantity'] ?? 1));
-            $price = (float) ($item['price'] ?? 0);
-            $item['quantity'] = $quantity;
-            $item['price'] = $price;
-            $item['subtotal'] = $quantity * $price;
+    /**
+     * Chuẩn bị dữ liệu cart để hiển thị
+     */
+    private function prepareCart(Request $request): array
+    {
+        // Ưu tiên lấy từ database
+        $cart = $this->getOrCreateCart($request);
+        $items = $cart->items()->with('product')->get();
 
-            return $item;
-        });
+        $sessionItems = [];
+        foreach ($items as $item) {
+            $product = $item->product;
+            if (!$product) {
+                continue; // Bỏ qua sản phẩm đã bị xóa
+            }
 
-        $subtotal = $items->sum('subtotal');
-        $shippingFee = (float) ($rawCart['shipping_fee'] ?? 30000);
-        $discountTotal = (float) ($rawCart['discount_total'] ?? 0);
+            $quantity = max(1, (int) $item->quantity);
+            $price = (float) $item->price;
+
+            $sessionItems[] = [
+                'product_id' => $item->product_id,
+                'variant_id' => $item->variant_id,
+                'quantity' => $quantity,
+                'price' => $price,
+                'subtotal' => $quantity * $price,
+                'name' => $product->name,
+                'image' => $product->primaryImage() ? $product->primaryImage()->image_path : null,
+            ];
+        }
+
+        $subtotal = collect($sessionItems)->sum('subtotal');
+        $shippingFee = 30000;
+        $discountTotal = (float) ($request->session()->get('cart.discount_total', 0));
         $grandTotal = max(($subtotal + $shippingFee) - $discountTotal, 0);
 
         return [
-            'items' => $items->all(),
+            'items' => $sessionItems,
             'subtotal' => $subtotal,
             'shipping_fee' => $shippingFee,
             'discount_total' => $discountTotal,
@@ -201,4 +327,3 @@ class CartController extends Controller
         ];
     }
 }
-

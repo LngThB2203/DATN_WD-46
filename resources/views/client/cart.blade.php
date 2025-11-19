@@ -149,8 +149,7 @@
                             <span class="text-primary fs-5" id="selectedTotal">{{ number_format($cart['grand_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
                         </div>
                         @if(!empty($cart['items']))
-                            <form method="POST" action="{{ route('checkout.index') }}" id="checkoutForm">
-                                @csrf
+                            <form method="GET" action="{{ route('checkout.index') }}" id="checkoutForm">
                                 <input type="hidden" name="selected_items" id="selectedItemsInput" value="">
                                 <button type="submit" class="btn btn-primary w-100" id="checkoutBtn">Tiến hành thanh toán</button>
                             </form>
@@ -290,6 +289,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán!');
                 return false;
+            }
+            // Đảm bảo selectedItemsInput được cập nhật trước khi submit
+            const selectedItems = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+            const selectedItemsInput = document.getElementById('selectedItemsInput');
+            if (selectedItemsInput) {
+                selectedItemsInput.value = selectedItems;
             }
         });
     }
