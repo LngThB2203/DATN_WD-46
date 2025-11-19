@@ -43,33 +43,7 @@
             </div>
         </div>
 
-        <!-- Bài viết liên quan -->
-        <div class="related-posts mt-5 p-4 bg-light rounded shadow-sm">
-            <h3 class="fw-bold mb-4">Bài viết liên quan</h3>
-            @php
-                $relatedPosts = \App\Models\Post::where('id', '!=', $post->id)
-                                ->latest()
-                                ->take(5)
-                                ->get();
-            @endphp
-            <ul class="list-unstyled mb-0">
-                @forelse($relatedPosts as $related)
-                    <li class="mb-3 d-flex align-items-center">
-                        <a href="{{ route('blog.show', $related->slug) }}" class="text-decoration-none text-dark d-flex align-items-center">
-                            <img 
-                                src="{{ $related->image ? asset('storage/' . $related->image) : asset('assets/client/img/default-post.webp') }}" 
-                                alt="{{ $related->title }}"
-                                class="rounded me-3"
-                                style="width: 60px; height: 60px; object-fit: cover;"
-                            >
-                            <span class="fw-bold">{{ $related->title }}</span>
-                        </a>
-                    </li>
-                @empty
-                    <li>Chưa có bài viết liên quan.</li>
-                @endforelse
-            </ul>
-        </div>
+        
 
     </div>
 </section>

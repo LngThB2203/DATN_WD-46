@@ -13,7 +13,7 @@
             </p>
         @endif
 
-        <h2 class="fw-bold mb-4 text-center">Bài viết mới</h2>
+        <h2 class="fw-bold mb-4 text-center">Bài viết </h2>
 
         <!-- Danh sách bài viết -->
         <div class="row g-4">

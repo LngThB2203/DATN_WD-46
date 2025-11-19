@@ -12,7 +12,6 @@
             <tr>
                 <th>ID</th>
                 <th>Tiêu đề</th>
-                <th>Danh mục</th>
                 <th>Ảnh</th>
                 <th>Hành động</th>
             </tr>
@@ -22,7 +21,6 @@
             <tr>
                 <td>{{ $post->id }}</td>
                 <td>{{ $post->title }}</td>
-                <td>{{ $post->category->name ?? 'Không có' }}</td>
                 <td>
                     @if ($post->image)
                         <img src="{{ asset('storage/' . $post->image) }}" width="80">

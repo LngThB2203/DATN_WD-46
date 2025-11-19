@@ -22,7 +22,7 @@ class PostController extends Controller{
 
     public function create()
     {
-        $categories = Category::where('type', 'post')->get();
+        $categories = Category::all();
         return view('admin.post.create', compact('categories'));
     }
 
@@ -30,12 +30,11 @@ class PostController extends Controller{
 {
     $request->validate([
         'title' => 'required|max:255|unique:posts,title',
-        'category_id' => 'required|exists:categories,id',
         'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
         'content' => 'nullable',
     ]);
 
-    $data = $request->only('title', 'category_id', 'content');
+    $data = $request->only('title', 'content');
 
     $slug = Str::slug($request->title);
     $count = Post::where('slug', $slug)->count();
@@ -54,7 +53,7 @@ class PostController extends Controller{
     public function edit($id)
     {
         $post = Post::findOrFail($id);
-        $categories = Category::where('type', 'post')->get();
+        $categories = Category::all();
         return view('admin.post.edit', compact('post', 'categories'));
     }
 
@@ -64,12 +63,11 @@ class PostController extends Controller{
 
     $request->validate([
         'title' => 'required|max:255|unique:posts,title,' . $post->id,
-        'category_id' => 'required|exists:categories,id',
         'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
         'content' => 'nullable',
     ]);
 
-    $data = $request->only('title', 'category_id', 'content');
+    $data = $request->only('title', 'content');
 
     // Sinh slug duy nhất
     $slug = Str::slug($request->title);
