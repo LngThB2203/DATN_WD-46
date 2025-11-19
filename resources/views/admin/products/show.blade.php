@@ -32,8 +32,8 @@
                                             @if($gallery->is_primary)
                                                 <span class="badge bg-primary position-absolute top-0 start-0">Primary</span>
                                             @endif
-                                        </div>
-                                    </div>
+                            </div>
+                        </div>
                                 @endforeach
                             </div>
                         @else
@@ -58,7 +58,7 @@
                                 <i class="bx bx-arrow-back"></i> Back to List
                             </a>
                         </div>
-                    </div>
+                                    </div>
                     <div class="card-body">
                         <div class="row mb-3">
                             <div class="col-sm-3">
@@ -76,8 +76,8 @@
                             <div class="col-sm-9">
                                 {{ $product->sku ?? 'N/A' }}
                             </div>
-                        </div>
-                        
+                                    </div>
+
                         <div class="row mb-3">
                             <div class="col-sm-3">
                                 <strong>Category:</strong>
@@ -85,8 +85,8 @@
                             <div class="col-sm-9">
                                 {{ $product->category->category_name ?? 'N/A' }}
                             </div>
-                        </div>
-                        
+                                    </div>
+
                         <div class="row mb-3">
                             <div class="col-sm-3">
                                 <strong>Price:</strong>
@@ -115,20 +115,20 @@
                         <div class="row mb-3">
                             <div class="col-sm-3">
                                 <strong>Status:</strong>
-                            </div>
+                    </div>
                             <div class="col-sm-9">
                                 @if($product->status)
                                     <span class="badge bg-success">Active</span>
                                 @else
                                     <span class="badge bg-danger">Inactive</span>
                                 @endif
-                            </div>
+                    </div>
                         </div>
                         
                         <div class="row mb-3">
                             <div class="col-sm-3">
                                 <strong>Created:</strong>
-                            </div>
+                        </div>
                             <div class="col-sm-9">
                                 {{ $product->created_at->format('d/m/Y H:i') }}
                             </div>
@@ -140,9 +140,9 @@
                             </div>
                             <div class="col-sm-9">
                                 {{ $product->updated_at->format('d/m/Y H:i') }}
-                            </div>
                         </div>
-                        
+                        </div>
+
                         @if($product->description)
                         <div class="row">
                             <div class="col-sm-3">
@@ -151,8 +151,8 @@
                             <div class="col-sm-9">
                                 <div class="border rounded p-3 bg-light">
                                     {{ $product->description }}
-                                </div>
-                            </div>
+                        </div>
+                        </div>
                         </div>
                         @endif
                     </div>
