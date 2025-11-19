@@ -23,18 +23,6 @@
         </div>
 
         <div class="mb-3">
-            <label>Danh mục</label>
-            <select name="category_id" class="form-select" required>
-                <option value="">-- Chọn danh mục --</option>
-                @foreach ($categories as $cat)
-                    <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
-                        {{ $cat->name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <div class="mb-3">
             <label>Ảnh đại diện</label>
             <input type="file" name="image" class="form-control">
         </div>

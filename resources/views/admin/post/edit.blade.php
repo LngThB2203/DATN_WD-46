@@ -14,18 +14,6 @@
         </div>
 
         <div class="mb-3">
-            <label>Danh mục</label>
-            <select name="category_id" class="form-select">
-                <option value="">-- Chọn danh mục --</option>
-                @foreach ($categories as $cat)
-                    <option value="{{ $cat->id }}" {{ $cat->id == $post->category_id ? 'selected' : '' }}>
-                        {{ $cat->name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <div class="mb-3">
             <label>Ảnh đại diện</label><br>
             @if ($post->image)
                 <img src="{{ asset('storage/' . $post->image) }}" width="100" class="mb-2"><br>
