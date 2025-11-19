@@ -10,21 +10,7 @@ use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\Client\ProductDetailController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\DiscountController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReviewController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use App\Http\Controllers\Client\CategoryController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\StatisticController;
 
 // ========================
 // AUTH ROUTES
@@ -84,8 +70,23 @@ Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear')
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
-// API kiểm tra mã giảm giá
-Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');
+// Orders
+Route::get('/orders', [App\Http\Controllers\Client\OrderController::class, 'index'])->name('orders.index');
+Route::get('/orders/{id}', [App\Http\Controllers\Client\OrderController::class, 'show'])->name('orders.show');
+
+// API route để kiểm tra mã giảm giá khi thanh toán
+Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
+
+Route::get('/about', function () {
+    return view('client.about');
+})->name('about');
+
+Route::get('/contact', [App\Http\Controllers\ContactController::class, 'index'])->name('contact.index');
+Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
+
+Route::get('/faq', function () {
+    return view('client.faq');
+})->name('faq.index');
 
 Route::get('/about', fn() => view('client.about'))->name('about');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
