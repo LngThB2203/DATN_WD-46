@@ -13,7 +13,7 @@ class WarehouseProductController extends Controller
     // Danh sách tồn kho
     public function index()
     {
-        $inventories = WarehouseProduct::with(['product', 'warehouse'])->paginate(10);
+        $inventories   = WarehouseProduct::with(['product', 'warehouse'])->paginate(10);
         $lowStockItems = $inventories->filter(function ($item) {
             return $item->quantity < ($item->min_stock_threshold ?? 0);
         });
@@ -70,4 +70,19 @@ class WarehouseProductController extends Controller
         $pdf   = PDF::loadView('admin.inventories.invoice', compact('stock'));
         return $pdf->download('invoice-' . $stock->id . '.pdf');
     }
+    // Cập nhật số lượng cho sản phẩm trong kho
+    public function updateQuantity(Request $request, $id)
+    {
+        $request->validate([
+            'quantity' => 'required|integer|min:0',
+        ]);
+
+        $item           = WarehouseProduct::findOrFail($id);
+        $item->quantity = $request->quantity;
+        $item->save();
+
+        return redirect()->route('inventories.received-orders')
+            ->with('success', 'Cập nhật số lượng thành công!');
+    }
+
 }
