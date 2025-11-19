@@ -9,16 +9,20 @@
     </div>
     @endif
 
-    <form action="{{ route('admin.variants.update', ['product' => $product->id, 'variant' => $variant->id]) }}"
-        method="POST">
+    <form action="{{ route('variants.update', ['variant' => $variant->id]) }}" method="POST">
         @csrf
         @method('PUT')
+
+        <!-- Hidden Product ID -->
+        <input type="hidden" name="product_id" value="{{ $product->id }}">
+
         <div class="mb-3">
             <label>Size</label>
-            <select name="size_id" class="form-control">
+            <select name="size_id" class="form-control" required>
                 <option value="">-- none --</option>
                 @foreach($sizes as $s)
-                <option value="{{ $s->id }}" @if($variant->size_id == $s->id) selected @endif>{{ $s->size_name }}
+                <option value="{{ $s->id }}" @if($variant->size_id == $s->id) selected @endif>
+                    {{ $s->size_name }}
                 </option>
                 @endforeach
             </select>
@@ -26,10 +30,11 @@
 
         <div class="mb-3">
             <label>Scent</label>
-            <select name="scent_id" class="form-control">
+            <select name="scent_id" class="form-control" required>
                 <option value="">-- none --</option>
                 @foreach($scents as $s)
-                <option value="{{ $s->id }}" @if($variant->scent_id == $s->id) selected @endif>{{ $s->scent_name }}
+                <option value="{{ $s->id }}" @if($variant->scent_id == $s->id) selected @endif>
+                    {{ $s->scent_name }}
                 </option>
                 @endforeach
             </select>
@@ -37,11 +42,12 @@
 
         <div class="mb-3">
             <label>Concentration</label>
-            <select name="concentration_id" class="form-control">
+            <select name="concentration_id" class="form-control" required>
                 <option value="">-- none --</option>
                 @foreach($concentrations as $c)
-                <option value="{{ $c->id }}" @if($variant->concentration_id == $c->id) selected @endif>{{
-                    $c->concentration_name }}</option>
+                <option value="{{ $c->id }}" @if($variant->concentration_id == $c->id) selected @endif>
+                    {{ $c->concentration_name }}
+                </option>
                 @endforeach
             </select>
         </div>
@@ -62,8 +68,17 @@
             <input type="number" name="stock" class="form-control" value="{{ old('stock', $variant->stock) }}" required>
         </div>
 
+        <div class="mb-3">
+            <label>Gender</label>
+            <select name="gender" class="form-control" required>
+                <option value="unisex" @if($variant->gender == 'unisex') selected @endif>Unisex</option>
+                <option value="male" @if($variant->gender == 'male') selected @endif>Male</option>
+                <option value="female" @if($variant->gender == 'female') selected @endif>Female</option>
+            </select>
+        </div>
+
         <button class="btn btn-success">Cập nhật</button>
-        <a href="{{ route('admin.variants.index', $product->id) }}" class="btn btn-secondary">Hủy</a>
+        <a href="{{ route('variants.index') }}" class="btn btn-secondary">Hủy</a>
     </form>
 </div>
 @endsection
