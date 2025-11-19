@@ -17,12 +17,10 @@
                     <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
                 </div>
                 <div class="col-lg-6">
-                    @if($heroProduct && $heroProduct->primaryImage())
-                    <img class="img-fluid rounded"
-                        src="{{ asset('storage/' . $heroProduct->primaryImage()->image_path) }}" alt="Hero">
+                    @if($heroBanner && $heroBanner->image)
+                        <img class="img-fluid rounded" src="{{ asset('storage/' . $heroBanner->image) }}" alt="Hero">
                     @else
-                    <img class="img-fluid rounded" src="{{ asset('assets/client/img/product/product-1.webp') }}"
-                        alt="Hero">
+                        <img class="img-fluid rounded" src="{{ asset('assets/client/img/default-hero.webp') }}" alt="Hero">
                     @endif
                 </div>
 
