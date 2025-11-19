@@ -179,6 +179,44 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('variants.update');
         Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('variants.destroy');
     });
+    // ========================
+    // CLIENT ROUTES
+    // ========================
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+
+    Route::get('/category', function () {
+        return view('client.category');
+    })->name('category.index');
+
+    // Product detail route đã được định nghĩa ở trên (dòng 72), không cần định nghĩa lại ở đây
+    // Cart và Checkout routes đã được định nghĩa ở trên, không cần định nghĩa lại ở đây
+
+    // API route để kiểm tra mã giảm giá khi thanh toán
+    Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
+
+    Route::get('/about', function () {
+        return view('client.about');
+    })->name('about');
+
+    Route::get('/contact', [App\Http\Controllers\ContactController::class, 'index'])->name('contact.index');
+    Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
+
+    Route::get('/faq', function () {
+        return view('client.faq');
+    })->name('faq.index');
+
+    Route::get('/privacy', function () {
+        return view('client.privacy');
+    })->name('privacy.index');
+
+    Route::get('/tos', function () {
+        return view('client.tos');
+    })->name('tos.index');
+
+    // Blog
+    Route::get('/blog', function () {
+        return view('client.blog');
+    })->name('blog.index');
 
     // Categories
     Route::prefix('categories')->name('admin.categories.')->group(function () {
