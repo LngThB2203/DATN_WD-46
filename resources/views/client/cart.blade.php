@@ -49,12 +49,6 @@
                                 <a href="{{ route('home') }}" class="btn btn-primary">Tiếp tục mua sắm</a>
                             </div>
                         @else
-                            <div class="mb-3">
-                                <label class="form-check-label">
-                                    <input type="checkbox" id="selectAll" class="form-check-input me-2">
-                                    <strong>Chọn tất cả</strong>
-                                </label>
-                            </div>
                             <div class="table-responsive">
                                 <table class="table">
                                     <thead>
@@ -204,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Chọn tất cả / Bỏ chọn tất cả
-    const selectAllCheckbox = document.getElementById('selectAll');
     const selectAllHeader = document.getElementById('selectAllHeader');
     const itemCheckboxes = document.querySelectorAll('.item-checkbox');
 
@@ -212,15 +205,8 @@ document.addEventListener('DOMContentLoaded', function() {
         itemCheckboxes.forEach(checkbox => {
             checkbox.checked = checked;
         });
-        if (selectAllCheckbox) selectAllCheckbox.checked = checked;
         if (selectAllHeader) selectAllHeader.checked = checked;
         calculateSelectedTotal();
-    }
-
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            toggleSelectAll(this.checked);
-        });
     }
 
     if (selectAllHeader) {
@@ -233,9 +219,8 @@ document.addEventListener('DOMContentLoaded', function() {
     itemCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             calculateSelectedTotal();
-            // Cập nhật trạng thái "Chọn tất cả"
+            // Cập nhật trạng thái "Chọn tất cả" ở header
             const allChecked = document.querySelectorAll('.item-checkbox:checked').length === itemCheckboxes.length;
-            if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
             if (selectAllHeader) selectAllHeader.checked = allChecked;
         });
     });
