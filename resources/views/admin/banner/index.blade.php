@@ -3,10 +3,10 @@
 @section('title', 'Danh sách Banner')
 
 @section('content')
-<div class="card shadow-sm border-0">
+<div class="page-content">
     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
         <h5 class="mb-0">🖼️ Danh sách Banner</h5>
-        <a href="{{ route('admin.banner.create') }}" class="btn btn-success btn-sm">+ Thêm Banner</a>
+        <a href="{{ route('banner.create') }}" class="btn btn-success btn-sm">+ Thêm Banner</a>
     </div>
 
     <div class="card-body table-responsive">
@@ -45,10 +45,10 @@
 </td>
 
                         <td>
-                         <a href="{{ route('admin.banner.edit', $banner->id) }}">Sửa</a>
+                         <a href="{{ route('banner.edit', $banner->id) }}">Sửa</a>
 
 
-<form action="{{ route('admin.banner.delete', $banner->id) }}" method="POST">
+<form action="{{ route('banner.delete', $banner->id) }}" method="POST">
     @csrf
     @method('DELETE')
     <button type="submit">Xóa</button>

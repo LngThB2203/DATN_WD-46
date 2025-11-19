@@ -3,7 +3,7 @@
 @section('title', 'Đăng nhập')
 
 @section('content')
-<div class="container py-5">
+<div class="container py-5 mt-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
 
@@ -59,10 +59,14 @@
                         <label for="remember" class="form-check-label">Ghi nhớ đăng nhập</label>
                     </div>
 
-                    {{-- Submit button --}}a
+                    {{-- Submit button --}}
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Đăng nhập</button>
                     </div>
+                    <div class="text-center mt-3">
+    <a href="{{ route('password.request') }}" class="text-decoration-none text-muted">Quên mật khẩu?</a>
+</div>
+
 
                     {{-- Đường dẫn đến trang đăng ký --}}
                     <p class="text-center mt-3">

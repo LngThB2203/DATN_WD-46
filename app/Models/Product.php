@@ -39,6 +39,11 @@ class Product extends Model
         return $this->hasMany(ProductGallery::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function primaryImage()
     {
         return $this->galleries->where('is_primary', true)->first();
@@ -56,12 +61,12 @@ class Product extends Model
 
     public function getFormattedPriceAttribute()
     {
-        return number_format($this->price, 0, ',', '.') . ' VNĐ';
+        return number_format((float) $this->price, 0, ',', '.') . ' VNĐ';
     }
 
     public function getFormattedSalePriceAttribute()
     {
-        return $this->sale_price ? number_format($this->sale_price, 0, ',', '.') . ' VNĐ' : null;
+        return $this->sale_price ? number_format((float) $this->sale_price, 0, ',', '.') . ' VNĐ' : null;
     }
 
     public function getDiscountPercentageAttribute()
@@ -71,5 +76,15 @@ class Product extends Model
         }
 
         return round((($this->price - $this->sale_price) / $this->price) * 100);
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return (float) ($this->reviews()->avg('rating') ?? 0);
+    }
+
+    public function getReviewsCountAttribute()
+    {
+        return (int) ($this->reviews()->count());
     }
 }

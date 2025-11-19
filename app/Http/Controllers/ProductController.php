@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Exports\ProductsExport;
@@ -38,11 +39,6 @@ class ProductController extends Controller
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
-        }
-
-        // Filter by brand
-        if ($request->filled('brand')) {
-            $query->where('brand', 'like', "%{$request->brand}%");
         }
 
         // Filter by price range
@@ -98,9 +94,8 @@ class ProductController extends Controller
             'sale_price'  => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-            'brand'       => 'nullable|string|max:100',
-            'status'      => 'boolean',
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'boolean',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::beginTransaction();
@@ -113,8 +108,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-                'brand'       => $request->brand,
-                'status'      => $request->has('status'),
+                'status' => $request->has('status'),
             ]);
 
             if ($request->hasFile('images')) {
@@ -163,9 +157,8 @@ class ProductController extends Controller
             'sale_price'  => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
-            'brand'       => 'nullable|string|max:100',
-            'status'      => 'boolean',
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'boolean',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         DB::beginTransaction();
@@ -178,8 +171,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
-                'brand'       => $request->brand,
-                'status'      => $request->has('status'),
+                'status' => $request->has('status'),
             ]);
 
             if ($request->hasFile('images')) {
@@ -203,7 +195,7 @@ class ProductController extends Controller
                     Storage::disk('public')->delete($gallery->image_path);
                 }
             }
-
+  
             $product->delete();
 
             DB::commit();

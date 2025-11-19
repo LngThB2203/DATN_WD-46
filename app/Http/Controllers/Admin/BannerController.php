@@ -43,7 +43,7 @@ class BannerController extends Controller
             'created_by' => Auth::id(),
         ]);
 
-        return redirect()->route('admin.banner.index')->with('success', 'Thêm banner thành công!');
+        return redirect()->route('banner.index')->with('success', 'Thêm banner thành công!');
     }
 
     // Form sửa banner
@@ -74,7 +74,7 @@ class BannerController extends Controller
 
         $banner->update($data);
 
-        return redirect()->route('admin.banner.index')->with('success', 'Cập nhật banner thành công!');
+        return redirect()->route('banner.index')->with('success', 'Cập nhật banner thành công!');
     }
 
     public function toggleStatus(Banner $banner)
@@ -95,6 +95,6 @@ class BannerController extends Controller
 
         $banner->delete();
 
-        return redirect()->route('admin.banner.index')->with('success', 'Xóa banner thành công!');
+        return redirect()->route('banner.index')->with('success', 'Xóa banner thành công!');
     }
 }
