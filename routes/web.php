@@ -1,33 +1,35 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
 
-use App\Http\Controllers\AccountController;
-use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\Client\ProductDetailController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\DiscountController;
-use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AccountController;
+
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\ClientBlogController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Client\HomeController;
 
 use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Admin\BrandController;
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Admin\StockTransactionController;
-use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\Admin\StatisticController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Client\ProductDetailController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 
 // ========================
 // AUTH ROUTES
@@ -97,10 +99,9 @@ Route::get('/faq', fn() => view('client.faq'))->name('faq.index');
 Route::get('/privacy', fn() => view('client.privacy'))->name('privacy.index');
 Route::get('/tos', fn() => view('client.tos'))->name('tos.index');
 
-// Blog
-Route::get('/blog', fn() => view('client.blog'))->name('blog.index');
-Route::get('/blog/{slug}', fn($slug) => view('client.blog-details', compact('slug')))->name('blog.show');
-
+//Blog
+Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
 // Auth (template combined)
 Route::get('/login-register', fn() => view('client.login-register'))->name('auth.index');
 
@@ -209,6 +210,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
     });
 
+     Route::prefix('post')->group(function () {
+    Route::get('/', [PostController::class, 'index'])->name('post.index');
+    Route::get('/create', [PostController::class, 'create'])->name('post.create');
+    Route::post('/store', [PostController::class, 'store'])->name('post.store');
+    Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
+    Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
+    Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
+    });
+    
     Route::prefix('discounts')->name('admin.discounts.')->group(function () {
         Route::get('/', [App\Http\Controllers\DiscountController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\DiscountController::class, 'create'])->name('create');
