@@ -1,10 +1,9 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Warehouse;
+use Illuminate\Http\Request;
 
 class WarehouseController extends Controller
 {
@@ -25,9 +24,9 @@ class WarehouseController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
-            'manager' => 'nullable|string|max:255',
+            'name'           => 'required|string|max:255',
+            'location'       => 'required|string|max:255',
+            'manager'        => 'nullable|string|max:255',
             'contact_number' => 'nullable|string|max:20',
         ]);
 
@@ -38,9 +37,13 @@ class WarehouseController extends Controller
     }
 
     // Sửa thông tin kho
+// Sửa thông tin kho
     public function edit(Warehouse $warehouse)
     {
-        return view('admin.inventories.edit-warehouse', compact('warehouse'));
+
+        $managers = \App\Models\User::all();
+
+        return view('admin.inventories.edit', compact('warehouse', 'managers'));
     }
 
     // Cập nhật kho
