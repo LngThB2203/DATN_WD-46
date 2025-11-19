@@ -46,13 +46,14 @@ class ProductVariantController extends Controller
     }
 
     public function edit(ProductVariant $variant)
-    {
-        $products = Product::all();
-        $sizes = VariantSize::all();
-        $scents = VariantScent::all();
-        $concentrations = VariantConcentration::all();
-        return view('admin.variants.edit', compact('variant', 'products', 'sizes', 'scents', 'concentrations'));
-    }
+{
+    $products = Product::all();
+    $sizes = VariantSize::all();
+    $scents = VariantScent::all();
+    $concentrations = VariantConcentration::all();
+    $product = $variant->product;
+    return view('admin.variants.edit', compact('variant', 'product', 'products', 'sizes', 'scents', 'concentrations'));
+}
 
     public function update(Request $request, ProductVariant $variant)
     {
