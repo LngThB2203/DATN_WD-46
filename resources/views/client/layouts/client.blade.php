@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Index - eStore Bootstrap Template</title>
     <meta name="description" content="">
     <meta name="keywords" content="">
@@ -31,10 +32,14 @@
     <link href="{{asset ('assets/client/css/main.css')}}" rel="stylesheet">
 </head>
 
-<body class="index-page">
+<body class="pt-5 mt-4">
 
         @include('client.partials.header')
-            @yield('content')
+
+       <main style="margin-top: 150px;">
+        @yield('content')
+
+    </main>
 
         @include('client.partials.footer')
 

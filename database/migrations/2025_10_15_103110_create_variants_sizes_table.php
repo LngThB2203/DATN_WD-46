@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('variants_sizes', function (Blueprint $table) {
-            $table->id(); // size_id
-            $table->string('size_name', 100);
+            $table->id();
+            $table->string('name', 100); // ví dụ: 30ml, 50ml, 100ml
             $table->timestamps();
         });
     }

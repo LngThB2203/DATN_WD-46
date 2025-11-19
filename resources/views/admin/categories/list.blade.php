@@ -72,13 +72,13 @@
                                         <td>
                                             <div class="d-flex gap-2">
                                                 <a href="{{ route('admin.categories.edit', $cat->id) }}" class="btn btn-sm btn-soft-primary">
-                                                    <i class="bi bi-pencil"></i>
+                                                    <i class="bi bi-pencil">Sửa</i>
                                                 </a>
                                                 <form action="{{ route('admin.categories.destroy', $cat->id) }}" method="POST" onsubmit="return confirm('Xóa danh mục này?')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-soft-danger">
-                                                        <i class="bi bi-trash"></i>
+                                                        <i class="bi bi-trash">Xóa</i>
                                                     </button>
                                                 </form>
                                             </div>
