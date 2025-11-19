@@ -1,24 +1,27 @@
 <?php
-
 namespace App\Http\Controllers\Client;
-
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Models\Product;
 
 class CategoryController extends Controller
 {
-    // Hiển thị tất cả categories
+    // Danh sách danh mục
     public function index()
     {
-        $categories = Category::all();
+        $categories = Category::where('status', 1)->get();
         return view('client.category', compact('categories'));
     }
 
-    // Hiển thị chi tiết 1 category và sản phẩm của nó
-    public function show($id)
+    // Sản phẩm theo danh mục
+    public function show($slug)
     {
-        $category = Category::with('products')->findOrFail($id);
-        return view('client.category-show', compact('category'));
+        $category = Category::where('slug', $slug)->firstOrFail();
+
+        $products = Product::where('category_id', $category->id)
+            ->where('status', 1)
+            ->paginate(12);
+
+        return view('client.category-products', compact('category', 'products'));
     }
 }

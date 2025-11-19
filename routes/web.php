@@ -1,23 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
-
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-
 use App\Http\Controllers\AccountController;
-use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\Client\ProductDetailController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\DiscountController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\CartController;
-
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
@@ -27,7 +10,21 @@ use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\Admin\StatisticController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Client\ProductDetailController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\Client\CategoryController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 // ========================
 // AUTH ROUTES
@@ -67,9 +64,10 @@ Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('
 // ========================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/category', function () {
-    return view('client.category');
-})->name('category.index');
+
+
+Route::get('/category', [CategoryController::class, 'index'])->name('category.index');
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
 
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
@@ -134,6 +132,16 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/export/pdf', [ProductController::class, 'exportPdf'])->name('products.export-pdf');
     });
 
+    // Product Variants
+    Route::prefix('variants')->group(function () {
+        Route::get('/', [ProductVariantController::class, 'index'])->name('variants.index');
+        Route::get('/create', [ProductVariantController::class, 'create'])->name('variants.create');
+        Route::post('/', [ProductVariantController::class, 'store'])->name('variants.store');
+        Route::get('/{variant}/edit', [ProductVariantController::class, 'edit'])->name('variants.edit');
+        Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('variants.update');
+        Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('variants.destroy');
+    });
+
     // Categories
     Route::prefix('categories')->name('admin.categories.')->group(function () {
         Route::get('/', [AdminCategoryController::class, 'index'])->name('list');
@@ -167,21 +175,53 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/transactions/{id}/print', [StockTransactionController::class, 'printInvoice'])->name('transactions.print');
     });
 
-    // Statistics
-    Route::prefix('statistics')->name('admin.statistics.')->group(function () {
-        Route::get('/', [StatisticController::class, 'index'])->name('index');
-        Route::get('/revenue-data', [StatisticController::class, 'revenueData'])->name('revenue-data');
-        Route::get('/top-products', [StatisticController::class, 'topProducts'])->name('top-products');
-        Route::get('/export/excel', [StatisticController::class, 'exportExcel'])->name('export-excel');
-        Route::get('/export/pdf', [StatisticController::class, 'exportPdf'])->name('export-pdf');
+    // Contacts
+    Route::prefix('contacts')->name('admin.contacts.')->group(function () {
+        Route::get('/', [ContactController::class, 'adminIndex'])->name('index');
+        Route::get('/{contact}', [ContactController::class, 'adminShow'])->name('show');
+        Route::post('/{contact}/update-status', [ContactController::class, 'adminUpdateStatus'])->name('update-status');
+        Route::post('/{contact}/update-notes', [ContactController::class, 'adminUpdateNotes'])->name('update-notes');
+        Route::delete('/{contact}', [ContactController::class, 'adminDestroy'])->name('destroy');
     });
 
-    // Orders (ví dụ placeholder)
-    Route::prefix('orders')->group(function () {
-        Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
-        Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
-        Route::get('/cart', fn() => view('admin.orders.cart'))->name('orders.cart');
-        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('orders.checkout');
+    Route::prefix('banner')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('banner.index');
+        Route::get('/create', [BannerController::class, 'create'])->name('banner.create');
+        Route::post('/store', [BannerController::class, 'store'])->name('banner.store');
+        Route::get('/edit/{banner}', [BannerController::class, 'edit'])->name('banner.edit');
+        Route::post('/update/{banner}', [BannerController::class, 'update'])->name('banner.update');
+        Route::get('/delete/{banner}', [BannerController::class, 'destroy'])->name('banner.delete');
+        Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])
+            ->name('banner.toggleStatus');
+
+    });
+
+    Route::prefix('brand')->group(function () {
+        Route::get('/', [BrandController::class, 'index'])->name('brand.index');
+        Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
+        Route::post('/store', [BrandController::class, 'store'])->name('brand.store');
+        Route::get('/edit/{brand}', [BrandController::class, 'edit'])->name('brand.edit');
+        Route::post('/update/{brand}', [BrandController::class, 'update'])->name('brand.update');
+        Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
+        Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
+        Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
+    });
+
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\DiscountController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\DiscountController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\DiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [App\Http\Controllers\DiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [App\Http\Controllers\DiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [App\Http\Controllers\DiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [App\Http\Controllers\DiscountController::class, 'destroy'])->name('destroy');
+    });
+// Orders
+    Route::prefix('orders')->name('admin.orders.')->middleware('auth')->group(function () {
+        Route::get('/list', [OrderController::class, 'index'])->name('list');
+        Route::get('/{id}/show', [OrderController::class, 'show'])->name('show');
+        Route::post('/{id}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{id}/update-shipment', [OrderController::class, 'updateShipment'])->name('update-shipment');
     });
 
     // Purchases
