@@ -36,16 +36,13 @@
                             <tr>
                                 <td>{{ $order->id }}</td>
                                 <td>{{ $order->user->name ?? $order->customer_name }}</td>
-                                <td>{{ number_format($order->total_price) }} đ</td>
+                                <td>{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</td>
                                 <td>
-                                    <span class="badge
-                                        {{ $order->order_status == 'pending' ? 'bg-secondary' : '' }}
-                                        {{ $order->order_status == 'processing' ? 'bg-primary' : '' }}
-                                        {{ $order->order_status == 'shipping' ? 'bg-info' : '' }}
-                                        {{ $order->order_status == 'completed' ? 'bg-success' : '' }}
-                                        {{ $order->order_status == 'cancelled' ? 'bg-danger' : '' }}">
-                                        {{ ucfirst($order->order_status) }}
-                                    </span>
+                                    @php
+                                        $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+                                        $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
+                                    @endphp
+                                    <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
                                 </td>
                                 <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
                                 <td>

@@ -15,7 +15,10 @@ class ProductDetailController extends Controller
             'galleries',
             'category',
             'reviews.user',
-            'warehouseProducts', 
+            'warehouseProducts',
+            'variants.size',
+            'variants.scent',
+            'variants.concentration',
         ])->where('slug', $slug)->firstOrFail();
 
         $reviews = $product->reviews()->where('status', 1)->latest()->get();

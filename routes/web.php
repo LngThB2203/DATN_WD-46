@@ -62,9 +62,8 @@ Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('
 // ========================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/category', function () {
-    return view('client.category');
-})->name('category.index');
+Route::get('/category', [App\Http\Controllers\Client\CategoryController::class, 'index'])->name('category.index');
+Route::get('/category/{slug}', [App\Http\Controllers\Client\CategoryController::class, 'show'])->name('category.show');
 
 Route::get('/product/{slug}', [App\Http\Controllers\Client\ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [App\Http\Controllers\ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
@@ -258,8 +257,10 @@ Route::prefix('admin')->middleware('auth')->group(function () {
 
     // Orders
     Route::prefix('orders')->name('admin.orders.')->group(function () {
-        Route::get('/list', fn() => view('admin.orders.list'))->name('list');
-        Route::get('/show', fn() => view('admin.orders.show'))->name('show');
+        Route::get('/list', [App\Http\Controllers\Admin\OrderController::class, 'index'])->name('list');
+        Route::get('/show/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('show');
+        Route::put('/update-status/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('update-status');
+        Route::post('/update-shipment/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateShipment'])->name('update-shipment');
         Route::get('/cart', fn() => view('admin.orders.cart'))->name('cart');
         Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
     });
