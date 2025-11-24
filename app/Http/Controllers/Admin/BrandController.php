@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Brand;
 use App\Models\Product;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class BrandController extends Controller
 {
@@ -26,9 +27,15 @@ class BrandController extends Controller
             'name' => 'required|string|max:255',
             'origin' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
         ]);
 
-        Brand::create($request->only('name', 'origin', 'description'));
+        $data = $request->only('name', 'origin', 'description');
+
+        if ($request->hasFile('image')) {
+        $data['image'] = $request->file('image')->store('brands', 'public');
+    }
+    Brand::create($data);
 
         return redirect()->route('brand.index')->with('success', 'Thêm thương hiệu thành công!');
     }
@@ -44,9 +51,19 @@ class BrandController extends Controller
             'name' => 'required|string|max:255',
             'origin' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
         ]);
 
-        $brand->update($request->only('name', 'origin', 'description'));
+        $data = $request->only('name', 'origin', 'description');
+
+        if ($request->hasFile('image')) {
+        // Xóa ảnh cũ nếu có
+        if ($brand->image && Storage::disk('public')->exists($brand->image)) {
+            \Storage::disk('public')->delete($brand->image);
+        }
+        $data['image'] = $request->file('image')->store('brands', 'public');
+    }
+    $brand->update($data);
 
         return redirect()->route('brand.index')->with('success', 'Cập nhật thương hiệu thành công!');
     }
