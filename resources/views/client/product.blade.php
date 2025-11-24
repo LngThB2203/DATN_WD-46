@@ -8,11 +8,13 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
-                <li class="breadcrumb-item">
-                    <a href="{{ route('category.show', $product->category->slug) }}">
-                        {{ $product->category->category_name }}
-                    </a>
-                </li>
+                @if($product->category)
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('category.show', $product->category->slug ?? $product->category->id) }}">
+                            {{ $product->category->category_name }}
+                        </a>
+                    </li>
+                @endif
 
                 <li class="breadcrumb-item active" aria-current="page">{{ $product->name ?? 'Sản phẩm' }}</li>
             </ol>
@@ -80,7 +82,7 @@
                             {{ number_format($product->price, 0, ',', '.') }} VNĐ
                         </span>
 
-                        @if($product->discount_percentage)
+                        @if($product->discount_percentage > 0)
                             <span class="badge bg-danger">-{{ $product->discount_percentage }}%</span>
                         @endif
 
@@ -93,9 +95,15 @@
 
                 <!-- ⭐ HIỂN THỊ TỒN KHO -->
                 <div class="mb-3">
-                    @if($product->stock_quantity > 0)
+                    @php
+                        $totalStock = $product->stock_quantity;
+                        if ($product->variants->count() > 0) {
+                            $totalStock += $product->variants->sum('stock');
+                        }
+                    @endphp
+                    @if($totalStock > 0)
                         <span class="badge bg-success p-2 fs-6">
-                            Tồn kho: {{ $product->stock_quantity }} sản phẩm
+                            Tồn kho: {{ $totalStock }} sản phẩm
                         </span>
                     @else
                         <span class="badge bg-danger p-2 fs-6">
@@ -104,10 +112,44 @@
                     @endif
                 </div>
 
+                <!-- ⭐ HIỂN THỊ BIẾN THỂ -->
+                @if($product->variants->count() > 0)
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold mb-2">Chọn biến thể:</label>
+                        <select name="variant_id" id="variantSelect" class="form-select">
+                            <option value="">-- Chọn biến thể --</option>
+                            @foreach($product->variants as $variant)
+                                <option value="{{ $variant->id }}" 
+                                        data-stock="{{ $variant->stock }}"
+                                        data-price-adjustment="{{ $variant->price_adjustment ?? 0 }}"
+                                        data-size="{{ $variant->size->size_name ?? '' }}"
+                                        data-scent="{{ $variant->scent->scent_name ?? '' }}"
+                                        data-concentration="{{ $variant->concentration->concentration_name ?? '' }}">
+                                    @if($variant->size)
+                                        Kích thước: {{ $variant->size->size_name }}
+                                    @endif
+                                    @if($variant->scent)
+                                        | Mùi hương: {{ $variant->scent->scent_name }}
+                                    @endif
+                                    @if($variant->concentration)
+                                        | Nồng độ: {{ $variant->concentration->concentration_name }}
+                                    @endif
+                                    @if($variant->price_adjustment)
+                                        ({{ $variant->price_adjustment > 0 ? '+' : '' }}{{ number_format($variant->price_adjustment, 0, ',', '.') }} VNĐ)
+                                    @endif
+                                    - Tồn: {{ $variant->stock }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div id="variantInfo" class="mt-2 small text-muted"></div>
+                    </div>
+                @endif
+
                 <!-- FORM THÊM GIỎ HÀNG -->
                 <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <input type="hidden" name="variant_id" id="selectedVariantId" value="">
 
                     <div class="d-flex gap-2 mb-4 align-items-center">
                         <label class="form-label mb-0 me-2">Số lượng:</label>
@@ -122,14 +164,26 @@
                     </div>
 
                     <div class="d-flex gap-3">
-                        <button type="submit" class="btn btn-primary" id="addToCartBtn">
-                            <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+                        @php
+                            $totalStock = $product->stock_quantity;
+                            if ($product->variants->count() > 0) {
+                                $totalStock += $product->variants->sum('stock');
+                            }
+                            $isOutOfStock = $totalStock <= 0;
+                        @endphp
+                        <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $isOutOfStock ? 'disabled' : '' }}>
+                            <i class="bi bi-cart-plus"></i> {{ $isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ' }}
                         </button>
 
-                        <a href="{{ route('checkout.index') }}" class="btn btn-outline-primary">
+                        <a href="{{ route('checkout.index') }}" class="btn btn-outline-primary" {{ $isOutOfStock ? 'onclick="return false;" style="pointer-events: none; opacity: 0.5;"' : '' }}>
                             Mua ngay
                         </a>
                     </div>
+                    @if($isOutOfStock)
+                        <div class="alert alert-warning mt-2 mb-0">
+                            <small>⚠️ Sản phẩm hiện đang hết hàng. Vui lòng quay lại sau.</small>
+                        </div>
+                    @endif
                 </form>
             </div>
         </div>
@@ -289,6 +343,75 @@
                 let max = parseInt(quantityInput.getAttribute('max')) || 100;
                 if (currentValue < max) {
                     quantityInput.value = currentValue + 1;
+                }
+            });
+        }
+
+        // Variant selection handler
+        const variantSelect = document.getElementById('variantSelect');
+        const selectedVariantId = document.getElementById('selectedVariantId');
+        const variantInfo = document.getElementById('variantInfo');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        const buyNowBtn = document.querySelector('a[href*="checkout"]');
+        
+        function updateStockStatus(stock) {
+            const isOutOfStock = parseInt(stock) <= 0;
+            if (addToCartBtn) {
+                addToCartBtn.disabled = isOutOfStock;
+                addToCartBtn.innerHTML = isOutOfStock ? '<i class="bi bi-cart-x"></i> Hết hàng' : '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
+            }
+            if (buyNowBtn) {
+                if (isOutOfStock) {
+                    buyNowBtn.style.pointerEvents = 'none';
+                    buyNowBtn.style.opacity = '0.5';
+                } else {
+                    buyNowBtn.style.pointerEvents = 'auto';
+                    buyNowBtn.style.opacity = '1';
+                }
+            }
+        }
+        
+        if (variantSelect) {
+            variantSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.value) {
+                    selectedVariantId.value = selectedOption.value;
+                    const stock = selectedOption.dataset.stock;
+                    const size = selectedOption.dataset.size;
+                    const scent = selectedOption.dataset.scent;
+                    const concentration = selectedOption.dataset.concentration;
+                    
+                    let infoText = '';
+                    if (size) infoText += 'Kích thước: ' + size + ' | ';
+                    if (scent) infoText += 'Mùi: ' + scent + ' | ';
+                    if (concentration) infoText += 'Nồng độ: ' + concentration + ' | ';
+                    infoText += 'Tồn kho: ' + stock;
+                    
+                    if (variantInfo) {
+                        variantInfo.textContent = infoText;
+                    }
+                    
+                    // Update max quantity based on stock
+                    const quantityInput = document.getElementById('productQuantity');
+                    if (quantityInput) {
+                        quantityInput.setAttribute('max', stock);
+                    }
+                    
+                    // Update button status
+                    updateStockStatus(stock);
+                } else {
+                    selectedVariantId.value = '';
+                    if (variantInfo) {
+                        variantInfo.textContent = '';
+                    }
+                    // Reset to product stock
+                    @php
+                        $totalStock = $product->stock_quantity;
+                        if ($product->variants->count() > 0) {
+                            $totalStock += $product->variants->sum('stock');
+                        }
+                    @endphp
+                    updateStockStatus({{ $totalStock }});
                 }
             });
         }

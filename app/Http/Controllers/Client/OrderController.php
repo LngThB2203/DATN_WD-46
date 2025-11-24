@@ -11,15 +11,19 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         // Nếu user đã đăng nhập, lấy đơn hàng theo user_id
-        // Nếu chưa đăng nhập, lấy đơn hàng theo email hoặc phone từ session
+        // Nếu chưa đăng nhập, lấy đơn hàng theo email hoặc phone từ session hoặc request
         $query = Order::with(['details.product', 'payment']);
 
         if ($request->user()) {
             $query->where('user_id', $request->user()->id);
         } else {
+            // Cho phép tìm kiếm theo email hoặc phone từ form
+            $searchEmail = $request->input('email');
+            $searchPhone = $request->input('phone');
+            
             // Lấy đơn hàng theo email hoặc phone từ session (nếu có)
-            $customerEmail = $request->session()->get('last_order_email');
-            $customerPhone = $request->session()->get('last_order_phone');
+            $customerEmail = $searchEmail ?? $request->session()->get('last_order_email');
+            $customerPhone = $searchPhone ?? $request->session()->get('last_order_phone');
             
             if ($customerEmail) {
                 $query->where('customer_email', $customerEmail);

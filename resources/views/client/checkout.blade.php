@@ -142,6 +142,17 @@
                                     Chuyển khoản ngân hàng
                                 </label>
                             </div>
+                        <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="payment_method"
+                                       id="payment_online"
+                                       value="online"
+                                       {{ old('payment_method') === 'online' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="payment_online">
+                                    Thanh toán online (VNPay/MoMo)
+                                </label>
+                            </div>
                             <div class="alert alert-secondary mt-3" id="bank_instructions" style="display: none;">
                                 <h6 class="fw-semibold mb-2">Thông tin chuyển khoản</h6>
                                 <ul class="mb-2 ps-3">
@@ -150,6 +161,10 @@
                                     <li>Chủ tài khoản: Công ty TNHH ABC</li>
                                 </ul>
                                 <p class="mb-0">Nội dung chuyển khoản: <strong>Thanh toán đơn hàng #{{ now()->format('His') }}</strong></p>
+                            </div>
+                            <div class="alert alert-info mt-3" id="online_instructions" style="display: none;">
+                                <h6 class="fw-semibold mb-2">Thanh toán online</h6>
+                                <p class="mb-0">Bạn sẽ được chuyển đến cổng thanh toán VNPay/MoMo để hoàn tất thanh toán.</p>
                             </div>
                     </div>
                 </div>
@@ -216,10 +231,24 @@
         const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
         const bankBlock = document.getElementById('bank_instructions');
 
-        function toggleBankBlock() {
+        const onlineBlock = document.getElementById('online_instructions');
+        
+        function togglePaymentBlocks() {
             if (!bankBlock) return;
             const selected = document.querySelector('input[name="payment_method"]:checked');
-            bankBlock.style.display = selected && selected.value === 'bank_transfer' ? 'block' : 'none';
+            if (selected) {
+                bankBlock.style.display = selected.value === 'bank_transfer' ? 'block' : 'none';
+                if (onlineBlock) {
+                    onlineBlock.style.display = selected.value === 'online' ? 'block' : 'none';
+                }
+            } else {
+                bankBlock.style.display = 'none';
+                if (onlineBlock) onlineBlock.style.display = 'none';
+            }
+        }
+        
+        function toggleBankBlock() {
+            togglePaymentBlocks();
         }
 
         paymentRadios.forEach(radio => radio.addEventListener('change', toggleBankBlock));
