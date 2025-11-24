@@ -1,7 +1,16 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReviewController;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\AuthController;
 
 use App\Http\Controllers\CartController;
@@ -158,6 +167,39 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/toggle/{id}', [AdminCategoryController::class, 'toggleStatus'])->name('toggle');
     });
 
+    // Discounts
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
+        Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
+        Route::post('/', [AdminDiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [AdminDiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [AdminDiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [AdminDiscountController::class, 'destroy'])->name('destroy');
+    });
+
+    // Banners
+    Route::prefix('banners')->name('banner.')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('index');
+        Route::get('/create', [BannerController::class, 'create'])->name('create');
+        Route::post('/store', [BannerController::class, 'store'])->name('store');
+        Route::get('/{banner}/edit', [BannerController::class, 'edit'])->name('edit');
+        Route::put('/{banner}', [BannerController::class, 'update'])->name('update');
+        Route::delete('/{banner}', [BannerController::class, 'destroy'])->name('delete');
+        Route::post('/{banner}/toggle', [BannerController::class, 'toggleStatus'])->name('toggleStatus');
+    });
+
+    // Brands
+    Route::prefix('brands')->name('brand.')->group(function () {
+        Route::get('/', [BrandController::class, 'index'])->name('index');
+        Route::get('/create', [BrandController::class, 'create'])->name('create');
+        Route::post('/store', [BrandController::class, 'store'])->name('store');
+        Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
+        Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
+        Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('delete');
+        Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
+    });
+
     // Inventories, Warehouse
     Route::prefix('inventories')->name('inventories.')->group(function () {
         Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
@@ -189,6 +231,12 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::delete('/{contact}', [ContactController::class, 'adminDestroy'])->name('destroy');
     });
 
+    // Orders
+    Route::prefix('orders')->name('admin.orders.')->group(function () {
+        Route::get('/list', fn() => view('admin.orders.list'))->name('list');
+        Route::get('/show', fn() => view('admin.orders.show'))->name('show');
+        Route::get('/cart', fn() => view('admin.orders.cart'))->name('cart');
+        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
     Route::prefix('banner')->group(function () {
         Route::get('/', [BannerController::class, 'index'])->name('banner.index');
         Route::get('/create', [BannerController::class, 'create'])->name('banner.create');
