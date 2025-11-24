@@ -25,6 +25,26 @@
 
         <h2 class="mb-4">Đơn hàng của tôi</h2>
 
+        @if(!auth()->check())
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="card-title">Tìm đơn hàng của bạn</h6>
+                    <p class="text-muted small">Nhập email hoặc số điện thoại bạn đã dùng khi đặt hàng</p>
+                    <form method="GET" action="{{ route('orders.index') }}" class="row g-3">
+                        <div class="col-md-5">
+                            <input type="email" name="email" class="form-control" placeholder="Email" value="{{ request('email') }}">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="phone" class="form-control" placeholder="Số điện thoại" value="{{ request('phone') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         @if($orders->count() > 0)
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -53,26 +73,10 @@
                                 </td>
                                 <td>
                                     @php
-                                        $statusColors = [
-                                            'pending' => 'warning',
-                                            'processing' => 'info',
-                                            'shipped' => 'primary',
-                                            'delivered' => 'success',
-                                            'cancelled' => 'danger',
-                                            'awaiting_payment' => 'secondary'
-                                        ];
-                                        $statusLabels = [
-                                            'pending' => 'Chờ xử lý',
-                                            'processing' => 'Đang xử lý',
-                                            'shipped' => 'Đang giao hàng',
-                                            'delivered' => 'Đã giao hàng',
-                                            'cancelled' => 'Đã hủy',
-                                            'awaiting_payment' => 'Chờ thanh toán'
-                                        ];
-                                        $color = $statusColors[$order->order_status] ?? 'secondary';
-                                        $label = $statusLabels[$order->order_status] ?? $order->order_status;
+                                        $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+                                        $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
                                     @endphp
-                                    <span class="badge bg-{{ $color }}">{{ $label }}</span>
+                                    <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
                                 </td>
                                 <td>
                                     <a href="{{ route('orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">

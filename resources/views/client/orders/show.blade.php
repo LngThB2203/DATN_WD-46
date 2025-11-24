@@ -30,26 +30,10 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">Mã đơn hàng: <strong>#{{ str_pad((string) $order->id, 6, '0', STR_PAD_LEFT) }}</strong></h5>
                         @php
-                            $statusColors = [
-                                'pending' => 'warning',
-                                'processing' => 'info',
-                                'shipped' => 'primary',
-                                'delivered' => 'success',
-                                'cancelled' => 'danger',
-                                'awaiting_payment' => 'secondary'
-                            ];
-                            $statusLabels = [
-                                'pending' => 'Chờ xử lý',
-                                'processing' => 'Đang xử lý',
-                                'shipped' => 'Đang giao hàng',
-                                'delivered' => 'Đã giao hàng',
-                                'cancelled' => 'Đã hủy',
-                                'awaiting_payment' => 'Chờ thanh toán'
-                            ];
-                            $color = $statusColors[$order->order_status] ?? 'secondary';
-                            $label = $statusLabels[$order->order_status] ?? $order->order_status;
+                            $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+                            $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
                         @endphp
-                        <span class="badge bg-{{ $color }} fs-6">{{ $label }}</span>
+                        <span class="badge {{ $statusClass }} fs-6">{{ $statusName }}</span>
                     </div>
                     <div class="card-body">
                         <h6 class="fw-semibold mb-3">Sản phẩm</h6>
@@ -141,8 +125,10 @@
                                     Thanh toán khi nhận hàng (COD)
                                 @elseif($order->payment_method === 'bank_transfer')
                                     Chuyển khoản ngân hàng
+                                @elseif($order->payment_method === 'online')
+                                    Thanh toán online (VNPay/MoMo)
                                 @else
-                                    {{ $order->payment_method }}
+                                    {{ ucfirst(str_replace('_', ' ', $order->payment_method)) }}
                                 @endif
                             </p>
                         </div>
