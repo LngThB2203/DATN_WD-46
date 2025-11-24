@@ -82,7 +82,7 @@ class BannerController extends Controller
     $banner->status = !$banner->status; // Đảo trạng thái
     $banner->save();
 
-    return redirect()->route('admin.banner.index')->with('success', 'Cập nhật trạng thái banner thành công!');
+    return redirect()->route('banner.index')->with('success', 'Cập nhật trạng thái banner thành công!');
 }
 
 
