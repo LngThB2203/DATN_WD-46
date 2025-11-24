@@ -65,6 +65,11 @@ class Product extends Model
         return $this->hasMany(WarehouseProduct::class, 'product_id');
     }
 
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
     public function getStockQuantityAttribute()
     {
         return $this->warehouseProducts()->sum('quantity');

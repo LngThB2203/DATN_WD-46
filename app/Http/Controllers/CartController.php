@@ -25,6 +25,7 @@ class CartController extends Controller
         try {
             $request->validate([
                 'product_id' => 'required|exists:products,id',
+                'variant_id' => 'nullable|exists:product_variants,id',
                 'quantity' => 'required|integer|min:1|max:100',
             ], [
                 'product_id.required' => 'Vui lòng chọn sản phẩm.',
@@ -37,7 +38,16 @@ class CartController extends Controller
 
             $product = Product::findOrFail($request->product_id);
             $quantity = (int) $request->quantity;
+            $variantId = $request->variant_id ? (int) $request->variant_id : null;
+            
+            // Tính giá: nếu có variant thì lấy giá từ variant, không thì lấy từ product
             $price = $product->sale_price ?? $product->price;
+            if ($variantId) {
+                $variant = \App\Models\ProductVariant::find($variantId);
+                if ($variant && $variant->price_adjustment) {
+                    $price = $price + (float) $variant->price_adjustment;
+                }
+            }
 
             DB::beginTransaction();
 
@@ -45,10 +55,10 @@ class CartController extends Controller
                 // Lấy hoặc tạo cart
                 $cart = $this->getOrCreateCart($request);
 
-                // Kiểm tra sản phẩm đã có trong giỏ chưa
+                // Kiểm tra sản phẩm đã có trong giỏ chưa (cùng product và variant)
                 $existingItem = CartItem::where('cart_id', $cart->id)
                     ->where('product_id', $product->id)
-                    ->whereNull('variant_id')
+                    ->where('variant_id', $variantId)
                     ->first();
 
                 if ($existingItem) {
@@ -60,7 +70,7 @@ class CartController extends Controller
                     CartItem::create([
                         'cart_id' => $cart->id,
                         'product_id' => $product->id,
-                        'variant_id' => null,
+                        'variant_id' => $variantId,
                         'quantity' => $quantity,
                         'price' => $price,
                         'added_at' => now(),
@@ -261,17 +271,27 @@ class CartController extends Controller
      */
     private function syncCartToSession(Request $request, Cart $cart): void
     {
-        $items = $cart->items()->with('product')->get();
+        $items = $cart->items()->with(['product', 'variant.size', 'variant.scent', 'variant.concentration'])->get();
         
         $sessionItems = [];
         foreach ($items as $item) {
             $product = $item->product;
+            $variant = $item->variant;
+            $variantName = '';
+            if ($variant) {
+                $parts = [];
+                if ($variant->size) $parts[] = 'Size: ' . $variant->size->size_name;
+                if ($variant->scent) $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                if ($variant->concentration) $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
+                $variantName = implode(' | ', $parts);
+            }
             $sessionItems[] = [
                 'product_id' => $item->product_id,
                 'variant_id' => $item->variant_id,
                 'quantity' => $item->quantity,
                 'price' => (float) $item->price,
                 'name' => $product ? $product->name : 'Sản phẩm đã bị xóa',
+                'variant_name' => $variantName,
                 'image' => $product && $product->primaryImage() ? $product->primaryImage()->image_path : null,
             ];
         }
@@ -302,6 +322,15 @@ class CartController extends Controller
             $quantity = max(1, (int) $item->quantity);
             $price = (float) $item->price;
 
+            $variant = $item->variant;
+            $variantName = '';
+            if ($variant) {
+                $parts = [];
+                if ($variant->size) $parts[] = 'Size: ' . $variant->size->size_name;
+                if ($variant->scent) $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                if ($variant->concentration) $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
+                $variantName = implode(' | ', $parts);
+            }
             $sessionItems[] = [
                 'product_id' => $item->product_id,
                 'variant_id' => $item->variant_id,
@@ -309,6 +338,7 @@ class CartController extends Controller
                 'price' => $price,
                 'subtotal' => $quantity * $price,
                 'name' => $product->name,
+                'variant_name' => $variantName,
                 'image' => $product->primaryImage() ? $product->primaryImage()->image_path : null,
             ];
         }

@@ -56,7 +56,7 @@ class CheckoutController extends Controller
             'shipping_ward' => ['nullable', 'string', 'max:120'],
             'shipping_address_line' => ['required', 'string', 'max:255'],
             'customer_note' => ['nullable', 'string', 'max:1000'],
-            'payment_method' => ['required', Rule::in(['cod', 'bank_transfer'])],
+            'payment_method' => ['required', Rule::in(['cod', 'bank_transfer', 'online'])],
         ], [
             'customer_name.required' => 'Vui lòng nhập họ tên.',
             'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
@@ -137,7 +137,14 @@ class CheckoutController extends Controller
                 'paid_at' => null,
             ]);
 
-            $orderStatus = $validated['payment_method'] === 'cod' ? 'processing' : 'awaiting_payment';
+            // Trạng thái ban đầu theo mô hình Shopee: Chờ xác nhận
+            // Sau khi thanh toán thành công sẽ chuyển sang "Đã xác nhận"
+            $orderStatus = match($validated['payment_method']) {
+                'cod' => 'pending',           // COD: Chờ xác nhận
+                'online' => 'pending',         // Online: Chờ xác nhận (sau khi thanh toán thành công sẽ là confirmed)
+                'bank_transfer' => 'pending',  // Bank transfer: Chờ xác nhận
+                default => 'pending'
+            };
             $order->update(['order_status' => $orderStatus]);
 
             if ($discountId) {

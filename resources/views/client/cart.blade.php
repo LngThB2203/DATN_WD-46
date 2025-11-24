@@ -82,7 +82,9 @@
                                                         @endif
                                                         <div>
                                                             <strong>{{ $item['name'] ?? 'Sản phẩm' }}</strong>
-                                                            @if(isset($item['variant_id']) && $item['variant_id'])
+                                                            @if(!empty($item['variant_name']))
+                                                                <br><small class="text-muted">{{ $item['variant_name'] }}</small>
+                                                            @elseif(isset($item['variant_id']) && $item['variant_id'])
                                                                 <br><small class="text-muted">Biến thể #{{ $item['variant_id'] }}</small>
                                                             @endif
                                                         </div>
@@ -122,7 +124,9 @@
             <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header fw-semibold">Tóm tắt đơn hàng</div>
-                    <div class="card-body">
+                    <div class="card-body" id="cartSummary" 
+                         data-shipping-fee="{{ (int)($cart['shipping_fee'] ?? 30000) }}" 
+                         data-discount-total="{{ (int)($cart['discount_total'] ?? 0) }}">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Tạm tính</span>
                             <span id="selectedSubtotal">{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }} VNĐ</span>
@@ -159,8 +163,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const shippingFee = {{ $cart['shipping_fee'] ?? 30000 }};
-    const discountTotal = {{ $cart['discount_total'] ?? 0 }};
+    // Lấy giá trị từ data attributes
+    const cartSummary = document.getElementById('cartSummary');
+    const shippingFee = cartSummary ? parseInt(cartSummary.dataset.shippingFee) || 30000 : 30000;
+    const discountTotal = cartSummary ? parseInt(cartSummary.dataset.discountTotal) || 0 : 0;
 
     // Tính tổng tiền các sản phẩm được chọn
     function calculateSelectedTotal() {
@@ -171,7 +177,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = checkbox.closest('.cart-item-row');
             if (row) {
                 const price = parseFloat(row.dataset.price) || 0;
-                const quantity = parseInt(row.dataset.quantity) || 1;
+                // Lấy quantity từ input thực tế, không phải từ dataset
+                const quantityInput = row.querySelector('.quantity-input');
+                const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : parseInt(row.dataset.quantity) || 1;
                 subtotal += price * quantity;
             }
         });
@@ -179,14 +187,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const grandTotal = Math.max((subtotal + shippingFee) - discountTotal, 0);
 
         // Cập nhật UI
-        document.getElementById('selectedSubtotal').textContent = subtotal.toLocaleString('vi-VN') + ' VNĐ';
-        document.getElementById('selectedShipping').textContent = shippingFee.toLocaleString('vi-VN') + ' VNĐ';
-        document.getElementById('selectedTotal').textContent = grandTotal.toLocaleString('vi-VN') + ' VNĐ';
+        const subtotalEl = document.getElementById('selectedSubtotal');
+        const shippingEl = document.getElementById('selectedShipping');
+        const totalEl = document.getElementById('selectedTotal');
+        
+        if (subtotalEl) subtotalEl.textContent = subtotal.toLocaleString('vi-VN') + ' VNĐ';
+        if (shippingEl) shippingEl.textContent = shippingFee.toLocaleString('vi-VN') + ' VNĐ';
+        if (totalEl) totalEl.textContent = grandTotal.toLocaleString('vi-VN') + ' VNĐ';
 
         // Enable/disable nút thanh toán
         const checkoutBtn = document.getElementById('checkoutBtn');
         if (checkoutBtn) {
-            checkoutBtn.disabled = selectedCheckboxes.length === 0;
+            const hasSelected = selectedCheckboxes.length > 0;
+            checkoutBtn.disabled = !hasSelected;
+            
+            // Hiển thị cảnh báo nếu không có sản phẩm được chọn
+            if (!hasSelected) {
+                checkoutBtn.setAttribute('title', 'Vui lòng chọn ít nhất một sản phẩm');
+            } else {
+                checkoutBtn.removeAttribute('title');
+            }
         }
 
         // Cập nhật selected items input
@@ -195,6 +215,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedItemsInput) {
             selectedItemsInput.value = selectedItems;
         }
+        
+        return selectedCheckboxes.length > 0;
     }
 
     // Chọn tất cả / Bỏ chọn tất cả
@@ -228,24 +250,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Xử lý nút tăng/giảm số lượng
     document.querySelectorAll('.quantity-increase').forEach(btn => {
         btn.addEventListener('click', function() {
-            const input = this.previousElementSibling;
-            const currentValue = parseInt(input.value);
-            const max = parseInt(input.getAttribute('max')) || 100;
-            if (currentValue < max) {
-                input.value = currentValue + 1;
-                input.dispatchEvent(new Event('change'));
+            const form = this.closest('.cart-update-form');
+            const input = form ? form.querySelector('.quantity-input') : null;
+            if (input) {
+                const currentValue = parseInt(input.value) || 1;
+                const max = parseInt(input.getAttribute('max')) || 100;
+                if (currentValue < max) {
+                    input.value = currentValue + 1;
+                    input.dispatchEvent(new Event('change'));
+                }
             }
         });
     });
 
     document.querySelectorAll('.quantity-decrease').forEach(btn => {
         btn.addEventListener('click', function() {
-            const input = this.nextElementSibling;
-            const currentValue = parseInt(input.value);
-            const min = parseInt(input.getAttribute('min')) || 1;
-            if (currentValue > min) {
-                input.value = currentValue - 1;
-                input.dispatchEvent(new Event('change'));
+            const form = this.closest('.cart-update-form');
+            const input = form ? form.querySelector('.quantity-input') : null;
+            if (input) {
+                const currentValue = parseInt(input.value) || 1;
+                const min = parseInt(input.getAttribute('min')) || 1;
+                if (currentValue > min) {
+                    input.value = currentValue - 1;
+                    input.dispatchEvent(new Event('change'));
+                }
             }
         });
     });
@@ -256,6 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = this.closest('.cart-item-row');
             if (row) {
                 row.dataset.quantity = this.value;
+                // Tính lại tổng trước khi submit
                 calculateSelectedTotal();
             }
             const form = this.closest('.cart-update-form');
@@ -263,29 +292,89 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.submit();
             }
         });
+        
+        // Cập nhật khi blur (rời khỏi input)
+        input.addEventListener('blur', function() {
+            calculateSelectedTotal();
+        });
     });
 
     // Xử lý form checkout
     const checkoutForm = document.getElementById('checkoutForm');
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
+            // Tính toán lại và kiểm tra trước khi submit
             const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+            
             if (selectedCheckboxes.length === 0) {
+                e.preventDefault();
+                // Hiển thị thông báo lỗi
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <strong>Lỗi!</strong> Vui lòng chọn ít nhất một sản phẩm để thanh toán.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                // Chèn vào đầu container
+                const container = document.querySelector('.container-fluid.container-xl');
+                if (container) {
+                    const existingAlert = container.querySelector('.alert-danger');
+                    if (existingAlert) {
+                        existingAlert.remove();
+                    }
+                    container.insertBefore(alertDiv, container.firstChild);
+                    // Tự động ẩn sau 5 giây
+                    setTimeout(() => {
+                        if (alertDiv.parentNode) {
+                            alertDiv.remove();
+                        }
+                    }, 5000);
+                }
+                return false;
+            }
+            
+            // Đảm bảo selectedItemsInput có giá trị trước khi submit
+            const selectedItems = Array.from(selectedCheckboxes).map(cb => cb.value).filter(v => v).join(',');
+            const selectedItemsInput = document.getElementById('selectedItemsInput');
+            
+            if (!selectedItemsInput) {
+                e.preventDefault();
+                alert('Có lỗi xảy ra. Vui lòng thử lại!');
+                return false;
+            }
+            
+            // Cập nhật giá trị
+            selectedItemsInput.value = selectedItems;
+            
+            // Kiểm tra lại lần cuối
+            if (!selectedItems || selectedItems.length === 0) {
                 e.preventDefault();
                 alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán!');
                 return false;
             }
-            // Đảm bảo selectedItemsInput được cập nhật trước khi submit
-            const selectedItems = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
-            const selectedItemsInput = document.getElementById('selectedItemsInput');
-            if (selectedItemsInput) {
-                selectedItemsInput.value = selectedItems;
-            }
+            
+            // Cho phép submit
+            return true;
         });
     }
 
-    // Tính tổng ban đầu
+    // Tính tổng ban đầu khi load trang
+    // Đảm bảo tất cả checkbox checked được tính toán ngay lập tức
     calculateSelectedTotal();
+    
+    // Tính lại sau một khoảng thời gian ngắn để đảm bảo DOM đã sẵn sàng
+    setTimeout(function() {
+        calculateSelectedTotal();
+    }, 50);
+    
+    // Tính lại khi window load hoàn toàn
+    if (document.readyState === 'complete') {
+        calculateSelectedTotal();
+    } else {
+        window.addEventListener('load', function() {
+            calculateSelectedTotal();
+        });
+    }
 });
 </script>
 @endsection
