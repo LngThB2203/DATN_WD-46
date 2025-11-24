@@ -112,8 +112,8 @@
                         <div class="card h-100">
 
                             <a href="{{ route('product.show', $product->slug) }}" class="text-decoration-none">
-                                @if($product->primary_image)
-                                    <img src="{{ asset('storage/' . $product->primary_image->image_path) }}"
+                                @if($product->primaryImageModel)
+                                    <img src="{{ asset('storage/' . $product->primaryImageModel->image_path) }}"
                                          class="card-img-top" style="height:250px; object-fit:cover;">
                                 @else
                                     <img src="{{ asset('assets/client/img/product/product-1.webp') }}"
@@ -175,8 +175,8 @@
 
                             <a href="{{ route('product.show', $product->slug) }}">
                                 <div class="product-image">
-                                    @if($product->primary_image)
-                                        <img src="{{ asset('storage/' . $product->primary_image->image_path) }}"
+                                    @if($product->primaryImageModel)
+                                        <img src="{{ asset('storage/' . $product->primaryImageModel->image_path) }}"
                                              class="img-fluid default-image">
                                     @else
                                         <img src="{{ asset('assets/client/img/product/product-1.webp') }}"
