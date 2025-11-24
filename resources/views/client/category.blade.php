@@ -62,8 +62,8 @@
 
                     <a href="{{ route('product.show', $product->slug) }}">
                         <img 
-                            src="{{ $product->primary_image 
-                                    ? asset('storage/' . $product->primary_image->image_path)
+                            src="{{ $product->primaryImageModel 
+                                    ? asset('storage/' . $product->primaryImageModel->image_path)
                                     : asset('assets/client/img/no-image.jpg') }}"
                             class="card-img-top"
                             alt="{{ $product->name }}">
