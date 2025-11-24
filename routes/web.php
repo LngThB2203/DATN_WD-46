@@ -15,9 +15,9 @@ use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Admin\BrandController;
-use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Client\HomeController;
-
+use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\Admin\WarehouseController;
@@ -69,9 +69,11 @@ Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('
 // ========================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/category', function () {
-    return view('client.category');
-})->name('category.index');
+
+
+Route::get('/category', [ClientCategoryController::class, 'index'])->name('category.index');
+Route::get('/category/{slug}', [ClientCategoryController::class, 'show'])->name('category.show');
+
 
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
@@ -218,7 +220,7 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
     Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
     });
-    
+
     Route::prefix('discounts')->name('admin.discounts.')->group(function () {
         Route::get('/', [App\Http\Controllers\DiscountController::class, 'index'])->name('index');
         Route::get('/create', [App\Http\Controllers\DiscountController::class, 'create'])->name('create');
@@ -230,10 +232,10 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     });
 // Orders
     Route::prefix('orders')->name('admin.orders.')->middleware('auth')->group(function () {
-        Route::get('/list', [OrderController::class, 'index'])->name('list');
-        Route::get('/{id}/show', [OrderController::class, 'show'])->name('show');
-        Route::post('/{id}/update-status', [OrderController::class, 'updateStatus'])->name('update-status');
-        Route::post('/{id}/update-shipment', [OrderController::class, 'updateShipment'])->name('update-shipment');
+        Route::get('/list', [AdminOrderController::class, 'index'])->name('list');
+        Route::get('/{id}/show', [AdminOrderController::class, 'show'])->name('show');
+        Route::post('/{id}/update-status', [AdminOrderController::class, 'updateStatus'])->name('update-status');
+        Route::post('/{id}/update-shipment', [AdminOrderController::class, 'updateShipment'])->name('update-shipment');
     });
 
     // Purchases
@@ -294,7 +296,7 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
     });
 
-    
+
 });
 
 // Fallback 404 - luôn đặt cuối cùng
