@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReviewController;
@@ -179,44 +180,6 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('variants.update');
         Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('variants.destroy');
     });
-    // ========================
-    // CLIENT ROUTES
-    // ========================
-    Route::get('/', [HomeController::class, 'index'])->name('home');
-
-    Route::get('/category', function () {
-        return view('client.category');
-    })->name('category.index');
-
-    // Product detail route đã được định nghĩa ở trên (dòng 72), không cần định nghĩa lại ở đây
-    // Cart và Checkout routes đã được định nghĩa ở trên, không cần định nghĩa lại ở đây
-
-    // API route để kiểm tra mã giảm giá khi thanh toán
-    Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
-
-    Route::get('/about', function () {
-        return view('client.about');
-    })->name('about');
-
-    Route::get('/contact', [App\Http\Controllers\ContactController::class, 'index'])->name('contact.index');
-    Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
-
-    Route::get('/faq', function () {
-        return view('client.faq');
-    })->name('faq.index');
-
-    Route::get('/privacy', function () {
-        return view('client.privacy');
-    })->name('privacy.index');
-
-    Route::get('/tos', function () {
-        return view('client.tos');
-    })->name('tos.index');
-
-    // Blog
-    Route::get('/blog', function () {
-        return view('client.blog');
-    })->name('blog.index');
 
     // Categories
     Route::prefix('categories')->name('admin.categories.')->group(function () {
@@ -227,6 +190,39 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/update/{id}', [AdminCategoryController::class, 'update'])->name('update');
         Route::delete('/delete/{id}', [AdminCategoryController::class, 'destroy'])->name('destroy');
         Route::get('/toggle/{id}', [AdminCategoryController::class, 'toggleStatus'])->name('toggle');
+    });
+
+    // Discounts
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
+        Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
+        Route::post('/', [AdminDiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [AdminDiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [AdminDiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [AdminDiscountController::class, 'destroy'])->name('destroy');
+    });
+
+    // Banners
+    Route::prefix('banners')->name('banner.')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('index');
+        Route::get('/create', [BannerController::class, 'create'])->name('create');
+        Route::post('/store', [BannerController::class, 'store'])->name('store');
+        Route::get('/{banner}/edit', [BannerController::class, 'edit'])->name('edit');
+        Route::put('/{banner}', [BannerController::class, 'update'])->name('update');
+        Route::delete('/{banner}', [BannerController::class, 'destroy'])->name('delete');
+        Route::post('/{banner}/toggle', [BannerController::class, 'toggleStatus'])->name('toggleStatus');
+    });
+
+    // Brands
+    Route::prefix('brands')->name('brand.')->group(function () {
+        Route::get('/', [BrandController::class, 'index'])->name('index');
+        Route::get('/create', [BrandController::class, 'create'])->name('create');
+        Route::post('/store', [BrandController::class, 'store'])->name('store');
+        Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
+        Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
+        Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('delete');
+        Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
     });
 
     // Inventories, Warehouse
@@ -260,12 +256,12 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::delete('/{contact}', [ContactController::class, 'adminDestroy'])->name('destroy');
     });
 
-        // Orders
-    Route::prefix('orders')->group(function () {
-        Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
-        Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
-        Route::get('/cart', fn() => view('admin.orders.cart'))->name('orders.cart');
-        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('orders.checkout');
+    // Orders
+    Route::prefix('orders')->name('admin.orders.')->group(function () {
+        Route::get('/list', fn() => view('admin.orders.list'))->name('list');
+        Route::get('/show', fn() => view('admin.orders.show'))->name('show');
+        Route::get('/cart', fn() => view('admin.orders.cart'))->name('cart');
+        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
     });
 
         // Purchases
