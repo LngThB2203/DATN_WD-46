@@ -44,14 +44,15 @@ class Product extends Model
         return $this->hasMany(Review::class);
     }
 
+    // Relation HasOne cho ảnh chính
     public function primaryImage()
     {
-        return $this->hasOne(ProductGallery::class)->where('is_primary', true);
+        return $this->galleries->where('is_primary', true)->first();
     }
-
-    public function getPrimaryImageAttribute()
+   
+    public function primaryImageModel()
     {
-        return $this->primaryImage()->first();
+        return $this->hasOne(ProductGallery::class)->where('is_primary', true);
     }
 
     public function allImages()
