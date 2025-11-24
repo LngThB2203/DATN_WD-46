@@ -46,12 +46,27 @@ class Product extends Model
 
     public function primaryImage()
     {
-        return $this->galleries->where('is_primary', true)->first();
+        return $this->hasOne(ProductGallery::class)->where('is_primary', true);
+    }
+
+    public function getPrimaryImageAttribute()
+    {
+        return $this->primaryImage()->first();
     }
 
     public function allImages()
     {
         return $this->galleries()->orderBy('is_primary', 'desc')->get();
+    }
+
+    public function warehouseProducts()
+    {
+        return $this->hasMany(WarehouseProduct::class, 'product_id');
+    }
+
+    public function getStockQuantityAttribute()
+    {
+        return $this->warehouseProducts()->sum('quantity');
     }
 
     public function scopeActive($query)
@@ -66,7 +81,9 @@ class Product extends Model
 
     public function getFormattedSalePriceAttribute()
     {
-        return $this->sale_price ? number_format((float) $this->sale_price, 0, ',', '.') . ' VNĐ' : null;
+        return $this->sale_price
+            ? number_format((float) $this->sale_price, 0, ',', '.') . ' VNĐ'
+            : null;
     }
 
     public function getDiscountPercentageAttribute()
