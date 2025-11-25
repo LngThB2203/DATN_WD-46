@@ -49,7 +49,7 @@ class Product extends Model
     {
         return $this->galleries->where('is_primary', true)->first();
     }
-   
+
     public function primaryImageModel()
     {
         return $this->hasOne(ProductGallery::class)->where('is_primary', true);
@@ -109,5 +109,9 @@ class Product extends Model
     public function getReviewsCountAttribute()
     {
         return (int) ($this->reviews()->count());
+    }
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
     }
 }
