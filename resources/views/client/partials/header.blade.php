@@ -111,7 +111,7 @@
                             <i class="bi bi-person-circle me-2"></i>
                             <span>Account</span>
                         </a>
-                        <a class="dropdown-item d-flex align-items-center" href="#">
+                        <a class="dropdown-item d-flex align-items-center" href="{{ route('orders.index') }}">
                             <i class="bi bi-bag-check me-2"></i>
                             <span>My Orders</span>
                         </a>

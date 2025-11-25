@@ -93,7 +93,7 @@
                                 // Hiển thị selected nếu là trạng thái hiện tại (sau khi map)
                                 $isSelected = ($mappedCurrentStatus == $value) || ($order->order_status == $value);
                             @endphp
-                            <option value="{{ $value }}" 
+                            <option value="{{ $value }}"
                                     {{ $isSelected ? 'selected' : '' }}
                                     {{ !$canUpdate && !$isSelected ? 'disabled' : '' }}
                                     data-can-update="{{ $canUpdate ? '1' : '0' }}">
@@ -107,15 +107,15 @@
                     <div id="statusWarning" class="alert alert-warning d-none mb-2">
                         <small>⚠️ Trạng thái này không thể chuyển đổi từ trạng thái hiện tại.</small>
                     </div>
-                    
+
                     {{-- Lý do hủy (chỉ hiển thị khi chọn "Đã hủy") --}}
                     <div id="cancellationReasonDiv" class="d-none mb-2">
                         <label class="form-label">Lý do hủy đơn hàng <span class="text-danger">*</span></label>
-                        <textarea name="cancellation_reason" id="cancellationReason" class="form-control" rows="3" 
+                        <textarea name="cancellation_reason" id="cancellationReason" class="form-control" rows="3"
                                   placeholder="Nhập lý do hủy đơn hàng...">{{ old('cancellation_reason', $order->cancellation_reason ?? '') }}</textarea>
                         <small class="text-muted">Lý do hủy sẽ được lưu lại và hiển thị trong lịch sử đơn hàng.</small>
                     </div>
-                    
+
                     @if($order->cancellation_reason)
                         <div class="alert alert-info mb-2">
                             <strong>Lý do hủy:</strong> {{ $order->cancellation_reason }}
@@ -124,37 +124,11 @@
                             @endif
                         </div>
                     @endif
-                    
+
                     <button type="submit" class="btn btn-primary" id="updateStatusBtn">Cập nhật</button>
                 </form>
             </div>
         </div>
-
-        {{-- Cập nhật vận chuyển --}}
-        <div class="card mb-4">
-            <div class="card-header">Thông tin vận chuyển</div>
-            <div class="card-body">
-                <form method="POST" action="{{ route('admin.orders.update-shipment', $order->id) }}">
-                    @csrf
-                    <label class="form-label">Trạng thái vận chuyển</label>
-                    <select name="shipping_status" class="form-select mb-2">
-                        <option value="">Chọn...</option>
-                        <option value="preparing" {{ $order->shipment?->shipping_status=='preparing' ? 'selected' : '' }}>Chuẩn bị hàng</option>
-                        <option value="shipping" {{ $order->shipment?->shipping_status=='shipping' ? 'selected' : '' }}>Đang giao</option>
-                        <option value="delivered" {{ $order->shipment?->shipping_status=='delivered' ? 'selected' : '' }}>Đã giao</option>
-                    </select>
-
-                    <label class="form-label">Mã vận đơn</label>
-                    <input name="tracking_number" class="form-control mb-2" value="{{ $order->shipment->tracking_number ?? '' }}">
-
-                    <label class="form-label">Đơn vị vận chuyển</label>
-                    <input name="carrier" class="form-control mb-2" value="{{ $order->shipment->carrier ?? '' }}">
-
-                    <button class="btn btn-success">Cập nhật vận chuyển</button>
-                </form>
-            </div>
-        </div>
-
     </div>
 </div>
 
@@ -164,16 +138,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusSelect = document.getElementById('orderStatusSelect');
     const warningDiv = document.getElementById('statusWarning');
     const updateBtn = document.getElementById('updateStatusBtn');
-    
+
     if (statusSelect && warningDiv && updateBtn) {
         const cancellationReasonDiv = document.getElementById('cancellationReasonDiv');
         const cancellationReason = document.getElementById('cancellationReason');
-        
+
         statusSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const canUpdate = selectedOption.dataset.canUpdate === '1';
             const selectedValue = this.value;
-            
+
             if (!canUpdate) {
                 warningDiv.classList.remove('d-none');
                 updateBtn.disabled = true;
@@ -181,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 warningDiv.classList.add('d-none');
                 updateBtn.disabled = false;
             }
-            
+
             // Hiển thị/ẩn form lý do hủy
             if (cancellationReasonDiv && cancellationReason) {
                 if (selectedValue === 'cancelled') {
@@ -193,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-        
+
         // Trigger on load
         statusSelect.dispatchEvent(new Event('change'));
     }
