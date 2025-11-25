@@ -26,6 +26,7 @@
 
         <div class="row g-4">
             <div class="col-lg-8">
+                {{-- Thông tin sản phẩm --}}
                 <div class="card">
                     <div class="card-header d-flex justify-content-between">
                         <h5>Mã đơn hàng: <strong>#{{ str_pad($order->id,6,'0',STR_PAD_LEFT) }}</strong></h5>
@@ -69,6 +70,7 @@
                     </div>
                 </div>
 
+                {{-- Thông tin giao hàng --}}
                 <div class="card mt-4">
                     <div class="card-header"><h5>Thông tin giao hàng</h5></div>
                     <div class="card-body">
@@ -77,16 +79,30 @@
                         <p><strong>Điện thoại:</strong> {{ $order->customer_phone }}</p>
                         <p><strong>Địa chỉ:</strong> {{ $order->shipping_address }}</p>
                         @if($order->customer_note)<p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>@endif
+
+                        {{-- Nút hủy đơn --}}
                         @if(in_array($order->order_status,['pending','processing']))
                         <form method="POST" action="{{ route('orders.cancel', $order->id) }}">
                             @csrf @method('PUT')
-                            <button type="submit" class="btn btn-danger mt-3">Hủy đơn hàng</button>
+                            <button type="submit" class="btn btn-danger mt-3 w-100">Hủy đơn hàng</button>
+                        </form>
+                        @endif
+
+                        {{-- Nút xác nhận đã nhận hàng --}}
+                        @if($order->order_status === 'delivered')
+                        <form method="POST" action="{{ route('orders.confirm-received', $order->id) }}">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-success mt-3 w-100">
+                                Xác nhận đã nhận hàng
+                            </button>
                         </form>
                         @endif
                     </div>
                 </div>
             </div>
 
+            {{-- Tóm tắt đơn hàng --}}
             <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header"><h5>Tóm tắt đơn hàng</h5></div>
