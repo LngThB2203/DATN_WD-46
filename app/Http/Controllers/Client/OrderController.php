@@ -89,4 +89,19 @@ class OrderController extends Controller
 
         return redirect()->back()->with('success', 'Đơn hàng đã được hủy thành công.');
     }
+    //Xác nhận nhận hàng
+    public function confirmReceived(Request $request, $id)
+{
+    $order = Order::where('user_id', $request->user()->id)
+                  ->where('order_status', 'delivered')
+                  ->findOrFail($id);
+
+    $order->update([
+        'order_status' => 'completed', // chuyển sang hoàn tất
+        'completed_at' => now(),
+    ]);
+
+    return redirect()->back()->with('success', 'Cảm ơn bạn! Đơn hàng đã được xác nhận.');
+}
+
 }

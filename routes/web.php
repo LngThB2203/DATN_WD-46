@@ -83,6 +83,9 @@ Route::get('/orders', [App\Http\Controllers\Client\OrderController::class, 'inde
 Route::get('/orders/{id}', [App\Http\Controllers\Client\OrderController::class, 'show'])->name('orders.show');
 Route::put('/orders/{order}/update-shipping', [App\Http\Controllers\Client\OrderController::class, 'updateShipping'])->name('orders.updateShipping');
 Route::put('/orders/{order}/cancel', [App\Http\Controllers\Client\OrderController::class, 'cancel'])->name('orders.cancel');
+Route::put('/orders/{order}/confirm-received', [\App\Http\Controllers\Client\OrderController::class, 'confirmReceived'])
+        ->name('orders.confirm-received');
+        
 // API route để kiểm tra mã giảm giá khi thanh toán
 Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
 
