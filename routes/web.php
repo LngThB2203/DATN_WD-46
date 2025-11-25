@@ -8,6 +8,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AccountController;
 
+use App\Http\Controllers\CompareController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Client\CategoryController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Admin\ProductVariantController;
@@ -69,9 +71,9 @@ Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('
 // ========================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/category', function () {
-    return view('client.category');
-})->name('category.index');
+Route::get('/categories', [CategoryController::class, 'index'])->name('category.index');
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
+
 
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
@@ -98,6 +100,11 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 Route::get('/faq', fn() => view('client.faq'))->name('faq.index');
 Route::get('/privacy', fn() => view('client.privacy'))->name('privacy.index');
 Route::get('/tos', fn() => view('client.tos'))->name('tos.index');
+
+Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
+Route::get('/compare/add/{id}', [CompareController::class, 'addToCompare'])->name('compare.add');
+Route::get('/compare/remove/{id}', [CompareController::class, 'remove'])->name('compare.remove');
+Route::get('/compare/clear', [CompareController::class, 'clear'])->name('compare.clear');
 
 // Blog
 Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');

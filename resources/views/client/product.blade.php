@@ -87,6 +87,26 @@
                             <i class="bi bi-cart-plus"></i> Thêm vào giỏ
                         </button>
                         <a href="{{ route('checkout.index') }}" class="btn btn-outline-primary">Mua ngay</a>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('compare.add', $product->id) }}" 
+                            class="btn btn-outline-primary btn-sm add-to-compare">
+                            Thêm vào so sánh
+                            </a>
+                            <a href="{{ route('compare.index') }}" 
+                            class="btn btn-outline-success btn-sm">
+                            Xem danh sách
+                            </a>
+                        </div>
+                        <script>
+                        document.querySelectorAll('.add-to-compare').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                fetch(this.href)
+                                    .then(res => res.text())
+                                    .then(() => alert('Đã thêm vào so sánh!'));
+                            });
+                        });
+                        </script>
                     </div>
                 </form>
             </div>
