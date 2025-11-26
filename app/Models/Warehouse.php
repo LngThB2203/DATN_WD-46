@@ -14,7 +14,8 @@ class Warehouse extends Model
         'warehouse_name',
         'address',
         'manager_id',
-        'phone'];
+        'phone',
+    ];
 
     public function manager()
     {

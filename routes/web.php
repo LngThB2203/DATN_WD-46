@@ -1,11 +1,9 @@
 <?php
-
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
-use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
@@ -84,8 +82,8 @@ Route::get('/orders/{id}', [App\Http\Controllers\Client\OrderController::class, 
 Route::put('/orders/{order}/update-shipping', [App\Http\Controllers\Client\OrderController::class, 'updateShipping'])->name('orders.updateShipping');
 Route::put('/orders/{order}/cancel', [App\Http\Controllers\Client\OrderController::class, 'cancel'])->name('orders.cancel');
 Route::put('/orders/{order}/confirm-received', [\App\Http\Controllers\Client\OrderController::class, 'confirmReceived'])
-        ->name('orders.confirm-received');
-        
+    ->name('orders.confirm-received');
+
 // API route để kiểm tra mã giảm giá khi thanh toán
 Route::post('/api/check-discount', [App\Http\Controllers\DiscountController::class, 'checkCode'])->name('api.check-discount');
 
@@ -224,8 +222,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
     });
 
-    // Inventories, Warehouse
     Route::prefix('inventories')->name('inventories.')->group(function () {
+
+        // Kho
         Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
         Route::get('/warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.add');
         Route::post('/warehouse/store', [WarehouseController::class, 'store'])->name('warehouse.store');
@@ -233,15 +232,22 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
         Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
 
+        // Tồn kho
         Route::get('/received-orders', [WarehouseProductController::class, 'index'])->name('received-orders');
         Route::put('/received-orders/{id}', [WarehouseProductController::class, 'updateQuantity'])->name('updateQuantity');
 
-        Route::get('/import', [StockTransactionController::class, 'createImport'])->name('import.create');
-        Route::post('/import', [StockTransactionController::class, 'storeImport'])->name('import.store');
+        // AJAX load biến thể theo sản phẩm
+        Route::get('/get-variants/{product}', [WarehouseProductController::class, 'getVariants'])->name('getVariants');
 
-        Route::get('/export', [StockTransactionController::class, 'createExport'])->name('export.create');
-        Route::post('/export', [StockTransactionController::class, 'storeExport'])->name('export.store');
+        // Nhập kho
+        Route::get('/import', [WarehouseProductController::class, 'createImport'])->name('import.create');
+        Route::post('/import', [WarehouseProductController::class, 'import'])->name('import.store');
 
+        // Xuất kho
+        Route::get('/export', [WarehouseProductController::class, 'createExport'])->name('export.create');
+        Route::post('/export', [WarehouseProductController::class, 'export'])->name('export.store');
+
+        // Lịch sử giao dịch
         Route::get('/transactions', [StockTransactionController::class, 'log'])->name('transactions');
         Route::get('/transactions/{id}/print', [StockTransactionController::class, 'printInvoice'])->name('transactions.print');
     });

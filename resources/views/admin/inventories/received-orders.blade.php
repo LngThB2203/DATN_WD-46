@@ -8,7 +8,12 @@
     <h5><i class="bx bx-error"></i> Cảnh báo tồn kho thấp</h5>
     <ul>
         @foreach($lowStockItems as $item)
-            <li>{{ $item->product->name ?? 'Sản phẩm?' }} tại <strong>{{ $item->warehouse->warehouse_name ?? 'Kho?' }}</strong> còn {{ $item->quantity }}/{{ $item->min_stock_threshold }}</li>
+            <li>{{ $item->product->name ?? 'Sản phẩm?' }}
+                @if($item->variant)
+                    ({{ $item->variant->size->size_name ?? '' }}{{ $item->variant->scent ? ' | '.$item->variant->scent->scent_name : '' }}{{ $item->variant->concentration ? ' | '.$item->variant->concentration->concentration_name : '' }})
+                @endif
+                tại <strong>{{ $item->warehouse->warehouse_name ?? 'Kho?' }}</strong> còn {{ $item->quantity }}/{{ $item->min_stock_threshold }}
+            </li>
         @endforeach
     </ul>
 </div>
@@ -25,6 +30,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Sản phẩm</th>
+                        <th>Biến thể</th> <!-- Thêm cột biến thể -->
                         <th>Kho</th>
                         <th>Số lượng</th>
                         <th>Ngưỡng</th>
@@ -37,6 +43,15 @@
                     <tr>
                         <td>{{ $inv->id }}</td>
                         <td>{{ $inv->product->name ?? 'N/A' }}</td>
+                        <td>
+                            @if($inv->variant)
+                                {{ $inv->variant->size->size_name ?? '' }}
+                                {{ $inv->variant->scent ? ' | '.$inv->variant->scent->scent_name : '' }}
+                                {{ $inv->variant->concentration ? ' | '.$inv->variant->concentration->concentration_name : '' }}
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td>{{ $inv->warehouse->warehouse_name ?? 'N/A' }}</td>
                         <td>{{ $inv->quantity }}</td>
                         <td>{{ $inv->min_stock_threshold }}</td>
