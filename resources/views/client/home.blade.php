@@ -7,26 +7,45 @@
     <!-- tránh header che -->
 
     <!-- Hero Section -->
-    <section class="hero py-5">
-        <div class="container-fluid container-xl">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-6">
-                    <h2 class="display-5 fw-bold mb-3">Cửa hàng nước hoa trực tuyến</h2>
-                    <p class="lead mb-4">Khám phá bộ sưu tập nước hoa chính hãng với ưu đãi hấp dẫn. Giao nhanh, đổi trả
-                        dễ dàng.</p>
-                    <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
-                </div>
-                <div class="col-lg-6">
-                    @if($heroBanner && $heroBanner->image)
-                        <img class="img-fluid rounded" src="{{ asset('storage/' . $heroBanner->image) }}" alt="Hero">
+<section class="hero py-5">
+    <div class="container-fluid container-xl">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <h2 class="display-5 fw-bold mb-3">Cửa hàng nước hoa trực tuyến</h2>
+                <p class="lead mb-4">Khám phá bộ sưu tập nước hoa chính hãng với ưu đãi hấp dẫn. Giao nhanh, đổi trả dễ dàng.</p>
+                <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
+            </div>
+            <div class="col-lg-6">
+                @if(isset($heroBanners) && $heroBanners->count() > 0)
+                    @if($heroBanners->count() == 1)
+                        <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" class="img-fluid rounded" alt="Hero Banner">
                     @else
-                        <img class="img-fluid rounded" src="{{ asset('assets/client/img/default-hero.webp') }}" alt="Hero">
+                        <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @foreach($heroBanners as $key => $banner)
+                                    <div class="carousel-item @if($key == 0) active @endif">
+                                        <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
+                                    </div>
+                                @endforeach
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                                <span class="visually-hidden"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                                <span class="visually-hidden"></span>
+                            </button>
+                        </div>
                     @endif
-                </div>
-
+                @endif
             </div>
         </div>
-    </section>
+    </div>
+</section>
+
+
+
 
     <!-- Info Cards Section -->
     <section id="info-cards" class="info-cards section light-background">
@@ -239,3 +258,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+<style>
+    #heroCarousel .carousel-item {
+    height: 400px; /* chiều cao cố định cho carousel */
+    overflow: hidden;
+}
+
+#heroCarousel .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ảnh sẽ tự dãn và cắt để lấp đầy khung */
+}
+
+</style>
