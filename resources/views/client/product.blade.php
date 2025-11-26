@@ -77,10 +77,9 @@
 
                 <!-- TỒN KHO -->
                 @php
-                    $totalStock = $product->stock_quantity;
-                    if ($product->variants->count() > 0) {
-                        $totalStock += $product->variants->sum('stock');
-                    }
+                    $totalStock = $product->variants->count() > 0
+                                  ? $product->variants->sum('stock')
+                                  : $product->stock_quantity;
                 @endphp
                 <div class="mb-3">
                     <span class="badge {{ $totalStock > 0 ? 'bg-success' : 'bg-danger' }} p-2 fs-6">

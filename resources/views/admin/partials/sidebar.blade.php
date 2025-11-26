@@ -94,14 +94,14 @@
             </li>
 
             <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarBanner" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarBanner">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
                     </span>
                     <span class="nav-text"> Banner </span>
                 </a>
-                <div class="collapse" id="sidebarInventory">
+                <div class="collapse" id="sidebarBanner">
                     <ul class="nav sub-navbar-nav">
 
                         <li class="sub-nav-item">
@@ -116,14 +116,14 @@
             </li>
 
             <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarBrand" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarBrand">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
                     </span>
                     <span class="nav-text"> Brand </span>
                 </a>
-                <div class="collapse" id="sidebarInventory">
+                <div class="collapse" id="sidebarBrand">
                     <ul class="nav sub-navbar-nav">
 
                         <li class="sub-nav-item">
