@@ -3,33 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Mail\OrderConfirmationMail;
+use App\Models\CartItem;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
     public function index(Request $request)
     {
-        // Lấy danh sách các sản phẩm được chọn
-        $selectedItems = $request->input('selected_items');
+        // Lấy các product_id được chọn
+        $selectedItems = $request->input('selected_items', []);
         if (is_string($selectedItems)) {
             $selectedItems = explode(',', $selectedItems);
         }
-        $selectedItems = $selectedItems ? array_filter(array_map('intval', (array) $selectedItems)) : null;
+        $selectedItems = array_filter(array_map('intval', (array)$selectedItems));
 
         $cart = $this->prepareCart($request, $selectedItems);
 
-        // Nếu không có sản phẩm nào được chọn, redirect về giỏ hàng
         if (empty($cart['items'])) {
             return redirect()->route('cart.index')
-                ->with('error', 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+                ->with('error','Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
         }
 
         $defaultCustomer = [
@@ -41,44 +40,32 @@ class CheckoutController extends Controller
         return view('client.checkout', [
             'cart' => $cart,
             'defaultCustomer' => $defaultCustomer,
-            'selectedItems' => $selectedItems,
+            'selectedItems' => $selectedItems
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'customer_name' => ['required', 'string', 'max:150'],
-            'customer_email' => ['nullable', 'email', 'max:150'],
-            'customer_phone' => ['required', 'string', 'max:20'],
-            'shipping_province' => ['required', 'string', 'max:120'],
-            'shipping_district' => ['required', 'string', 'max:120'],
-            'shipping_ward' => ['nullable', 'string', 'max:120'],
-            'shipping_address_line' => ['required', 'string', 'max:255'],
-            'customer_note' => ['nullable', 'string', 'max:1000'],
-            'payment_method' => ['required', Rule::in(['cod', 'bank_transfer', 'online'])],
-        ], [
-            'customer_name.required' => 'Vui lòng nhập họ tên.',
-            'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
-            'shipping_province.required' => 'Vui lòng chọn tỉnh/thành phố.',
-            'shipping_district.required' => 'Vui lòng chọn quận/huyện.',
-            'shipping_address_line.required' => 'Vui lòng nhập địa chỉ chi tiết.',
-            'payment_method.required' => 'Vui lòng chọn phương thức thanh toán.',
+            'customer_name'=>'required|string|max:150',
+            'customer_email'=>'nullable|email|max:150',
+            'customer_phone'=>'required|string|max:20',
+            'shipping_province'=>'required|string|max:120',
+            'shipping_district'=>'required|string|max:120',
+            'shipping_ward'=>'nullable|string|max:120',
+            'shipping_address_line'=>'required|string|max:255',
+            'customer_note'=>'nullable|string|max:1000',
+            'payment_method'=>'required|string|in:cod,bank_transfer,online'
         ]);
 
-        // Lấy danh sách các sản phẩm được chọn
-        $selectedItems = $request->input('selected_items');
-        if (is_string($selectedItems)) {
-            $selectedItems = explode(',', $selectedItems);
-        }
-        $selectedItems = $selectedItems ? array_filter(array_map('intval', (array) $selectedItems)) : null;
+        $selectedItems = $request->input('selected_items', []);
+        if (is_string($selectedItems)) $selectedItems = explode(',',$selectedItems);
+        $selectedItems = array_filter(array_map('intval',(array)$selectedItems));
 
         $cart = $this->prepareCart($request, $selectedItems);
 
         if (empty($cart['items'])) {
-            return back()
-                ->withInput()
-                ->withErrors(['cart' => 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.']);
+            return back()->withInput()->withErrors(['cart'=>'Vui lòng chọn ít nhất một sản phẩm để thanh toán.']);
         }
 
         DB::beginTransaction();
@@ -87,183 +74,162 @@ class CheckoutController extends Controller
             $fullAddress = $this->buildFullAddress($validated);
             $discountId = $request->session()->get('cart.discount_id');
 
+            // Tạo đơn hàng
             $order = Order::create([
-                'user_id' => optional($request->user())->id,
-                'discount_id' => $discountId,
-                'order_status' => 'pending',
-                'total_price' => $cart['subtotal'],
-                'shipping_address' => $fullAddress,
-                'shipping_cost' => $cart['shipping_fee'],
-                'customer_name' => $validated['customer_name'],
-                'customer_email' => $validated['customer_email'] ?? null,
-                'customer_phone' => $validated['customer_phone'],
-                'shipping_province' => $validated['shipping_province'],
-                'shipping_district' => $validated['shipping_district'],
-                'shipping_ward' => $validated['shipping_ward'] ?? null,
-                'shipping_address_line' => $validated['shipping_address_line'],
-                'customer_note' => $validated['customer_note'] ?? null,
-                'subtotal' => $cart['subtotal'],
-                'discount_total' => $cart['discount_total'],
-                'grand_total' => $cart['grand_total'],
-                'payment_method' => $validated['payment_method'],
+                'user_id'=>optional($request->user())->id,
+                'discount_id'=>$discountId,
+                'order_status'=>'pending',
+                'total_price'=>$cart['subtotal'],
+                'shipping_address'=>$fullAddress,
+                'shipping_cost'=>$cart['shipping_fee'],
+                'customer_name'=>$validated['customer_name'],
+                'customer_email'=>$validated['customer_email'] ?? null,
+                'customer_phone'=>$validated['customer_phone'],
+                'shipping_province'=>$validated['shipping_province'],
+                'shipping_district'=>$validated['shipping_district'],
+                'shipping_ward'=>$validated['shipping_ward'] ?? null,
+                'shipping_address_line'=>$validated['shipping_address_line'],
+                'customer_note'=>$validated['customer_note'] ?? null,
+                'subtotal'=>$cart['subtotal'],
+                'discount_total'=>$cart['discount_total'],
+                'grand_total'=>$cart['grand_total'],
+                'payment_method'=>$validated['payment_method']
             ]);
 
-            $orderDetailsPayload = collect($cart['items'])->map(function (array $item) use ($order) {
-                $quantity = (int) ($item['quantity'] ?? 1);
-                $price = (float) ($item['price'] ?? 0);
-
-                return [
-                    'order_id' => $order->id,
-                    'product_id' => $item['product_id'] ?? null,
-                    'variant_id' => $item['variant_id'] ?? null,
-                    'quantity' => $quantity,
-                    'price' => $price,
-                    'subtotal' => $quantity * $price,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+            // Tạo order details
+            $orderDetails = [];
+            foreach($cart['items'] as $item){
+                $orderDetails[] = [
+                    'order_id'=>$order->id,
+                    'product_id'=>$item['product_id'],
+                    'variant_id'=>$item['variant_id'] ?? null,
+                    'quantity'=>$item['quantity'],
+                    'price'=>$item['price'],
+                    'subtotal'=>$item['subtotal'],
+                    'created_at'=>now(),
+                    'updated_at'=>now(),
                 ];
-            });
-
-            if ($orderDetailsPayload->isNotEmpty()) {
-                OrderDetail::insert($orderDetailsPayload->all());
             }
+            if(!empty($orderDetails)) OrderDetail::insert($orderDetails);
 
+            // Tạo payment
             Payment::create([
-                'order_id' => $order->id,
-                'payment_method' => $validated['payment_method'],
-                'transaction_code' => null,
-                'amount' => $cart['grand_total'],
-                'status' => $validated['payment_method'] === 'cod' ? 'pending' : 'pending',
-                'paid_at' => null,
+                'order_id'=>$order->id,
+                'payment_method'=>$validated['payment_method'],
+                'transaction_code'=>null,
+                'amount'=>$cart['grand_total'],
+                'status'=>'pending',
+                'paid_at'=>null
             ]);
 
-            // Trạng thái ban đầu theo mô hình Shopee: Chờ xác nhận
-            // Sau khi thanh toán thành công sẽ chuyển sang "Đã xác nhận"
-            $orderStatus = match($validated['payment_method']) {
-                'cod' => 'pending',           // COD: Chờ xác nhận
-                'online' => 'pending',         // Online: Chờ xác nhận (sau khi thanh toán thành công sẽ là confirmed)
-                'bank_transfer' => 'pending',  // Bank transfer: Chờ xác nhận
-                default => 'pending'
-            };
-            $order->update(['order_status' => $orderStatus]);
-
-            if ($discountId) {
-                $discount = Discount::find($discountId);
-                if ($discount) {
-                    $discount->incrementUsage();
-                }
+            // Nếu có discount, tăng usage
+            if($discountId && $discount = Discount::find($discountId)){
+                $discount->incrementUsage();
             }
 
             DB::commit();
 
-            // Chỉ xóa các sản phẩm đã thanh toán khỏi giỏ hàng, không xóa toàn bộ
-            if ($selectedItems !== null && !empty($selectedItems)) {
-                $cart = $request->session()->get('cart', ['items' => []]);
-                $remainingItems = [];
-                foreach ($cart['items'] ?? [] as $index => $item) {
-                    if (!in_array($index, $selectedItems, true)) {
-                        $remainingItems[] = $item;
-                    }
+            // Xóa các item đã thanh toán khỏi cart
+            $this->removePaidItemsFromCart($request, $selectedItems);
+
+            // Gửi mail an toàn
+            try {
+                if($order->customer_email){
+                    Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
                 }
-                $cart['items'] = $remainingItems;
-                // Reset lại subtotal và grand_total
-                $cart['subtotal'] = 0;
-                $cart['grand_total'] = 0;
-                $cart['discount_total'] = 0;
-                $request->session()->put('cart', $cart);
-            } else {
-                // Nếu không có selected_items, xóa toàn bộ giỏ hàng (fallback)
-                $request->session()->forget('cart');
+            } catch (\Exception $e){
+                Log::error('Send order email failed: '.$e->getMessage());
             }
 
-            $order->load(['details.product']);
+            // Lưu thông tin customer vào session
+            if($validated['customer_email']) $request->session()->put('last_order_email',$validated['customer_email']);
+            if($validated['customer_phone']) $request->session()->put('last_order_phone',$validated['customer_phone']);
 
-            if ($order->customer_email) {
-                Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
-            }
-
-            // Lưu thông tin customer vào session để có thể xem đơn hàng sau
-            if ($validated['customer_email']) {
-                $request->session()->put('last_order_email', $validated['customer_email']);
-            }
-            if ($validated['customer_phone']) {
-                $request->session()->put('last_order_phone', $validated['customer_phone']);
-            }
-
-            $orderCode = '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
-            $successMessage = $validated['payment_method'] === 'bank_transfer'
+            $orderCode = '#'.str_pad((string)$order->id,6,'0',STR_PAD_LEFT);
+            $successMessage = $validated['payment_method']==='bank_transfer'
                 ? "Đơn hàng {$orderCode} đã được ghi nhận. Vui lòng chuyển khoản theo hướng dẫn để hoàn tất thanh toán."
                 : "Đơn hàng {$orderCode} đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.";
 
-            return redirect()
-                ->route('orders.index')
-                ->with('success', $successMessage);
-        } catch (\Throwable $exception) {
+            return redirect()->route('orders.index')->with('success',$successMessage);
+
+        } catch (\Throwable $exception){
             DB::rollBack();
-            report($exception);
-
-            Log::error('Checkout error: ' . $exception->getMessage(), [
-                'trace' => $exception->getTraceAsString(),
-                'request' => $request->all()
+            Log::error('Checkout error: '.$exception->getMessage(),[
+                'trace'=>$exception->getTraceAsString(),
+                'request'=>$request->all()
             ]);
-
-            return back()
-                ->withInput()
-                ->with('error', 'Có lỗi xảy ra khi lưu đơn hàng: ' . $exception->getMessage() . '. Vui lòng thử lại sau.');
+            return back()->withInput()->with('error','Có lỗi xảy ra khi lưu đơn hàng. Vui lòng thử lại.');
         }
     }
 
-    private function prepareCart(Request $request, ?array $selectedItems = null): array
+    /**
+     * Chuẩn bị cart để hiển thị
+     */
+    private function prepareCart(Request $request, array $selectedItems = []): array
     {
-        $rawCart = $request->session()->get('cart', [
-            'items' => [],
-            'shipping_fee' => 0,
-            'discount_total' => 0,
-        ]);
+        $sessionCart = $request->session()->get('cart',['items'=>[],'shipping_fee'=>30000,'discount_total'=>0]);
+        $items = collect($sessionCart['items'] ?? []);
 
-        $allItems = collect($rawCart['items'] ?? []);
-
-        // Nếu có selected_items, chỉ lấy các sản phẩm được chọn
-        if ($selectedItems !== null && !empty($selectedItems)) {
-            $allItems = $allItems->filter(function ($item, $index) use ($selectedItems) {
-                return in_array($index, $selectedItems, true);
-            });
+        if(!empty($selectedItems)){
+            $items = $items->filter(fn($i)=>in_array($i['product_id'],$selectedItems,true));
         }
 
-        $items = $allItems->map(function ($item) {
-            $quantity = max(1, (int) ($item['quantity'] ?? 1));
-            $price = (float) ($item['price'] ?? 0);
-            $item['quantity'] = $quantity;
-            $item['price'] = $price;
-            $item['subtotal'] = $quantity * $price;
-
-            return $item;
+        $items = $items->map(function ($i) {
+            $i['quantity'] = max(1, (int)($i['quantity'] ?? 1));
+            $i['price'] = (float)($i['price'] ?? 0);
+            $i['subtotal'] = $i['quantity'] * $i['price'];
+            return $i;
         });
 
         $subtotal = $items->sum('subtotal');
-        $shippingFee = (float) ($rawCart['shipping_fee'] ?? 0);
-        $discountTotal = (float) ($rawCart['discount_total'] ?? 0);
-        $grandTotal = max(($subtotal + $shippingFee) - $discountTotal, 0);
+        $shippingFee = (float)($sessionCart['shipping_fee'] ?? 0);
+        $discountTotal = (float)($sessionCart['discount_total'] ?? 0);
+        $grandTotal = max(($subtotal+$shippingFee)-$discountTotal,0);
 
         return [
-            'items' => $items->all(),
-            'subtotal' => $subtotal,
-            'shipping_fee' => $shippingFee,
-            'discount_total' => $discountTotal,
-            'grand_total' => $grandTotal,
+            'items'=>$items->all(),
+            'subtotal'=>$subtotal,
+            'shipping_fee'=>$shippingFee,
+            'discount_total'=>$discountTotal,
+            'grand_total'=>$grandTotal
         ];
     }
 
+    /**
+     * Xây dựng địa chỉ đầy đủ
+     */
     private function buildFullAddress(array $data): string
     {
         return collect([
             $data['shipping_address_line'] ?? null,
             $data['shipping_ward'] ?? null,
             $data['shipping_district'] ?? null,
-            $data['shipping_province'] ?? null,
-        ])
-            ->filter()
-            ->implode(', ');
+            $data['shipping_province'] ?? null
+        ])->filter()->implode(', ');
+    }
+
+    /**
+     * Xóa các item đã thanh toán khỏi cart
+     */
+    private function removePaidItemsFromCart(Request $request, array $paidProductIds): void
+    {
+        $sessionCart = $request->session()->get('cart',['items'=>[]]);
+        $sessionCart['items'] = collect($sessionCart['items'] ?? [])
+            ->reject(fn($i)=>in_array($i['product_id'],$paidProductIds,true))
+            ->values()
+            ->all();
+
+        // Cập nhật subtotal & grand_total
+        $subtotal = collect($sessionCart['items'])->sum(fn($i)=>$i['quantity']*$i['price']);
+        $sessionCart['subtotal'] = $subtotal;
+        $sessionCart['grand_total'] = max(($subtotal + ($sessionCart['shipping_fee'] ?? 0)) - ($sessionCart['discount_total'] ?? 0),0);
+
+        $request->session()->put('cart',$sessionCart);
+
+        // Nếu user đăng nhập, xóa DB CartItem tương ứng
+        $user = $request->user();
+        if($user){
+            CartItem::whereIn('product_id',$paidProductIds)->delete();
+        }
     }
 }
-
