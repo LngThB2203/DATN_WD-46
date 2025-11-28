@@ -62,7 +62,7 @@ use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController
             })->middleware(['throttle:6,1'])->name('verification.send');
 
         });
-        //newsletter
+        //newsletter cilent
         Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
         // ========================
         // CLIENT ROUTES
@@ -149,7 +149,7 @@ use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController
         // ========================
         // ADMIN ROUTES
         // ========================
-        Route::prefix('admin')->group(function () {
+        Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
             Route::get('/', fn() => view('admin.dashboard'))->name('admin.dashboard');
 
