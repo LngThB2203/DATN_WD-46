@@ -73,29 +73,29 @@
                     </ul>
                 </div>
             </li>
-<!-- quan li khachhang -->
+
+<!-- quan li kkhach hag-->
 <li class="nav-item">
-                <a class="nav-link menu-arrow" href="customers-list.html#sidebarInventory" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarCustomers">
-                    <span class="nav-icon">
-                       <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+    <a class="nav-link menu-arrow" href="#sidebarCustomer" data-bs-toggle="collapse"
+        role="button" aria-expanded="false" aria-controls="sidebarCustomer">
+       <span class="nav-icon">
+            <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+        </span>
+        <span class="nav-text"> Customer </span>
+    </a>
+    <div class="collapse" id="sidebarCustomer">
+        <ul class="nav sub-navbar-nav">
+            <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('admin.customers.list') }}">Danh sách khách hàng</a>
+        </ul>
+        <ul class="nav sub-navbar-nav">
+            <li class="sub-nav-item">
+                <a class="sub-nav-link" href="{{ route('admin.customers.create') }}">Thêm khách hàng</a>
+        </ul>
+    </div>
+</li>
 
-                    </span>
-                    <span class="nav-text"> Customers </span>
-                </a>
-                <div class="collapse" id="sidebarCustomers">
-                    <ul class="nav sub-navbar-nav">
 
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.customers.list') }}">Danh sách khách hàng</a>
-                        </li>
-
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.customers.create') }}">Thêm khách hàng</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
 <!-- quan li newletter-->
 <li class="nav-item">
     <a class="nav-link menu-arrow" href="#sidebarNewsletter" data-bs-toggle="collapse"
