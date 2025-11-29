@@ -73,6 +73,25 @@
                     </ul>
                 </div>
             </li>
+            <li class="nav-item">
+                <a class="nav-link menu-arrow" href="#sidebarVariants" data-bs-toggle="collapse" role="button"
+                    aria-expanded="false" aria-controls="sidebarVariants">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:flask-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Product Variants </span>
+                </a>
+                <div class="collapse" id="sidebarVariants">
+                    <ul class="nav sub-navbar-nav">
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('variants.index') }}">List</a>
+                        </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('variants.create') }}">Add New</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
 
 <!-- quan li kkhach hag-->
 <li class="nav-item">
@@ -115,14 +134,14 @@
 </li>
 
             <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarBanner" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarBanner">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
                     </span>
                     <span class="nav-text"> Banner </span>
                 </a>
-                <div class="collapse" id="sidebarInventory">
+                <div class="collapse" id="sidebarBanner">
                     <ul class="nav sub-navbar-nav">
 
                         <li class="sub-nav-item">
@@ -138,14 +157,14 @@
 
 
             <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarInventory" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarInventory">
+                <a class="nav-link menu-arrow" href="category-list.html#sidebarBrand" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="sidebarBrand">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
                     </span>
                     <span class="nav-text"> Brand </span>
                 </a>
-                <div class="collapse" id="sidebarInventory">
+                <div class="collapse" id="sidebarBrand">
                     <ul class="nav sub-navbar-nav">
 
                         <li class="sub-nav-item">
@@ -195,19 +214,18 @@
                 </a>
                 <div class="collapse" id="sidebarOrders">
                     <ul class="nav sub-navbar-nav">
-
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.list') }}">List</a>
+                            <a class="sub-nav-link" href="{{ route('admin.orders.list') }}">List</a>
+                        </li>
+                        {{-- <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.orders.show') }}">Details</a>
+                        </li> --}}
+                        {{-- <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.orders.cart') }}">Cart</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.show') }}">Details</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.cart') }}">Cart</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('orders.checkout') }}">Check Out</a>
-                        </li>
+                            <a class="sub-nav-link" href="{{ route('admin.orders.checkout') }}">Check Out</a>
+                        </li> --}}
                     </ul>
                 </div>
             </li>
@@ -245,15 +263,22 @@
                 </a>
                 <div class="collapse" id="sidebarAttributes">
                     <ul class="nav sub-navbar-nav">
+                        @if(isset($product))
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('attributes.list') }}">List</a>
+                            <a class="sub-nav-link"
+                                href="{{ route('variants.index', ['product' => $product->id]) }}">List</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('attributes.edit') }}">Edit</a>
+                            <a class="sub-nav-link"
+                                href="{{ route('variants.create', ['product' => $product->id]) }}">Create</a>
                         </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('attributes.add') }}">Create</a>
-                        </li>
+                        @if(isset($variant))
+                        <a class="sub-nav-link"
+                            href="{{ route('variants.update', ['product' => $product->id, 'variant' => $variant->id]) }}">Edit</a>
+                        @endif
+
+                        @endif
+
                     </ul>
                 </div>
             </li>
@@ -564,6 +589,3 @@
         </ul>
     </div>
 </div>
-<style>
-
-</style>
