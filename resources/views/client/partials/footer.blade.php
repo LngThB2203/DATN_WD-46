@@ -23,6 +23,25 @@
             </div>
         </div>
     </div>
+    <!-- newsletter trong footer -->
+<div class="newsletter mt-4">
+    <form action="{{ route('newsletter.subscribe') }}" method="POST" class="newsletter-form">
+        @csrf
+        <label for="email" class="newsletter-label">Đăng ký nhận tin:</label>
+        <div class="newsletter-input-group">
+            <input type="email" name="email" placeholder="Nhập email của bạn..." required>
+            <button type="submit">Đăng ký</button>
+        </div>
+    </form>
+
+    @if(session('success'))
+        <div class="alert alert-success mt-2">{{ session('success') }}</div>
+    @endif
+
+    @error('email')
+        <div class="alert alert-danger mt-2">{{ $message }}</div>
+    @enderror
+</div>
     <div class="footer-bottom py-3 border-top">
         <div class="container-fluid container-xl d-flex justify-content-between">
             <div>© <span id="year"></span> 46 Perfume. All rights reserved.</div>
@@ -32,6 +51,9 @@
             </div>
         </div>
     </div>
+
     <script>document.getElementById('year').textContent = new Date().getFullYear()</script>
+
+
+
 </footer>
-    
