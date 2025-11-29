@@ -176,7 +176,7 @@
                 <ul class="d-flex flex-wrap justify-content-center gap-3 py-2 mb-0 list-unstyled">
                     <li><a href="{{ route('home') }}" class="active">Home</a></li>
                     <li><a href="{{ route('about') }}">About</a></li>
-                    <li><a href="#">Blog</a></li>
+                    <li><a href="{{ route('blog.index') }}">Blog</a></li>
                     <li><a href="{{ route('contact.index') }}">Contact</a></li>
                     <li><a href="{{ route('account.show') }}">Account</a></li>
                     <li><a href="{{ route('category.index') }}">Category</a></li>

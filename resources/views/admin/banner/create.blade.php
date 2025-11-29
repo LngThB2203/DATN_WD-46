@@ -3,14 +3,14 @@
 @section('title', 'Thêm Banner mới')
 
 @section('content')
-<div class="card shadow-sm border-0">
+<div class="page-content">
     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
         <h5 class="mb-0">🖼️ Thêm Banner mới</h5>
-        <a href="{{ route('admin.banner.index') }}" class="btn btn-secondary btn-sm">Quay lại</a>
+        <a href="{{ route('banner.index') }}" class="btn btn-secondary btn-sm">Quay lại</a>
     </div>
 
     <div class="card-body">
-        <form action="{{ route('admin.banner.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('banner.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <div class="mb-3">
@@ -34,7 +34,7 @@
                 </div>
             </div>
 
-            
+
 
             <div class="text-end">
                 <button type="submit" class="btn btn-success">Thêm mới</button>
