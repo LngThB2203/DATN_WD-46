@@ -265,7 +265,6 @@ class ProductController extends Controller
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
-
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -327,3 +326,4 @@ class ProductController extends Controller
         return $pdf->download('products_' . date('Y-m-d_H-i-s') . '.pdf');
     }
 }
+
