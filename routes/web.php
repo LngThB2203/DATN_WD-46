@@ -291,27 +291,6 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
     });
 
-    // Roles
-    Route::prefix('roles')->group(function () {
-        Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
-        Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
-        Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
-    });
-
-    // Customers
-    Route::prefix('customers')->group(function () {
-        Route::get('/list', fn() => view('admin.customers.list'))->name('customers.list');
-        Route::get('/show', fn() => view('admin.customers.show'))->name('customers.show');
-    });
-
-    // Sellers
-    Route::prefix('sellers')->group(function () {
-        Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
-        Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
-        Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
-        Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
-    });
-
 // Roles
     Route::prefix('roles')->group(function () {
         Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
