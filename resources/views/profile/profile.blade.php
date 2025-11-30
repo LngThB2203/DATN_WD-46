@@ -27,7 +27,8 @@
                             </form>
                         @endif
                     </div>
-                    <p><strong>Giới tính:</strong> {{ Auth::user()->gender === 1 ? 'Nam' : (Auth::user()->gender === 0 ? 'Nữ' : 'Chưa có') }}</p>
+                    <p><strong>Giới tính:</strong>
+    {{ Auth::user()->gender === 'male' ? 'Nam' : (Auth::user()->gender === 'female' ? 'Nữ' : 'Chưa có') }}</p>
                     <p><strong>Số điện thoại:</strong> {{ Auth::user()->phone ?? 'Chưa có' }}</p>
                     <p><strong>Địa chỉ:</strong> {{ Auth::user()->address ?? 'Chưa có' }}</p>
                 </div>
@@ -52,7 +53,7 @@
                     use App\Models\Order;
                     $orders = Order::where('user_id', auth()->id())
                         ->orderBy('created_at', 'desc')
-                        ->get(); 
+                        ->get();
                 @endphp
 
                 <div class="d-flex justify-content-between align-items-center mb-3">

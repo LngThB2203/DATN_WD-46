@@ -21,6 +21,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\DiscountController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -253,6 +254,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
     });
 
+    Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
+        Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');
+        Route::delete('/delete/{id}', [AdminNewsletterController::class, 'destroy'])->name('delete');
+    });
     // Purchases
     Route::prefix('purchases')->group(function () {
         Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
