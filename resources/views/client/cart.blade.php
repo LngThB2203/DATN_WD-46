@@ -69,7 +69,7 @@
                                                 <td>
                                                     <input type="checkbox"
                                                            name="selected_items[]"
-                                                           value="{{ $index }}"
+                                                           value="{{ $item['cart_item_id'] }}"
                                                            class="form-check-input item-checkbox"
                                                            checked>
                                                 </td>
@@ -94,7 +94,7 @@
                                                 <td>
                                                     <form method="POST" action="{{ route('cart.update') }}" class="d-inline cart-update-form">
                                                         @csrf
-                                                        <input type="hidden" name="index" value="{{ $index }}">
+                                                        <input type="hidden" name="cart_item_id" value="{{ $item['cart_item_id'] }}">
                                                         <div class="d-flex gap-2 align-items-center">
                                                             <button type="button" class="btn btn-sm btn-outline-secondary quantity-decrease">-</button>
                                                             <input type="number" name="quantity" class="form-control form-control-sm text-center quantity-input" value="{{ $item['quantity'] ?? 1 }}" min="1" max="100" style="width: 70px;">
@@ -106,7 +106,7 @@
                                                 <td>
                                                     <form method="POST" action="{{ route('cart.remove') }}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa sản phẩm này?');">
                                                         @csrf
-                                                        <input type="hidden" name="index" value="{{ $index }}">
+                                                        <input type="hidden" name="cart_item_id" value="{{ $item['cart_item_id'] }}">
                                                         <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
                                                             <i class="bi bi-trash"></i>
                                                         </button>

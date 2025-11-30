@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
@@ -14,8 +13,8 @@ class CartController extends Controller
 {
     public function index(Request $request)
     {
-        $cartData = $this->prepareCart($request);
-        return view('client.cart', ['cart' => $cartData]);
+        $cart = $this->prepareCart($request);
+        return view('client.cart', compact('cart'));
     }
 
     public function add(Request $request)
@@ -23,19 +22,19 @@ class CartController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'variant_id' => 'nullable|exists:product_variants,id',
-            'quantity' => 'required|integer|min:1|max:100',
+            'quantity'   => 'required|integer|min:1|max:100',
         ]);
 
         try {
-            $product = Product::findOrFail($request->product_id);
+            $product   = Product::findOrFail($request->product_id);
             $variantId = $request->variant_id ? (int) $request->variant_id : null;
-            $quantity = (int) $request->quantity;
+            $quantity  = (int) $request->quantity;
 
             $price = $product->sale_price ?? $product->price;
             if ($variantId) {
                 $variant = ProductVariant::find($variantId);
                 if ($variant && $variant->price_adjustment) {
-                    $price += (float)$variant->price_adjustment;
+                    $price += (float) $variant->price_adjustment;
                 }
             }
 
@@ -54,12 +53,12 @@ class CartController extends Controller
                 $item->save();
             } else {
                 $item = CartItem::create([
-                    'cart_id' => $cart->id,
+                    'cart_id'    => $cart->id,
                     'product_id' => $product->id,
                     'variant_id' => $variantId,
-                    'quantity' => $quantity,
-                    'price' => $price,
-                    'added_at' => now(),
+                    'quantity'   => $quantity,
+                    'price'      => $price,
+                    'added_at'   => now(),
                 ]);
             }
 
@@ -71,10 +70,10 @@ class CartController extends Controller
 
             if ($request->ajax()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Đã thêm sản phẩm vào giỏ hàng!',
+                    'success'    => true,
+                    'message'    => 'Đã thêm sản phẩm vào giỏ hàng!',
                     'cart_count' => $cartCount,
-                    'cart' => $this->prepareCart($request)
+                    'cart'       => $this->prepareCart($request),
                 ]);
             }
 
@@ -82,11 +81,11 @@ class CartController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Cart add error: '.$e->getMessage());
+            Log::error('Cart add error: ' . $e->getMessage());
             if ($request->ajax()) {
-                return response()->json(['success'=>false,'message'=>'Có lỗi xảy ra khi thêm sản phẩm.'],500);
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi thêm sản phẩm.'], 500);
             }
-            return back()->with('error','Có lỗi xảy ra khi thêm sản phẩm.');
+            return back()->with('error', 'Có lỗi xảy ra khi thêm sản phẩm.');
         }
     }
 
@@ -94,11 +93,11 @@ class CartController extends Controller
     {
         $request->validate([
             'cart_item_id' => 'required|exists:cart_items,id',
-            'quantity' => 'required|integer|min:1|max:100'
+            'quantity'     => 'required|integer|min:1|max:100',
         ]);
 
         try {
-            $cartItem = CartItem::findOrFail($request->cart_item_id);
+            $cartItem           = CartItem::findOrFail($request->cart_item_id);
             $cartItem->quantity = (int) $request->quantity;
             $cartItem->save();
 
@@ -107,46 +106,46 @@ class CartController extends Controller
 
             if ($request->ajax()) {
                 return response()->json([
-                    'success'=>true,
-                    'message'=>'Cập nhật số lượng thành công!',
-                    'cart'=>$this->prepareCart($request)
+                    'success' => true,
+                    'message' => 'Cập nhật số lượng thành công!',
+                    'cart'    => $this->prepareCart($request),
                 ]);
             }
 
-            return back()->with('success','Cập nhật số lượng thành công!');
+            return back()->with('success', 'Cập nhật số lượng thành công!');
         } catch (\Exception $e) {
-            Log::error('Cart update error: '.$e->getMessage());
+            Log::error('Cart update error: ' . $e->getMessage());
             if ($request->ajax()) {
-                return response()->json(['success'=>false,'message'=>'Có lỗi xảy ra khi cập nhật.']);
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi cập nhật.']);
             }
-            return back()->with('error','Có lỗi xảy ra khi cập nhật.');
+            return back()->with('error', 'Có lỗi xảy ra khi cập nhật.');
         }
     }
 
     public function remove(Request $request)
     {
-        $request->validate(['cart_item_id'=>'required|exists:cart_items,id']);
+        $request->validate(['cart_item_id' => 'required|exists:cart_items,id']);
         try {
             $cartItem = CartItem::findOrFail($request->cart_item_id);
-            $cart = $cartItem->cart;
+            $cart     = $cartItem->cart;
             $cartItem->delete();
 
             $this->syncCartToSession($request, $cart);
 
             if ($request->ajax()) {
                 return response()->json([
-                    'success'=>true,
-                    'message'=>'Xóa sản phẩm thành công!',
-                    'cart'=>$this->prepareCart($request)
+                    'success' => true,
+                    'message' => 'Xóa sản phẩm thành công!',
+                    'cart'    => $this->prepareCart($request),
                 ]);
             }
-            return back()->with('success','Xóa sản phẩm thành công!');
+            return back()->with('success', 'Xóa sản phẩm thành công!');
         } catch (\Exception $e) {
-            Log::error('Cart remove error: '.$e->getMessage());
+            Log::error('Cart remove error: ' . $e->getMessage());
             if ($request->ajax()) {
-                return response()->json(['success'=>false,'message'=>'Có lỗi xảy ra khi xóa.']);
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi xóa.']);
             }
-            return back()->with('error','Có lỗi xảy ra khi xóa.');
+            return back()->with('error', 'Có lỗi xảy ra khi xóa.');
         }
     }
 
@@ -159,13 +158,16 @@ class CartController extends Controller
             $request->session()->forget('cart_id');
 
             if ($request->ajax()) {
-                return response()->json(['success'=>true,'message'=>'Đã xóa toàn bộ giỏ hàng!']);
+                return response()->json(['success' => true, 'message' => 'Đã xóa toàn bộ giỏ hàng!']);
             }
-            return redirect()->route('cart.index')->with('success','Đã xóa toàn bộ giỏ hàng!');
+            return redirect()->route('cart.index')->with('success', 'Đã xóa toàn bộ giỏ hàng!');
         } catch (\Exception $e) {
-            Log::error('Cart clear error: '.$e->getMessage());
-            if ($request->ajax()) return response()->json(['success'=>false,'message'=>'Có lỗi xảy ra khi xóa.']);
-            return back()->with('error','Có lỗi xảy ra khi xóa.');
+            Log::error('Cart clear error: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi xóa.']);
+            }
+
+            return back()->with('error', 'Có lỗi xảy ra khi xóa.');
         }
     }
 
@@ -173,14 +175,14 @@ class CartController extends Controller
     {
         $user = $request->user();
         if ($user) {
-            return Cart::firstOrCreate(['user_id'=>$user->id]);
+            return Cart::firstOrCreate(['user_id' => $user->id]);
         }
 
         $cartId = $request->session()->get('cart_id');
-        $cart = $cartId ? Cart::find($cartId) : null;
+        $cart   = $cartId ? Cart::find($cartId) : null;
 
-        if (!$cart) {
-            $cart = Cart::create(['user_id'=>null]);
+        if (! $cart) {
+            $cart = Cart::create(['user_id' => null]);
             $request->session()->put('cart_id', $cart->id);
         }
         return $cart;
@@ -188,61 +190,68 @@ class CartController extends Controller
 
     private function syncCartToSession(Request $request, Cart $cart): void
     {
-        $items = $cart->items()->with(['product','variant.size','variant.scent','variant.concentration'])->get();
+        $items        = $cart->items()->with(['product', 'variant.size', 'variant.scent', 'variant.concentration'])->get();
         $sessionItems = [];
 
-        foreach($items as $item){
-            $product = $item->product;
-            $variant = $item->variant;
+        foreach ($items as $item) {
+            $product     = $item->product;
+            $variant     = $item->variant;
             $variantName = '';
             if ($variant) {
                 $parts = [];
-                if($variant->size) $parts[] = 'Size: '.$variant->size->size_name;
-                if($variant->scent) $parts[] = 'Mùi: '.$variant->scent->scent_name;
-                if($variant->concentration) $parts[] = 'Nồng độ: '.$variant->concentration->concentration_name;
+                if ($variant->size) {
+                    $parts[] = 'Size: ' . $variant->size->size_name;
+                }
+
+                if ($variant->scent) {
+                    $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                }
+
+                if ($variant->concentration) {
+                    $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
+                }
+
                 $variantName = implode(' | ', $parts);
             }
             $image = $product ? $product->primaryImage() : null;
 
             $sessionItems[] = [
-                'cart_item_id'=>$item->id,
-                'product_id'=>$item->product_id,
-                'variant_id'=>$item->variant_id,
-                'quantity'=>$item->quantity,
-                'price'=>(float)$item->price,
-                'name'=>$product ? $product->name : 'Sản phẩm đã bị xóa',
-                'variant_name'=>$variantName,
-                'image'=>$image ? $image->image_path : null,
+                'cart_item_id' => $item->id,
+                'product_id'   => $item->product_id,
+                'variant_id'   => $item->variant_id,
+                'quantity'     => $item->quantity,
+                'price'        => (float) $item->price,
+                'name'         => $product ? $product->name : 'Sản phẩm đã bị xóa',
+                'variant_name' => $variantName,
+                'image'        => $image ? $image->image_path : null,
             ];
         }
 
         $request->session()->put('cart', [
-            'items'=>$sessionItems,
-            'shipping_fee'=>30000,
-            'discount_total'=>0
+            'items'          => $sessionItems,
+            'shipping_fee'   => 30000,
+            'discount_total' => 0,
         ]);
     }
 
     private function prepareCart(Request $request): array
     {
-        $sessionCart = $request->session()->get('cart', ['items'=>[],'shipping_fee'=>30000,'discount_total'=>0]);
-        $items = $sessionCart['items'] ?? [];
+        $cart = session()->get('cart', []);
 
-        $subtotal = collect($items)->sum(fn($i)=>$i['quantity']*$i['price']);
-        $shippingFee = $sessionCart['shipping_fee'] ?? 0;
-        $discountTotal = $sessionCart['discount_total'] ?? 0;
-        $grandTotal = max(($subtotal+$shippingFee)-$discountTotal,0);
+        $items    = $cart['items'] ?? [];
+        $subtotal = 0;
 
-        foreach($items as &$i) {
-            $i['subtotal'] = $i['quantity']*$i['price'];
+        foreach ($items as $item) {
+            $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
         }
 
         return [
-            'items'=>$items,
-            'subtotal'=>$subtotal,
-            'shipping_fee'=>$shippingFee,
-            'discount_total'=>$discountTotal,
-            'grand_total'=>$grandTotal
+            'items'          => $items,
+            'subtotal'       => $subtotal,
+            'shipping_fee'   => 30000,
+            'discount_total' => 0,
+            'grand_total'    => $subtotal + 30000,
         ];
     }
+
 }

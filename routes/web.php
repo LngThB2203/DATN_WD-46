@@ -25,6 +25,17 @@ use App\Http\Controllers\DiscountController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+Route::get('/test-form', function () {
+    return '<form method="POST" action="/test-form-submit">'
+        . csrf_field()
+        . '<button type="submit">Submit</button>'
+        . '</form>';
+});
+
+Route::post('/test-form-submit', function () {
+    return 'Form submitted successfully!';
+});
+
 
 // ========================
 // AUTH ROUTES

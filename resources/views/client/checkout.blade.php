@@ -35,7 +35,9 @@
             @csrf
             {{-- Hidden input luôn tồn tại --}}
             <input type="hidden" name="selected_items"
-                   value="{{ isset($selectedItems) && !empty($selectedItems) ? implode(',', $selectedItems) : implode(',', array_keys($cart['items'] ?? [])) }}">
+       value="{{ isset($selectedItems) && !empty($selectedItems)
+           ? implode(',', $selectedItems)
+           : implode(',', collect($cart['items'] ?? [])->pluck('cart_item_id')->all()) }}">
 
             <div class="row g-4">
                 <div class="col-lg-7">
