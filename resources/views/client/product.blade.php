@@ -88,21 +88,21 @@
                 <span class="text-muted">({{ $product->reviews_count }} lượt)</span>
             </div>
             @if(isset($reviews) && $reviews->count())
-                <div class="list-group mb-4">
-                    @foreach($reviews as $review)
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <strong>{{ $review->user->name ?? 'Người dùng' }}</strong>
-                                    <span class="ms-2">{{ $review->rating }}/5</span>
-                                </div>
-                                <small class="text-muted">{{ $review->created_at->format('d/m/Y H:i') }}</small>
-                            </div>
-                            @if($review->comment)
-                                <div class="mt-2">{{ $review->comment }}</div>
-                            @endif
-                        </div>
-                    @endforeach
+                <div id="reviews-list" class="list-group mb-3">
+                    @include('client.partials.reviews', ['reviews' => $reviews])
+                </div>
+                <div class="d-grid mb-4">
+                    @php
+                        $perPage = request('per_page', 5);
+                        $nextPage = $reviews->currentPage() + 1;
+                        $hasMore = $reviews->hasMorePages();
+                    @endphp
+                    <button
+                        id="load-more-reviews"
+                        class="btn btn-outline-secondary"
+                        data-next-url="{{ $hasMore ? route('product.reviews.index', $product->slug) . '?page=' . $nextPage . '&per_page=' . $perPage : '' }}"
+                        @if(!$hasMore) style="display:none" @endif
+                    >Xem thêm</button>
                 </div>
             @else
                 <p class="text-muted">Chưa có đánh giá.</p>
@@ -177,6 +177,42 @@
                 mainImage.setAttribute('src', large);
             });
         });
+        var loadMoreBtn = document.getElementById('load-more-reviews');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function () {
+                var nextUrl = loadMoreBtn.getAttribute('data-next-url');
+                if (!nextUrl) {
+                    loadMoreBtn.style.display = 'none';
+                    return;
+                }
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.textContent = 'Đang tải...';
+                fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data && data.html) {
+                            var container = document.getElementById('reviews-list');
+                            var temp = document.createElement('div');
+                            temp.innerHTML = data.html;
+                            var items = temp.children;
+                            while (items.length) {
+                                container.appendChild(items[0]);
+                            }
+                        }
+                        if (data && data.next_page_url) {
+                            loadMoreBtn.setAttribute('data-next-url', data.next_page_url);
+                            loadMoreBtn.disabled = false;
+                            loadMoreBtn.textContent = 'Xem thêm';
+                        } else {
+                            loadMoreBtn.style.display = 'none';
+                        }
+                    })
+                    .catch(function () {
+                        loadMoreBtn.disabled = false;
+                        loadMoreBtn.textContent = 'Xem thêm';
+                    });
+            });
+        }
 
         // Quantity controls
         const quantityInput = document.getElementById('productQuantity');

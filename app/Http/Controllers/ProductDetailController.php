@@ -12,7 +12,14 @@ class ProductDetailController extends Controller
     {
         $product = Product::with(['galleries', 'category', 'reviews.user'])->where('slug', $slug)->firstOrFail();
 
-        $reviews = $product->reviews()->where('status', 1)->latest()->get();
+        $perPage = (int) request('per_page', 5);
+        if ($perPage < 1) { $perPage = 5; }
+        if ($perPage > 10) { $perPage = 10; }
+
+        $reviews = $product->reviews()
+            ->where('status', 1)
+            ->latest()
+            ->paginate($perPage);
 
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
