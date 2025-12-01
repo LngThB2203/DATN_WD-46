@@ -1,9 +1,12 @@
 <?php
-
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
@@ -11,194 +14,244 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $cart = $this->prepareCart($request);
-
-        return view('client.cart', [
-            'cart' => $cart,
-        ]);
+        return view('client.cart', compact('cart'));
     }
 
     public function add(Request $request)
     {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|exists:product_variants,id',
+            'quantity'   => 'required|integer|min:1|max:100',
+        ]);
+
         try {
-            $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'quantity' => 'required|integer|min:1|max:100',
-            ], [
-                'product_id.required' => 'Vui lòng chọn sản phẩm.',
-                'product_id.exists' => 'Sản phẩm không tồn tại.',
-                'quantity.required' => 'Vui lòng nhập số lượng.',
-                'quantity.integer' => 'Số lượng phải là số nguyên.',
-                'quantity.min' => 'Số lượng tối thiểu là 1.',
-                'quantity.max' => 'Số lượng tối đa là 100.',
-            ]);
+            $product   = Product::findOrFail($request->product_id);
+            $variantId = $request->variant_id ? (int) $request->variant_id : null;
+            $quantity  = (int) $request->quantity;
 
-            $product = Product::findOrFail($request->product_id);
-            $quantity = (int) $request->quantity;
             $price = $product->sale_price ?? $product->price;
-
-            $cart = $request->session()->get('cart', [
-                'items' => [],
-                'shipping_fee' => 30000,
-                'discount_total' => 0,
-            ]);
-
-            // Kiểm tra sản phẩm đã có trong giỏ chưa
-            $existingIndex = collect($cart['items'])->search(function ($item) use ($request) {
-                return ($item['product_id'] ?? null) == $request->product_id;
-            });
-
-            if ($existingIndex !== false) {
-                $cart['items'][$existingIndex]['quantity'] += $quantity;
-            } else {
-                $cart['items'][] = [
-                    'product_id' => $product->id,
-                    'variant_id' => null,
-                    'quantity' => $quantity,
-                    'price' => $price,
-                    'name' => $product->name,
-                    'image' => $product->primaryImage() ? $product->primaryImage()->image_path : null,
-                ];
+            if ($variantId) {
+                $variant = ProductVariant::find($variantId);
+                if ($variant && $variant->price_adjustment) {
+                    $price += (float) $variant->price_adjustment;
+                }
             }
 
-            $request->session()->put('cart', $cart);
+            DB::beginTransaction();
+
+            $cart = $this->getOrCreateCart($request);
+
+            // Tìm item theo product_id + variant_id
+            $item = CartItem::where('cart_id', $cart->id)
+                ->where('product_id', $product->id)
+                ->where('variant_id', $variantId)
+                ->first();
+
+            if ($item) {
+                $item->quantity += $quantity;
+                $item->save();
+            } else {
+                $item = CartItem::create([
+                    'cart_id'    => $cart->id,
+                    'product_id' => $product->id,
+                    'variant_id' => $variantId,
+                    'quantity'   => $quantity,
+                    'price'      => $price,
+                    'added_at'   => now(),
+                ]);
+            }
+
+            $this->syncCartToSession($request, $cart);
+
+            DB::commit();
+
+            $cartCount = $cart->items()->count();
 
             if ($request->ajax()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Đã thêm sản phẩm vào giỏ hàng!',
-                    'cart_count' => count($cart['items']),
+                    'success'    => true,
+                    'message'    => 'Đã thêm sản phẩm vào giỏ hàng!',
+                    'cart_count' => $cartCount,
+                    'cart'       => $this->prepareCart($request),
                 ]);
             }
 
             return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra: ' . implode(', ', $e->errors()),
-                ], 422);
-            }
-            return redirect()->back()->withErrors($e->errors())->withInput();
+
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Cart add error: ' . $e->getMessage());
             if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.',
-                ], 500);
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi thêm sản phẩm.'], 500);
             }
-            return redirect()->back()->with('error', 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.');
+            return back()->with('error', 'Có lỗi xảy ra khi thêm sản phẩm.');
         }
     }
 
     public function update(Request $request)
     {
         $request->validate([
-            'index' => 'required|integer|min:0',
-            'quantity' => 'required|integer|min:1|max:100',
+            'cart_item_id' => 'required|exists:cart_items,id',
+            'quantity'     => 'required|integer|min:1|max:100',
         ]);
 
-        $cart = $request->session()->get('cart', ['items' => []]);
-        $index = (int) $request->index;
+        try {
+            $cartItem           = CartItem::findOrFail($request->cart_item_id);
+            $cartItem->quantity = (int) $request->quantity;
+            $cartItem->save();
 
-        if (!isset($cart['items'][$index])) {
+            $cart = $cartItem->cart;
+            $this->syncCartToSession($request, $cart);
+
             if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cập nhật số lượng thành công!',
+                    'cart'    => $this->prepareCart($request),
+                ]);
             }
-            return back()->with('error', 'Sản phẩm không tồn tại trong giỏ hàng.');
+
+            return back()->with('success', 'Cập nhật số lượng thành công!');
+        } catch (\Exception $e) {
+            Log::error('Cart update error: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi cập nhật.']);
+            }
+            return back()->with('error', 'Có lỗi xảy ra khi cập nhật.');
         }
-
-        $cart['items'][$index]['quantity'] = (int) $request->quantity;
-        $request->session()->put('cart', $cart);
-
-        if ($request->ajax()) {
-            $cart = $this->prepareCart($request);
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã cập nhật số lượng!',
-                'cart' => $cart,
-            ]);
-        }
-
-        return back()->with('success', 'Đã cập nhật số lượng!');
     }
 
     public function remove(Request $request)
     {
-        $request->validate([
-            'index' => 'required|integer|min:0',
-        ]);
+        $request->validate(['cart_item_id' => 'required|exists:cart_items,id']);
+        try {
+            $cartItem = CartItem::findOrFail($request->cart_item_id);
+            $cart     = $cartItem->cart;
+            $cartItem->delete();
 
-        $cart = $request->session()->get('cart', ['items' => []]);
-        $index = (int) $request->index;
+            $this->syncCartToSession($request, $cart);
 
-        if (!isset($cart['items'][$index])) {
             if ($request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Xóa sản phẩm thành công!',
+                    'cart'    => $this->prepareCart($request),
+                ]);
             }
-            return back()->with('error', 'Sản phẩm không tồn tại trong giỏ hàng.');
+            return back()->with('success', 'Xóa sản phẩm thành công!');
+        } catch (\Exception $e) {
+            Log::error('Cart remove error: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi xóa.']);
+            }
+            return back()->with('error', 'Có lỗi xảy ra khi xóa.');
         }
-
-        unset($cart['items'][$index]);
-        $cart['items'] = array_values($cart['items']);
-        $request->session()->put('cart', $cart);
-
-        if ($request->ajax()) {
-            $cart = $this->prepareCart($request);
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
-                'cart' => $cart,
-            ]);
-        }
-
-        return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng!');
     }
 
     public function clear(Request $request)
     {
-        $request->session()->forget('cart');
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $cart->items()->delete();
+            $request->session()->forget('cart');
+            $request->session()->forget('cart_id');
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã xóa toàn bộ giỏ hàng!',
-            ]);
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Đã xóa toàn bộ giỏ hàng!']);
+            }
+            return redirect()->route('cart.index')->with('success', 'Đã xóa toàn bộ giỏ hàng!');
+        } catch (\Exception $e) {
+            Log::error('Cart clear error: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi xóa.']);
+            }
+
+            return back()->with('error', 'Có lỗi xảy ra khi xóa.');
+        }
+    }
+
+    private function getOrCreateCart(Request $request): Cart
+    {
+        $user = $request->user();
+        if ($user) {
+            return Cart::firstOrCreate(['user_id' => $user->id]);
         }
 
-        return redirect()->route('cart.index')->with('success', 'Đã xóa toàn bộ giỏ hàng!');
+        $cartId = $request->session()->get('cart_id');
+        $cart   = $cartId ? Cart::find($cartId) : null;
+
+        if (! $cart) {
+            $cart = Cart::create(['user_id' => null]);
+            $request->session()->put('cart_id', $cart->id);
+        }
+        return $cart;
+    }
+
+    private function syncCartToSession(Request $request, Cart $cart): void
+    {
+        $items        = $cart->items()->with(['product', 'variant.size', 'variant.scent', 'variant.concentration'])->get();
+        $sessionItems = [];
+
+        foreach ($items as $item) {
+            $product     = $item->product;
+            $variant     = $item->variant;
+            $variantName = '';
+            if ($variant) {
+                $parts = [];
+                if ($variant->size) {
+                    $parts[] = 'Size: ' . $variant->size->size_name;
+                }
+
+                if ($variant->scent) {
+                    $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                }
+
+                if ($variant->concentration) {
+                    $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
+                }
+
+                $variantName = implode(' | ', $parts);
+            }
+            $image = $product ? $product->primaryImage() : null;
+
+            $sessionItems[] = [
+                'cart_item_id' => $item->id,
+                'product_id'   => $item->product_id,
+                'variant_id'   => $item->variant_id,
+                'quantity'     => $item->quantity,
+                'price'        => (float) $item->price,
+                'name'         => $product ? $product->name : 'Sản phẩm đã bị xóa',
+                'variant_name' => $variantName,
+                'image'        => $image ? $image->image_path : null,
+            ];
+        }
+
+        $request->session()->put('cart', [
+            'items'          => $sessionItems,
+            'shipping_fee'   => 30000,
+            'discount_total' => 0,
+        ]);
     }
 
     private function prepareCart(Request $request): array
     {
-        $rawCart = $request->session()->get('cart', [
-            'items' => [],
-            'shipping_fee' => 30000,
-            'discount_total' => 0,
-        ]);
+        $cart = session()->get('cart', []);
 
-        $items = collect($rawCart['items'] ?? [])->map(function ($item) {
-            $quantity = max(1, (int) ($item['quantity'] ?? 1));
-            $price = (float) ($item['price'] ?? 0);
-            $item['quantity'] = $quantity;
-            $item['price'] = $price;
-            $item['subtotal'] = $quantity * $price;
+        $items    = $cart['items'] ?? [];
+        $subtotal = 0;
 
-            return $item;
-        });
-
-        $subtotal = $items->sum('subtotal');
-        $shippingFee = (float) ($rawCart['shipping_fee'] ?? 30000);
-        $discountTotal = (float) ($rawCart['discount_total'] ?? 0);
-        $grandTotal = max(($subtotal + $shippingFee) - $discountTotal, 0);
+        foreach ($items as $item) {
+            $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
+        }
 
         return [
-            'items' => $items->all(),
-            'subtotal' => $subtotal,
-            'shipping_fee' => $shippingFee,
-            'discount_total' => $discountTotal,
-            'grand_total' => $grandTotal,
+            'items'          => $items,
+            'subtotal'       => $subtotal,
+            'shipping_fee'   => 30000,
+            'discount_total' => 0,
+            'grand_total'    => $subtotal + 30000,
         ];
     }
-}
 
+}

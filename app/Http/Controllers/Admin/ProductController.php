@@ -9,6 +9,7 @@ use App\Models\ProductGallery;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -71,7 +72,8 @@ class ProductController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return view('admin.products.add', compact('categories'));
+        $warehouses = \App\Models\Warehouse::all();
+        return view('admin.products.add', compact('categories', 'warehouses'));
     }
 
     /**
@@ -81,13 +83,14 @@ class ProductController extends Controller
     {
         \Illuminate\Support\Facades\Log::info('Store request data:', [
             'name'         => $request->name,
+            'warehouse_id' => $request->warehouse_id,
+            'stock_quantity' => $request->stock_quantity,
             'has_images'   => $request->hasFile('images'),
             'has_image'    => $request->hasFile('image'),
             'images_count' => $request->hasFile('images') ? count($request->file('images')) : 0,
-            'all_files'    => $request->allFiles(),
         ]);
 
-        $request->validate([
+        $rules = [
             'name'        => 'required|string|max:200',
             'sku'         => 'nullable|string|max:100|unique:products,sku',
             'price'       => 'required|numeric|min:0',
@@ -96,6 +99,20 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'status'      => 'boolean',
             'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'warehouse_id' => 'nullable|exists:warehouse,id',
+            'stock_quantity' => 'nullable|integer|min:0',
+        ];
+        
+        // Nếu chọn kho thì số lượng là bắt buộc
+        if ($request->warehouse_id) {
+            $rules['stock_quantity'] = 'required|integer|min:0';
+        }
+        
+        $request->validate($rules, [
+            'warehouse_id.exists' => 'Kho hàng không tồn tại.',
+            'stock_quantity.required' => 'Vui lòng nhập số lượng tồn kho khi chọn kho.',
+            'stock_quantity.integer' => 'Số lượng phải là số nguyên.',
+            'stock_quantity.min' => 'Số lượng không được âm.',
         ]);
 
         DB::beginTransaction();
@@ -115,6 +132,50 @@ class ProductController extends Controller
                 $this->handleImageUpload($product, $request->file('images'));
             } elseif ($request->hasFile('image')) {
                 $this->handleSingleImageUpload($product, $request->file('image'));
+            }
+
+            // Thêm tồn kho nếu có
+            if ($request->warehouse_id) {
+                $stockQuantity = $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0;
+                
+                \Illuminate\Support\Facades\Log::info('Creating warehouse product', [
+                    'product_id' => $product->id,
+                    'warehouse_id' => $request->warehouse_id,
+                    'stock_quantity' => $stockQuantity,
+                    'request_stock_quantity' => $request->stock_quantity,
+                ]);
+                
+                if ($stockQuantity >= 0) {
+                    try {
+                        $warehouseProduct = \App\Models\WarehouseProduct::updateOrCreate(
+                            [
+                                'warehouse_id' => $request->warehouse_id,
+                                'product_id' => $product->id,
+                                'variant_id' => null,
+                            ],
+                            [
+                                'quantity' => $stockQuantity,
+                                'last_updated' => now(),
+                            ]
+                        );
+                        \Illuminate\Support\Facades\Log::info('Warehouse product created successfully', [
+                            'product_id' => $product->id,
+                            'warehouse_id' => $request->warehouse_id,
+                            'quantity' => $stockQuantity,
+                            'warehouse_product_id' => $warehouseProduct->id,
+                        ]);
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Error creating warehouse product', [
+                            'product_id' => $product->id,
+                            'warehouse_id' => $request->warehouse_id,
+                            'stock_quantity' => $stockQuantity,
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                        // Throw exception để user biết có lỗi
+                        throw new \Exception('Không thể tạo tồn kho: ' . $e->getMessage());
+                    }
+                }
             }
 
             DB::commit();
@@ -144,13 +205,14 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $categories = Category::all();
-        $product->load('galleries');
-        return view('admin.products.edit', compact('product', 'categories'));
+        $warehouses = \App\Models\Warehouse::all();
+        $product->load(['galleries', 'warehouseProducts.warehouse']);
+        return view('admin.products.edit', compact('product', 'categories', 'warehouses'));
     }
 
     public function update(Request $request, Product $product)
     {
-        $request->validate([
+        $rules = [
             'name'        => 'required|string|max:200',
             'sku'         => 'nullable|string|max:100|unique:products,sku,' . $product->id,
             'price'       => 'required|numeric|min:0',
@@ -159,7 +221,24 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'status'      => 'boolean',
             'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+            'warehouse_id' => 'nullable|exists:warehouse,id',
+            'stock_quantity' => 'nullable|integer|min:0',
+        ];
+
+        // Nếu chọn kho thì phải nhập số lượng
+        if ($request->warehouse_id) {
+            $rules['stock_quantity'] = 'required|integer|min:0';
+        }
+
+        $messages = [
+            'warehouse_id.exists' => 'Kho hàng không tồn tại.',
+            'warehouse_id.required' => 'Vui lòng chọn kho hàng.',
+            'stock_quantity.required' => 'Vui lòng nhập số lượng tồn kho khi chọn kho.',
+            'stock_quantity.integer' => 'Số lượng phải là số nguyên.',
+            'stock_quantity.min' => 'Số lượng không được âm.',
+        ];
+
+        $request->validate($rules, $messages);
 
         DB::beginTransaction();
         try {
@@ -176,6 +255,49 @@ class ProductController extends Controller
 
             if ($request->hasFile('images')) {
                 $this->handleImageUpload($product, $request->file('images'));
+            }
+
+            // Cập nhật tồn kho nếu có
+            if ($request->warehouse_id) {
+                $stockQuantity = $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0;
+                
+                \Log::info('Updating warehouse product', [
+                    'product_id' => $product->id,
+                    'warehouse_id' => $request->warehouse_id,
+                    'stock_quantity' => $stockQuantity,
+                    'request_stock_quantity' => $request->stock_quantity,
+                ]);
+                
+                if ($stockQuantity >= 0) {
+                    try {
+                        $warehouseProduct = \App\Models\WarehouseProduct::updateOrCreate(
+                            [
+                                'warehouse_id' => $request->warehouse_id,
+                                'product_id' => $product->id,
+                                'variant_id' => null,
+                            ],
+                            [
+                                'quantity' => $stockQuantity,
+                                'last_updated' => now(),
+                            ]
+                        );
+                        \Log::info('Warehouse product updated/created successfully', [
+                            'warehouse_id' => $request->warehouse_id,
+                            'product_id' => $product->id,
+                            'quantity' => $stockQuantity,
+                            'warehouse_product_id' => $warehouseProduct->id
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error('Error updating warehouse product', [
+                            'error' => $e->getMessage(),
+                            'warehouse_id' => $request->warehouse_id,
+                            'product_id' => $product->id,
+                            'quantity' => $stockQuantity,
+                            'trace' => $e->getTraceAsString(),
+                        ]);
+                        throw $e;
+                    }
+                }
             }
 
             DB::commit();

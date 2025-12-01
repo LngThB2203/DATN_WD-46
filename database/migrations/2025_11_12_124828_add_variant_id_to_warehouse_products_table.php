@@ -12,8 +12,11 @@ return new class extends Migration
     public function up()
     {
         Schema::table('warehouse_products', function (Blueprint $table) {
-            $table->unsignedBigInteger('variant_id')->nullable()->after('product_id');
-            $table->foreign('variant_id')->references('id')->on('product_variants')->onDelete('cascade');
+            // Kiểm tra xem cột đã tồn tại chưa
+            if (!Schema::hasColumn('warehouse_products', 'variant_id')) {
+                $table->unsignedBigInteger('variant_id')->nullable()->after('product_id');
+                $table->foreign('variant_id')->references('id')->on('product_variants')->onDelete('cascade');
+            }
         });
     }
 
