@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -36,7 +37,6 @@ Route::get('/test-form', function () {
 Route::post('/test-form-submit', function () {
     return 'Form submitted successfully!';
 });
-
 
 // ========================
 // AUTH ROUTES
@@ -83,6 +83,9 @@ Route::get('/category/{slug}', [ClientCategoryController::class, 'show'])->name(
 // Product
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
+Route::get('/product/{slug}/reviews', [ReviewController::class, 'index'])->name('product.reviews.index'); // AJAX phân trang đánh giá
+
+Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
 
 // Cart
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -132,9 +135,17 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 // ========================
 // ADMIN ROUTES
 // ========================
-Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
+Route::prefix('admin')->middleware('auth')->group(function () {
+    Route::get('/', fn() => redirect()->route('admin.statistics.index'))->name('admin.dashboard');
 
-    Route::get('/', fn() => view('admin.dashboard'))->name('admin.dashboard');
+    // Statistics
+    Route::prefix('statistics')->name('admin.statistics.')->group(function () {
+        Route::get('/', [StatisticController::class, 'index'])->name('index');
+        Route::get('/revenue-data', [StatisticController::class, 'revenueData'])->name('revenue-data');
+        Route::get('/top-products', [StatisticController::class, 'topProducts'])->name('top-products');
+        Route::get('/export/excel', [StatisticController::class, 'exportExcel'])->name('export-excel');
+        Route::get('/export/pdf', [StatisticController::class, 'exportPdf'])->name('export-pdf');
+    });
 
     // Products
     Route::prefix('products')->group(function () {
@@ -152,14 +163,14 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/export/pdf', [ProductController::class, 'exportPdf'])->name('products.export-pdf');
     });
 
-    // Product Variants
-    Route::prefix('variants')->group(function () {
-        Route::get('/', [ProductVariantController::class, 'index'])->name('variants.index');
-        Route::get('/create', [ProductVariantController::class, 'create'])->name('variants.create');
-        Route::post('/', [ProductVariantController::class, 'store'])->name('variants.store');
-        Route::get('/{variant}/edit', [ProductVariantController::class, 'edit'])->name('variants.edit');
-        Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('variants.update');
-        Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('variants.destroy');
+    // Variants
+    Route::prefix('variants')->name('variants.')->group(function () {
+        Route::get('/', [ProductVariantController::class, 'index'])->name('index');
+        Route::get('/create', [ProductVariantController::class, 'create'])->name('create');
+        Route::post('/', [ProductVariantController::class, 'store'])->name('store');
+        Route::get('/{variant}/edit', [ProductVariantController::class, 'edit'])->name('edit');
+        Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('update');
+        Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('destroy');
     });
 
     // Categories
@@ -303,6 +314,65 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
     });
 
-    // Fallback 404
-    Route::fallback(fn() => response()->view('client.404', [], 404));
+    // Coupons
+    Route::prefix('coupons')->group(function () {
+        Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
+        Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
+    });
+
+    // Admin Reviews
+    Route::prefix('reviews')->name('admin.reviews.')->group(function () {
+        Route::get('/', [AdminReviewController::class, 'index'])->name('index');
+        Route::get('/create', [AdminReviewController::class, 'create'])->name('create');
+        Route::post('/', [AdminReviewController::class, 'store'])->name('store');
+        Route::get('/{review}/edit', [AdminReviewController::class, 'edit'])->name('edit');
+        Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
+        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
+        Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
+    });
+
+    // Banners
+    Route::prefix('banner')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('banner.index');
+        Route::get('/create', [BannerController::class, 'create'])->name('banner.create');
+        Route::post('/store', [BannerController::class, 'store'])->name('banner.store');
+        Route::get('/edit/{banner}', [BannerController::class, 'edit'])->name('banner.edit');
+        Route::post('/update/{banner}', [BannerController::class, 'update'])->name('banner.update');
+        Route::get('/delete/{banner}', [BannerController::class, 'destroy'])->name('banner.delete');
+        Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])->name('banner.toggleStatus');
+    });
+
+    // Brands
+    Route::prefix('brand')->group(function () {
+        Route::get('/', [BrandController::class, 'index'])->name('brand.index');
+        Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
+        Route::post('/store', [BrandController::class, 'store'])->name('brand.store');
+        Route::get('/edit/{brand}', [BrandController::class, 'edit'])->name('brand.edit');
+        Route::post('/update/{brand}', [BrandController::class, 'update'])->name('brand.update');
+        Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
+        Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
+        Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
+    });
+
+    // Discounts
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
+        Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
+        Route::post('/', [AdminDiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [AdminDiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [AdminDiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [AdminDiscountController::class, 'destroy'])->name('destroy');
+    });
+
+    // Contacts
+    Route::prefix('contacts')->name('admin.contacts.')->group(function () {
+        Route::get('/', fn() => view('admin.contacts.list'))->name('index');
+        Route::get('/{id}', fn($id) => view('admin.contacts.show', compact('id')))->name('show');
+    });
+});
+
+// Fallback 404 - luôn đặt cuối cùng
+Route::fallback(function () {
+    return response()->view('client.404', [], 404);
 });

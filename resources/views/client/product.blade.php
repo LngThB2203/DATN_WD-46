@@ -66,7 +66,7 @@
             <!-- THÔNG TIN SẢN PHẨM -->
             <div class="col-lg-6">
                 <h2 class="fw-bold mb-3 text-capitalize">{{ $product->name }}</h2>
-                <p class="text-muted">{{ $product->brand ? 'Thương hiệu: ' . $product->brand : '' }}</p>
+                <p class="text-muted">{{ $product->brand ? 'Thương hiệu: ' . ($product->brand->name ?? '') : '' }}</p>
 
                 <!-- GIÁ SẢN PHẨM -->
                 <div class="d-flex align-items-center gap-3 mb-3">
@@ -75,12 +75,7 @@
                     </span>
                 </div>
 
-                <!-- TỒN KHO -->
-                @php
-                    $totalStock = $product->variants->count() > 0
-                                  ? $product->variants->sum('stock')
-                                  : $product->stock_quantity;
-                @endphp
+                <!-- TỒN KHO (theo controller) -->
                 <div class="mb-3">
                     <span class="badge {{ $totalStock > 0 ? 'bg-success' : 'bg-danger' }} p-2 fs-6">
                         {{ $totalStock > 0 ? 'Tồn kho: '.$totalStock.' sản phẩm' : 'Hết hàng' }}
@@ -124,6 +119,84 @@
                 </form>
             </div>
         </div>
+        <div class="mt-5">
+            <h4 class="mb-3">Mô tả chi tiết</h4>
+            <p>{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
+        </div>
+        <div class="mt-5">
+            <h4 class="mb-3">Đánh giá</h4>
+            <div class="mb-3">
+                <strong>Điểm trung bình:</strong>
+                <span>{{ number_format($product->average_rating, 1) }}/5</span>
+                <span class="text-muted">({{ $product->reviews_count }} lượt)</span>
+            </div>
+            @if(isset($reviews) && $reviews->count())
+                <div id="reviews-list" class="list-group mb-3">
+                    @include('client.partials.reviews', ['reviews' => $reviews])
+                </div>
+                <div class="d-grid mb-4">
+                    @php
+                        $perPage = request('per_page', 5);
+                        $nextPage = $reviews->currentPage() + 1;
+                        $hasMore = $reviews->hasMorePages();
+                    @endphp
+                    <button
+                        id="load-more-reviews"
+                        class="btn btn-outline-secondary"
+                        data-next-url="{{ $hasMore ? route('product.reviews.index', $product->slug) . '?page=' . $nextPage . '&per_page=' . $perPage : '' }}"
+                        @if(!$hasMore) style="display:none" @endif
+                    >Xem thêm</button>
+                </div>
+            @else
+                <p class="text-muted">Chưa có đánh giá.</p>
+            @endif
+
+            @auth
+                <form action="{{ route('product.review.store', $product->slug ?? $product->id) }}" method="POST" class="border p-3 rounded">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Chấm điểm (1-5)</label>
+                        <select id="rating" name="rating" class="form-select" required>
+                            <option value="">Chọn</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Nhận xét</label>
+                        <textarea id="comment" name="comment" class="form-control" rows="3" placeholder="Viết nhận xét (tuỳ chọn)"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+                </form>
+            @else
+                <p class="mt-3">Vui lòng <a href="{{ route('login') }}">đăng nhập</a> để đánh giá.</p>
+            @endauth
+        </div>
+
+        @if(isset($relatedProducts) && $relatedProducts->count())
+            <div class="mt-5">
+                <h4 class="mb-3">Sản phẩm tương tự</h4>
+                <div class="row g-3">
+                    @foreach($relatedProducts as $item)
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <a href="{{ route('product.show', $item->slug ?? $item->id) }}" class="text-decoration-none">
+                                <div class="card h-100">
+                                    @php $img = $item->primaryImage() ? asset('storage/'.$item->primaryImage()->image_path) : ($item->image ? asset('storage/'.$item->image) : asset('assets/client/img/product/product-1.webp')); @endphp
+                                    <img src="{{ $img }}" class="card-img-top" alt="{{ $item->name }}">
+                                    <div class="card-body">
+                                        <div class="fw-semibold text-dark">{{ $item->name }}</div>
+                                        <div class="small text-primary">{{ $item->formatted_sale_price ?? $item->formatted_price }}</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 </section>
 
@@ -177,7 +250,78 @@ document.addEventListener('DOMContentLoaded', function() {
                 addToCartBtn.disabled = {{ $totalStock <= 0 ? 'true' : 'false' }};
             }
         });
-    }
-});
+        var loadMoreBtn = document.getElementById('load-more-reviews');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function () {
+                var nextUrl = loadMoreBtn.getAttribute('data-next-url');
+                if (!nextUrl) {
+                    loadMoreBtn.style.display = 'none';
+                    return;
+                }
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.textContent = 'Đang tải...';
+                fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data && data.html) {
+                            var container = document.getElementById('reviews-list');
+                            var temp = document.createElement('div');
+                            temp.innerHTML = data.html;
+                            var items = temp.children;
+                            while (items.length) {
+                                container.appendChild(items[0]);
+                            }
+                        }
+                        if (data && data.next_page_url) {
+                            loadMoreBtn.setAttribute('data-next-url', data.next_page_url);
+                            loadMoreBtn.disabled = false;
+                            loadMoreBtn.textContent = 'Xem thêm';
+                        } else {
+                            loadMoreBtn.style.display = 'none';
+                        }
+                    })
+                    .catch(function () {
+                        loadMoreBtn.disabled = false;
+                        loadMoreBtn.textContent = 'Xem thêm';
+                    });
+            });
+        }
+
+        // Quantity controls
+        const quantityInput = document.getElementById('productQuantity');
+        const decreaseBtn = document.querySelector('.quantity-decrease');
+        const increaseBtn = document.querySelector('.quantity-increase');
+
+        if (decreaseBtn) {
+            decreaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(quantityInput.value);
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                }
+            });
+        }
+
+        if (increaseBtn) {
+            increaseBtn.addEventListener('click', function() {
+                const currentValue = parseInt(quantityInput.value);
+                const max = parseInt(quantityInput.getAttribute('max')) || 100;
+                if (currentValue < max) {
+                    quantityInput.value = currentValue + 1;
+                }
+            });
+        }
+
+        // Add to cart form submission
+        const addToCartForm = document.getElementById('addToCartForm');
+        if (addToCartForm) {
+            addToCartForm.addEventListener('submit', function(e) {
+                const btn = document.getElementById('addToCartBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...';
+                }
+            });
+        }
+    });
 </script>
 @endsection
