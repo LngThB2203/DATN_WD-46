@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\Admin\StatisticController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 
 // ========================
 // AUTH ROUTES
@@ -73,7 +74,9 @@ Route::get('/category', function () {
 
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
+
 Route::get('/product/{slug}/reviews', [ReviewController::class, 'index'])->name('product.reviews.index'); // AJAX phân trang đánh giá
+
 
 Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
 
@@ -116,7 +119,7 @@ Route::get('/support', fn() => view('client.support'))->name('support.index');
 // ADMIN ROUTES
 // ========================
 Route::prefix('admin')->middleware('auth')->group(function () {
-    Route::get('/', fn() => view('admin.dashboard'))->name('admin.dashboard');
+    Route::get('/', fn() => redirect()->route('admin.statistics.index'))->name('admin.dashboard');
 
     // Products
     Route::prefix('products')->group(function () {
@@ -132,6 +135,16 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::post('/gallery/{gallery}/set-primary', [ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
         Route::get('/export/excel', [ProductController::class, 'exportExcel'])->name('products.export-excel');
         Route::get('/export/pdf', [ProductController::class, 'exportPdf'])->name('products.export-pdf');
+    });
+
+    // Variants
+    Route::prefix('variants')->name('variants.')->group(function () {
+        Route::get('/', [ProductVariantController::class, 'index'])->name('index');
+        Route::get('/create', [ProductVariantController::class, 'create'])->name('create');
+        Route::post('/', [ProductVariantController::class, 'store'])->name('store');
+        Route::get('/{variant}/edit', [ProductVariantController::class, 'edit'])->name('edit');
+        Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('update');
+        Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('destroy');
     });
 
     // Categories
@@ -177,7 +190,7 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     });
 
     // Orders (ví dụ placeholder)
-    Route::prefix('orders')->group(function () {
+    Route::prefix('orders')->name('admin.')->group(function () {
         Route::get('/list', fn() => view('admin.orders.list'))->name('orders.list');
         Route::get('/show', fn() => view('admin.orders.show'))->name('orders.show');
         Route::get('/cart', fn() => view('admin.orders.cart'))->name('orders.cart');
@@ -263,6 +276,23 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
         Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
         Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
+    });
+
+    // Discounts
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
+        Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
+        Route::post('/', [AdminDiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [AdminDiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [AdminDiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [AdminDiscountController::class, 'destroy'])->name('destroy');
+    });
+
+    // Contacts
+    Route::prefix('contacts')->name('admin.contacts.')->group(function () {
+        Route::get('/', fn() => view('admin.contacts.list'))->name('index');
+        Route::get('/{id}', fn($id) => view('admin.contacts.show', compact('id')))->name('show');
     });
 });
 

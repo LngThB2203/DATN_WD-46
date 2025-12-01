@@ -19,8 +19,15 @@ class ProductDetailController extends Controller
                   ->orWhere('id', $slug);
         })->firstOrFail();
 
-        // Lấy tất cả reviews
-        $reviews = $product->reviews()->with('user')->latest()->get();
+        // Lấy reviews (phân trang để phù hợp với view) và chỉ lấy review đã duyệt
+        $perPage = (int) request('per_page', 5);
+        if ($perPage < 1) { $perPage = 5; }
+        if ($perPage > 10) { $perPage = 10; }
+        $reviews = $product->reviews()
+            ->with('user')
+            ->where('status', 1)
+            ->latest()
+            ->paginate($perPage);
 
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
