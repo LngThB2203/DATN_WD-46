@@ -12,7 +12,10 @@ return new class extends Migration
     public function up()
     {
         Schema::table('reviews', function (Blueprint $table) {
-            $table->tinyInteger('status')->default(1); // 1 = active
+            // Kiểm tra xem cột đã tồn tại chưa
+            if (!Schema::hasColumn('reviews', 'status')) {
+                $table->tinyInteger('status')->default(1); // 1 = active
+            }
         });
     }
     /**

@@ -29,6 +29,8 @@ class Order extends Model
         'discount_total',
         'grand_total',
         'payment_method',
+        'cancellation_reason',
+        'cancelled_at',
     ];
 
     protected $casts = [

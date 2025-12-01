@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
@@ -9,17 +8,23 @@ class ProductDetailController extends Controller
 {
     public function show(string $slug)
     {
-        // Tìm sản phẩm theo slug hoặc ID (fallback)
         $product = Product::with([
             'galleries',
             'category',
+            'brand',
             'reviews.user',
-        ])->where(function($query) use ($slug) {
-            $query->where('slug', $slug)
-                  ->orWhere('id', $slug);
-        })->firstOrFail();
+            'variants.size',
+            'variants.scent',
+            'variants.concentration',
+            'warehouseProducts.warehouse',
+        ])
+            ->where('slug', $slug)
+            ->firstOrFail();
 
-        // Lấy reviews (phân trang để phù hợp với view) và chỉ lấy review đã duyệt
+        // Tổng tồn kho theo warehouse
+        $totalStock = $product->warehouseProducts->sum('quantity');
+
+        // Reviews: phân trang để phù hợp với view, chỉ review đã duyệt
         $perPage = (int) request('per_page', 5);
         if ($perPage < 1) { $perPage = 5; }
         if ($perPage > 10) { $perPage = 10; }
@@ -29,7 +34,8 @@ class ProductDetailController extends Controller
             ->latest()
             ->paginate($perPage);
 
-        $relatedProducts = Product::where('category_id', $product->category_id)
+        $relatedProducts = Product::with('primaryImage')
+            ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(6)
             ->get();
@@ -37,9 +43,9 @@ class ProductDetailController extends Controller
         return view('client.product', [
             'product'         => $product,
             'galleries'       => $product->galleries,
+            'totalStock'      => $totalStock,
             'reviews'         => $reviews,
             'relatedProducts' => $relatedProducts,
         ]);
     }
 }
-

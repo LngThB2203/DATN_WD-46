@@ -19,7 +19,7 @@
         <ul>
             <li>Thanh toán khi nhận hàng (COD)</li>
             <li>Chuyển khoản ngân hàng</li>
-            <li>Ví điện tử (tích hợp sau)</li>
+            <li>Ví điện tử</li>
         </ul>
     </div>
 </section>
