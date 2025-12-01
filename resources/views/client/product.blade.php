@@ -66,7 +66,7 @@
             <!-- THÔNG TIN SẢN PHẨM -->
             <div class="col-lg-6">
                 <h2 class="fw-bold mb-3 text-capitalize">{{ $product->name }}</h2>
-                <p class="text-muted">{{ $product->brand ? 'Thương hiệu: ' . $product->brand : '' }}</p>
+                <p class="text-muted">{{ $product->brand ? 'Thương hiệu: ' . ($product->brand->name ?? '') : '' }}</p>
 
                 <!-- GIÁ SẢN PHẨM -->
                 <div class="d-flex align-items-center gap-3 mb-3">
@@ -75,12 +75,7 @@
                     </span>
                 </div>
 
-                <!-- TỒN KHO -->
-                @php
-                    $totalStock = $product->variants->count() > 0
-                                  ? $product->variants->sum('stock')
-                                  : $product->stock_quantity;
-                @endphp
+                <!-- TỒN KHO (theo controller) -->
                 <div class="mb-3">
                     <span class="badge {{ $totalStock > 0 ? 'bg-success' : 'bg-danger' }} p-2 fs-6">
                         {{ $totalStock > 0 ? 'Tồn kho: '.$totalStock.' sản phẩm' : 'Hết hàng' }}

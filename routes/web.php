@@ -138,6 +138,15 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 Route::prefix('admin')->middleware('auth')->group(function () {
     Route::get('/', fn() => redirect()->route('admin.statistics.index'))->name('admin.dashboard');
 
+    // Statistics
+    Route::prefix('statistics')->name('admin.statistics.')->group(function () {
+        Route::get('/', [StatisticController::class, 'index'])->name('index');
+        Route::get('/revenue-data', [StatisticController::class, 'revenueData'])->name('revenue-data');
+        Route::get('/top-products', [StatisticController::class, 'topProducts'])->name('top-products');
+        Route::get('/export/excel', [StatisticController::class, 'exportExcel'])->name('export-excel');
+        Route::get('/export/pdf', [StatisticController::class, 'exportPdf'])->name('export-pdf');
+    });
+
     // Products
     Route::prefix('products')->group(function () {
         Route::get('/list', [ProductController::class, 'index'])->name('products.index');
