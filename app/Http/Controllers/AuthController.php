@@ -33,7 +33,7 @@ class AuthController extends Controller
       $user->sendEmailVerificationNotification();
         Auth::login($user);
 
-        return redirect()->route('login.post')->with('success', 'Đăng ký thành công!');
+        return redirect()->route('home')->with('success', 'Đăng ký thành công!');
     }
 
     // Đăng nhập
@@ -47,9 +47,34 @@ class AuthController extends Controller
             'password.required' => 'Vui lòng nhập mật khẩu.',
         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
+        $remember = $request->boolean('remember');
+        try {
+            if (Auth::attempt($credentials, $remember)) {
+                $request->session()->regenerate();
+                return redirect()->intended(route('home'))->with('success', 'Đăng nhập thành công!');
+            }
+        } catch (\RuntimeException $e) {
+            $user = User::where('email', $request->input('email'))->first();
+            if ($user) {
+                $stored = $user->password;
+                $plain = $request->input('password');
+                $matched = false;
+                if ($stored === $plain) {
+                    $matched = true;
+                } else {
+                    $info = password_get_info($stored);
+                    if (!empty($info['algo'])) {
+                        $matched = password_verify($plain, $stored);
+                    }
+                }
+                if ($matched) {
+                    $user->password = $plain;
+                    $user->save();
+                    Auth::login($user, $remember);
+                    $request->session()->regenerate();
+                    return redirect()->intended(route('home'))->with('success', 'Đăng nhập thành công!');
+                }
+            }
         }
 
         return back()->withErrors([

@@ -21,14 +21,20 @@ class ProductDetailController extends Controller
             ->where('slug', $slug)
             ->firstOrFail();
 
+        // Tổng tồn kho theo warehouse
         $totalStock = $product->warehouseProducts->sum('quantity');
 
+        // Reviews: phân trang để phù hợp với view, chỉ review đã duyệt
+        $perPage = (int) request('per_page', 5);
+        if ($perPage < 1) { $perPage = 5; }
+        if ($perPage > 10) { $perPage = 10; }
         $reviews = $product->reviews()
+            ->with('user')
             ->where('status', 1)
             ->latest()
-            ->get();
+            ->paginate($perPage);
 
-        $relatedProducts = Product::with('primaryImage')
+        $relatedProducts = Product::with('galleries')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(6)
