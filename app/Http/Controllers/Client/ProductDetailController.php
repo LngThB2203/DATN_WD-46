@@ -34,7 +34,7 @@ class ProductDetailController extends Controller
             ->latest()
             ->paginate($perPage);
 
-        $relatedProducts = Product::with('primaryImage')
+        $relatedProducts = Product::with('galleries')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(6)
