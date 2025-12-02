@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
@@ -9,20 +8,34 @@ class ProductDetailController extends Controller
 {
     public function show(string $slug)
     {
-        // Tìm sản phẩm theo slug hoặc ID (fallback)
         $product = Product::with([
             'galleries',
             'category',
+            'brand',
             'reviews.user',
-        ])->where(function($query) use ($slug) {
-            $query->where('slug', $slug)
-                  ->orWhere('id', $slug);
-        })->firstOrFail();
+            'variants.size',
+            'variants.scent',
+            'variants.concentration',
+            'warehouseProducts.warehouse',
+        ])
+            ->where('slug', $slug)
+            ->firstOrFail();
 
-        // Lấy tất cả reviews
-        $reviews = $product->reviews()->with('user')->latest()->get();
+        // Tổng tồn kho theo warehouse
+        $totalStock = $product->warehouseProducts->sum('quantity');
 
-        $relatedProducts = Product::where('category_id', $product->category_id)
+        // Reviews: phân trang để phù hợp với view, chỉ review đã duyệt
+        $perPage = (int) request('per_page', 5);
+        if ($perPage < 1) { $perPage = 5; }
+        if ($perPage > 10) { $perPage = 10; }
+        $reviews = $product->reviews()
+            ->with('user')
+            ->where('status', 1)
+            ->latest()
+            ->paginate($perPage);
+
+        $relatedProducts = Product::with('galleries')
+            ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(6)
             ->get();
@@ -30,9 +43,9 @@ class ProductDetailController extends Controller
         return view('client.product', [
             'product'         => $product,
             'galleries'       => $product->galleries,
+            'totalStock'      => $totalStock,
             'reviews'         => $reviews,
             'relatedProducts' => $relatedProducts,
         ]);
     }
 }
-

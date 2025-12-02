@@ -44,14 +44,35 @@ class Product extends Model
         return $this->hasMany(Review::class);
     }
 
+    // Relation HasOne cho ảnh chính
     public function primaryImage()
     {
         return $this->galleries->where('is_primary', true)->first();
     }
 
+    public function primaryImageModel()
+    {
+        return $this->hasOne(ProductGallery::class)->where('is_primary', true);
+    }
+
     public function allImages()
     {
         return $this->galleries()->orderBy('is_primary', 'desc')->get();
+    }
+
+    public function warehouseProducts()
+    {
+        return $this->hasMany(WarehouseProduct::class, 'product_id');
+    }
+
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function getStockQuantityAttribute()
+    {
+        return $this->warehouseProducts()->sum('quantity');
     }
 
     public function scopeActive($query)
@@ -66,7 +87,9 @@ class Product extends Model
 
     public function getFormattedSalePriceAttribute()
     {
-        return $this->sale_price ? number_format((float) $this->sale_price, 0, ',', '.') . ' VNĐ' : null;
+        return $this->sale_price
+            ? number_format((float) $this->sale_price, 0, ',', '.') . ' VNĐ'
+            : null;
     }
 
     public function getDiscountPercentageAttribute()
@@ -86,5 +109,9 @@ class Product extends Model
     public function getReviewsCountAttribute()
     {
         return (int) ($this->reviews()->count());
+    }
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
     }
 }

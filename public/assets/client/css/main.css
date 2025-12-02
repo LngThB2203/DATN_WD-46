@@ -20,7 +20,7 @@
 }
 
 /* Global Colors - The following color variables are used throughout the website. Updating them here will change the color scheme of the entire website */
-:root { 
+:root {
   --background-color: #ffffff; /* Background color for the entire website, including individual sections */
   --default-color: #212529; /* Default color used for the majority of the text content across the entire website */
   --heading-color: #2d465e; /* Color for headings, subheadings and title throughout the website */
@@ -12203,4 +12203,65 @@ section,
   padding-left: 5px;
   color: color-mix(in srgb, var(--default-color), transparent 60%);
   font-size: 14px;
+}
+/*--------------------------------------------------------------css newletster section
+/* Newsletter Footer */
+.newsletter {
+    padding: 20px 0;
+    border-top: 1px solid #e5e5e5;
+}
+
+.newsletter-form {
+    max-width: 450px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.newsletter-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #333;
+}
+
+.newsletter-input-group {
+    display: flex;
+    gap: 5px;
+}
+
+.newsletter-input-group input[type="email"] {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.newsletter-input-group input[type="email"]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0,123,255,0.3);
+}
+
+.newsletter-input-group button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 0 4px 4px 0;
+    transition: all 0.3s;
+}
+
+.newsletter-input-group button:hover {
+    background-color: #0056b3;
+}
+
+.newsletter .alert {
+    margin-top: 10px;
+    font-size: 14px;
+    text-align: center;
 }
