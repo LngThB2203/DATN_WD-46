@@ -18,12 +18,32 @@
                     @if($heroBanner && $heroBanner->image)
                         <img class="img-fluid rounded" src="{{ asset('storage/' . $heroBanner->image) }}" alt="Hero">
                     @else
-                        <img class="img-fluid rounded" src="{{ asset('assets/client/img/default-hero.webp') }}" alt="Hero">
+                        <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @foreach($heroBanners as $key => $banner)
+                                    <div class="carousel-item @if($key == 0) active @endif">
+                                        <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
+                                    </div>
+                                @endforeach
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                                <span class="visually-hidden"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                                <span class="visually-hidden"></span>
+                            </button>
+                        </div>
                     @endif
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
+
+
+
 
     <!-- Info Cards Section -->
     <section id="info-cards" class="info-cards section light-background">
@@ -260,3 +280,16 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 @endsection
+<style>
+    #heroCarousel .carousel-item {
+    height: 400px; /* chiều cao cố định cho carousel */
+    overflow: hidden;
+}
+
+#heroCarousel .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ảnh sẽ tự dãn và cắt để lấp đầy khung */
+}
+
+</style>

@@ -41,7 +41,9 @@
                         <div class="card-footer bg-white border-0">
                             <a href="{{ route('blog.show', $post->slug) }}" class="btn btn-sm btn-primary w-100">Xem chi tiết</a>
                         </div>
-                    </div>
+                    @empty
+                        <p class="text-center">Chưa có bài viết nào.</p>
+                    @endforelse
                 </div>
             @empty
                 <p class="text-center">Chưa có bài viết nào.</p>
