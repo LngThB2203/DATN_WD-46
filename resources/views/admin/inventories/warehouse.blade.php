@@ -3,6 +3,20 @@
 @section('content')
 <div class="page-content">
     <div class="container-xxl">
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
         <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Danh sách kho</h4>

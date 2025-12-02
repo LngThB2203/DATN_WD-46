@@ -1,11 +1,12 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use Storage;
 use App\Models\Post;
 use App\Models\Category;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class PostController extends Controller{
     public function index(Request $request)
@@ -77,7 +78,7 @@ class PostController extends Controller{
     // Upload ảnh mới nếu có
     if ($request->hasFile('image')) {
         // Xóa ảnh cũ nếu có
-        if ($post->image && \Storage::disk('public')->exists($post->image)) {
+        if ($post->image && Storage::disk('public')->exists($post->image)) {
             \Storage::disk('public')->delete($post->image);
         }
 

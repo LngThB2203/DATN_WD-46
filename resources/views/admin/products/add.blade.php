@@ -187,6 +187,55 @@
                         </div>
                     </div>
 
+                    {{-- Quản lý tồn kho --}}
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Quản lý tồn kho</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {{-- Kho hàng --}}
+                                <div class="col-lg-6">
+                                    <div class="mb-3">
+                                        <label for="warehouse_id" class="form-label">Kho hàng</label>
+                                        <select id="warehouse_id" name="warehouse_id"
+                                            class="form-select @error('warehouse_id') is-invalid @enderror">
+                                            <option value="">-- Chọn kho hàng --</option>
+                                            @if(isset($warehouses))
+                                                @foreach($warehouses as $warehouse)
+                                                    <option value="{{ $warehouse->id }}" {{ old('warehouse_id')==$warehouse->id ? 'selected' : '' }}>
+                                                        {{ $warehouse->warehouse_name ?? $warehouse->name }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                        @error('warehouse_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="text-muted">Chọn kho để thêm số lượng tồn kho cho sản phẩm</small>
+                                    </div>
+                                </div>
+
+                                {{-- Số lượng tồn kho --}}
+                                <div class="col-lg-6">
+                                    <div class="mb-3">
+                                        <label for="stock_quantity" class="form-label">Số lượng tồn kho <span id="stockRequired" class="text-danger d-none">*</span></label>
+                                        <input type="number" id="stock_quantity" name="stock_quantity"
+                                            class="form-control @error('stock_quantity') is-invalid @enderror"
+                                            placeholder="Nhập số lượng" value="{{ old('stock_quantity') }}" min="0" step="1">
+                                        @error('stock_quantity')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                        <small class="text-muted">Nhập số lượng sản phẩm có trong kho (bắt buộc nếu chọn kho)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <small><i class="bi bi-info-circle"></i> <strong>Lưu ý:</strong> Nếu không chọn kho hàng, bạn có thể thêm tồn kho sau trong phần Quản lý kho.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Nút hành động --}}
                     <div class="p-3 bg-light mb-3 rounded">
                         <div class="row justify-content-end g-2">
@@ -207,6 +256,29 @@
 {{-- Preview ảnh --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+    // Xử lý warehouse selection
+    const warehouseSelect = document.getElementById('warehouse_id');
+    const stockQuantityInput = document.getElementById('stock_quantity');
+    const stockRequired = document.getElementById('stockRequired');
+    
+    if (warehouseSelect && stockQuantityInput) {
+        warehouseSelect.addEventListener('change', function() {
+            if (this.value) {
+                stockQuantityInput.setAttribute('required', 'required');
+                if (stockRequired) stockRequired.classList.remove('d-none');
+            } else {
+                stockQuantityInput.removeAttribute('required');
+                if (stockRequired) stockRequired.classList.add('d-none');
+                stockQuantityInput.value = '';
+            }
+        });
+        
+        // Trigger on load
+        if (warehouseSelect.value) {
+            warehouseSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
     const imageInput = document.getElementById('images');
     const imagePreview = document.getElementById('image-preview');
 
