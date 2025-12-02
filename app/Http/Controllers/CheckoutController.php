@@ -30,9 +30,10 @@ class CheckoutController extends Controller
         }
 
         $defaultCustomer = [
-            'name'  => optional($request->user())->name,
-            'email' => optional($request->user())->email,
-            'phone' => optional($request->user())->phone ?? null,
+            'name'    => optional($request->user())->name,
+            'email'   => optional($request->user())->email,
+            'phone'   => optional($request->user())->phone ?? null,
+            'address' => optional($request->user())->address ?? null,
         ];
 
         return view('client.checkout', [
@@ -48,9 +49,6 @@ class CheckoutController extends Controller
             'customer_name'         => 'required|string|max:150',
             'customer_email'        => 'nullable|email|max:150',
             'customer_phone'        => 'required|string|max:20',
-            'shipping_province'     => 'required|string|max:120',
-            'shipping_district'     => 'required|string|max:120',
-            'shipping_ward'         => 'nullable|string|max:120',
             'shipping_address_line' => 'required|string|max:255',
             'customer_note'         => 'nullable|string|max:1000',
             'payment_method'        => 'required|string|in:cod,bank_transfer,online',
@@ -60,7 +58,6 @@ class CheckoutController extends Controller
         if (is_string($selectedItems)) {
             $selectedItems = explode(',', $selectedItems);
         }
-
         $selectedItems = array_filter(array_map('intval', (array) $selectedItems));
 
         $cart = $this->prepareCart($request, $selectedItems);
@@ -70,9 +67,8 @@ class CheckoutController extends Controller
         }
 
         DB::beginTransaction();
-
         try {
-            $fullAddress = $this->buildFullAddress($validated);
+            $fullAddress = $validated['shipping_address_line'];
             $discountId  = $request->session()->get('cart.discount_id');
 
             // Tạo đơn hàng
@@ -86,9 +82,6 @@ class CheckoutController extends Controller
                 'customer_name'         => $validated['customer_name'],
                 'customer_email'        => $validated['customer_email'] ?? null,
                 'customer_phone'        => $validated['customer_phone'],
-                'shipping_province'     => $validated['shipping_province'],
-                'shipping_district'     => $validated['shipping_district'],
-                'shipping_ward'         => $validated['shipping_ward'] ?? null,
                 'shipping_address_line' => $validated['shipping_address_line'],
                 'customer_note'         => $validated['customer_note'] ?? null,
                 'subtotal'              => $cart['subtotal'],
@@ -111,7 +104,7 @@ class CheckoutController extends Controller
                     'updated_at' => now(),
                 ];
             }
-            if (! empty($orderDetails)) {
+            if (!empty($orderDetails)) {
                 OrderDetail::insert($orderDetails);
             }
 
@@ -144,16 +137,7 @@ class CheckoutController extends Controller
                 Log::error('Send order email failed: ' . $e->getMessage());
             }
 
-            // Lưu thông tin customer vào session
-            if ($validated['customer_email']) {
-                $request->session()->put('last_order_email', $validated['customer_email']);
-            }
-
-            if ($validated['customer_phone']) {
-                $request->session()->put('last_order_phone', $validated['customer_phone']);
-            }
-
-            $orderCode      = '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+            $orderCode      = '#' . str_pad((string)$order->id, 6, '0', STR_PAD_LEFT);
             $successMessage = $validated['payment_method'] === 'bank_transfer'
                 ? "Đơn hàng {$orderCode} đã được ghi nhận. Vui lòng chuyển khoản theo hướng dẫn để hoàn tất thanh toán."
                 : "Đơn hàng {$orderCode} đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.";
@@ -170,28 +154,25 @@ class CheckoutController extends Controller
         }
     }
 
-    /**
-     * Chuẩn bị cart để hiển thị
-     */
     private function prepareCart(Request $request, array $selectedItems = []): array
     {
         $sessionCart = $request->session()->get('cart', ['items' => [], 'shipping_fee' => 30000, 'discount_total' => 0]);
         $items       = collect($sessionCart['items'] ?? []);
 
-        if (! empty($selectedItems)) {
+        if (!empty($selectedItems)) {
             $items = $items->filter(fn($i) => in_array($i['cart_item_id'], $selectedItems, true));
         }
 
         $items = $items->map(function ($i) {
-            $i['quantity'] = max(1, (int) ($i['quantity'] ?? 1));
-            $i['price']    = (float) ($i['price'] ?? 0);
+            $i['quantity'] = max(1, (int)($i['quantity'] ?? 1));
+            $i['price']    = (float)($i['price'] ?? 0);
             $i['subtotal'] = $i['quantity'] * $i['price'];
             return $i;
         });
 
         $subtotal      = $items->sum('subtotal');
-        $shippingFee   = (float) ($sessionCart['shipping_fee'] ?? 0);
-        $discountTotal = (float) ($sessionCart['discount_total'] ?? 0);
+        $shippingFee   = (float)($sessionCart['shipping_fee'] ?? 0);
+        $discountTotal = (float)($sessionCart['discount_total'] ?? 0);
         $grandTotal    = max(($subtotal + $shippingFee) - $discountTotal, 0);
 
         return [
@@ -203,44 +184,25 @@ class CheckoutController extends Controller
         ];
     }
 
-    /**
-     * Xây dựng địa chỉ đầy đủ
-     */
-    private function buildFullAddress(array $data): string
-    {
-        return collect([
-            $data['shipping_address_line'] ?? null,
-            $data['shipping_ward'] ?? null,
-            $data['shipping_district'] ?? null,
-            $data['shipping_province'] ?? null,
-        ])->filter()->implode(', ');
-    }
-
     private function removePaidItemsFromCart(Request $request, array $paidItemIds): void
-{
-    $sessionCart = $request->session()->get('cart', ['items' => []]);
+    {
+        $sessionCart = $request->session()->get('cart', ['items' => []]);
 
-    // Xóa item khỏi SESSION theo cart_item_id
-    $sessionCart['items'] = collect($sessionCart['items'])
-        ->reject(fn($i) => in_array($i['cart_item_id'], $paidItemIds, true))
-        ->values()
-        ->all();
+        $sessionCart['items'] = collect($sessionCart['items'])
+            ->reject(fn($i) => in_array($i['cart_item_id'], $paidItemIds, true))
+            ->values()
+            ->all();
 
-    // Cập nhật lại tổng
-    $subtotal = collect($sessionCart['items'])
-        ->sum(fn($i) => $i['quantity'] * $i['price']);
+        $subtotal = collect($sessionCart['items'])
+            ->sum(fn($i) => $i['quantity'] * $i['price']);
 
-    $sessionCart['subtotal'] = $subtotal;
-    $sessionCart['grand_total'] =
-        max(($subtotal + ($sessionCart['shipping_fee'] ?? 0)) - ($sessionCart['discount_total'] ?? 0), 0);
+        $sessionCart['subtotal'] = $subtotal;
+        $sessionCart['grand_total'] = max(($subtotal + ($sessionCart['shipping_fee'] ?? 0)) - ($sessionCart['discount_total'] ?? 0), 0);
 
-    // Lưu lại session
-    $request->session()->put('cart', $sessionCart);
+        $request->session()->put('cart', $sessionCart);
 
-    // Nếu user đăng nhập → xóa đúng CartItem theo ID
-    if ($request->user()) {
-        CartItem::whereIn('id', $paidItemIds)->delete();
+        if ($request->user()) {
+            CartItem::whereIn('id', $paidItemIds)->delete();
+        }
     }
-}
-
 }
