@@ -186,13 +186,4 @@
             </nav>
         </div>
     </div>
-</div>
-<style>
-    .header-nav ul li a.active {
-    color: #fff;
-    background-color: #007bff;
-    border-radius: 4px;
-    padding: 4px 8px;
-}
-</style>
 </header>
