@@ -162,7 +162,7 @@
                     </a>
                     <a href="{{ route('cart.index') }}" class="header-action-btn">
                         <i class="bi bi-cart3"></i>
-                        <span class="badge">0</span>
+                        <span class="badge" id="cartBadge">0</span>
                     </a>
                     <i class="mobile-nav-toggle d-xl-none bi bi-list me-0"></i>
                 </div>

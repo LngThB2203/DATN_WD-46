@@ -105,6 +105,14 @@ class CartController extends Controller
             $this->syncCartToSession($request, $cart);
 
             if ($request->ajax()) {
+                $cart = $this->getOrCreateCart($request);
+                $cartCount = $cart->items()->count();
+                $cartData = $this->prepareCart($request);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã cập nhật số lượng!',
+                    'cart' => $cartData,
+                    'cart_count' => $cartCount,
                 return response()->json([
                     'success' => true,
                     'message' => 'Cập nhật số lượng thành công!',
@@ -133,10 +141,14 @@ class CartController extends Controller
             $this->syncCartToSession($request, $cart);
 
             if ($request->ajax()) {
+                $cart = $this->getOrCreateCart($request);
+                $cartCount = $cart->items()->count();
+                $cartData = $this->prepareCart($request);
                 return response()->json([
                     'success' => true,
-                    'message' => 'Xóa sản phẩm thành công!',
-                    'cart'    => $this->prepareCart($request),
+                    'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
+                    'cart' => $cartData,
+                    'cart_count' => $cartCount,
                 ]);
             }
             return back()->with('success', 'Xóa sản phẩm thành công!');
@@ -158,7 +170,11 @@ class CartController extends Controller
             $request->session()->forget('cart_id');
 
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Đã xóa toàn bộ giỏ hàng!']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã xóa toàn bộ giỏ hàng!',
+                    'cart_count' => 0,
+                ]);
             }
             return redirect()->route('cart.index')->with('success', 'Đã xóa toàn bộ giỏ hàng!');
         } catch (\Exception $e) {
@@ -234,6 +250,31 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Lấy số lượng items trong giỏ hàng
+     */
+    public function getCount(Request $request)
+    {
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $count = $cart->items()->count();
+            
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Cart count error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * Chuẩn bị dữ liệu cart để hiển thị
+     */
     private function prepareCart(Request $request): array
     {
         $cart = session()->get('cart', []);

@@ -35,7 +35,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 fw-semibold">Sản phẩm trong giỏ</h5>
                         @if(!empty($cart['items']))
-                            <form method="POST" action="{{ route('cart.clear') }}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?');">
+                            <form method="POST" action="{{ route('cart.clear') }}" class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Xóa tất cả</button>
                             </form>
@@ -104,7 +104,7 @@
                                                 </td>
                                                 <td><strong>{{ number_format(($item['quantity'] ?? 1) * ($item['price'] ?? 0), 0, ',', '.') }} VNĐ</strong></td>
                                                 <td>
-                                                    <form method="POST" action="{{ route('cart.remove') }}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa sản phẩm này?');">
+                                                    <form method="POST" action="{{ route('cart.remove') }}" class="d-inline">
                                                         @csrf
                                                         <input type="hidden" name="cart_item_id" value="{{ $item['cart_item_id'] }}">
                                                         <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
@@ -212,9 +212,136 @@ document.addEventListener('DOMContentLoaded', function() {
         input.dispatchEvent(new Event('change'));
     }));
 
+    // Tự động submit khi thay đổi số lượng (AJAX)
     document.querySelectorAll('.quantity-input').forEach(input => {
-        input.addEventListener('change', calculateSelectedTotal);
-        input.addEventListener('blur', calculateSelectedTotal);
+        input.addEventListener('change', function() {
+            const row = this.closest('.cart-item-row');
+            if (row) {
+                row.dataset.quantity = this.value;
+                // Tính lại tổng trước khi submit
+                calculateSelectedTotal();
+            }
+            const form = this.closest('.cart-update-form');
+            if (form) {
+                // Submit bằng AJAX
+                const formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Cập nhật badge
+                        if (window.updateCartBadge && data.cart_count !== undefined) {
+                            window.updateCartBadge(data.cart_count);
+                        }
+                        // Reload trang để cập nhật giỏ hàng
+                        window.location.reload();
+                    } else {
+                        if (window.showNotification) {
+                            window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Fallback: submit form thông thường
+                    form.submit();
+                });
+            }
+        });
+        
+        // Cập nhật khi blur (rời khỏi input)
+        input.addEventListener('blur', function() {
+            calculateSelectedTotal();
+        });
+    });
+    
+    // Xử lý form remove (AJAX)
+    document.querySelectorAll('form[action*="cart.remove"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
+                return;
+            }
+            
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Cập nhật badge
+                    if (window.updateCartBadge && data.cart_count !== undefined) {
+                        window.updateCartBadge(data.cart_count);
+                    } else if (window.loadCartCount) {
+                        window.loadCartCount();
+                    }
+                    // Reload trang để cập nhật giỏ hàng
+                    window.location.reload();
+                } else {
+                    if (window.showNotification) {
+                        window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Fallback: submit form thông thường
+                form.submit();
+            });
+        });
+    });
+    
+    // Xử lý form clear (AJAX)
+    document.querySelectorAll('form[action*="cart.clear"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?')) {
+                return;
+            }
+            
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Cập nhật badge về 0
+                    if (window.updateCartBadge) {
+                        window.updateCartBadge(0);
+                    }
+                    // Reload trang
+                    window.location.reload();
+                } else {
+                    if (window.showNotification) {
+                        window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Fallback: submit form thông thường
+                form.submit();
+            });
+        });
     });
 
     // Calculate total on page load

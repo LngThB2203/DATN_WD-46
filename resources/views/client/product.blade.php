@@ -311,15 +311,128 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Add to cart form submission
+        // Variant selection handler
+        const variantSelect = document.getElementById('variantSelect');
+        const selectedVariantId = document.getElementById('selectedVariantId');
+        const variantInfo = document.getElementById('variantInfo');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        const buyNowBtn = document.querySelector('a[href*="checkout"]');
+        
+        function updateStockStatus(stock) {
+            const isOutOfStock = parseInt(stock) <= 0;
+            if (addToCartBtn) {
+                addToCartBtn.disabled = isOutOfStock;
+                addToCartBtn.innerHTML = isOutOfStock ? '<i class="bi bi-cart-x"></i> Hết hàng' : '<i class="bi bi-cart-plus"></i> Thêm vào giỏ';
+            }
+            if (buyNowBtn) {
+                if (isOutOfStock) {
+                    buyNowBtn.style.pointerEvents = 'none';
+                    buyNowBtn.style.opacity = '0.5';
+                } else {
+                    buyNowBtn.style.pointerEvents = 'auto';
+                    buyNowBtn.style.opacity = '1';
+                }
+            }
+        }
+        
+        if (variantSelect) {
+            variantSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption.value) {
+                    selectedVariantId.value = selectedOption.value;
+                    const stock = selectedOption.dataset.stock;
+                    const size = selectedOption.dataset.size;
+                    const scent = selectedOption.dataset.scent;
+                    const concentration = selectedOption.dataset.concentration;
+                    
+                    let infoText = '';
+                    if (size) infoText += 'Kích thước: ' + size + ' | ';
+                    if (scent) infoText += 'Mùi: ' + scent + ' | ';
+                    if (concentration) infoText += 'Nồng độ: ' + concentration + ' | ';
+                    infoText += 'Tồn kho: ' + stock;
+                    
+                    if (variantInfo) {
+                        variantInfo.textContent = infoText;
+                    }
+                    
+                    // Update max quantity based on stock
+                    const quantityInput = document.getElementById('productQuantity');
+                    if (quantityInput) {
+                        quantityInput.setAttribute('max', stock);
+                    }
+                    
+                    // Update button status
+                    updateStockStatus(stock);
+                } else {
+                    selectedVariantId.value = '';
+                    if (variantInfo) {
+                        variantInfo.textContent = '';
+                    }
+                    // Reset to product stock
+                    @php
+                        $totalStock = $product->stock_quantity;
+                        if ($product->variants->count() > 0) {
+                            $totalStock += $product->variants->sum('stock');
+                        }
+                    @endphp
+                    updateStockStatus({{ $totalStock }});
+                }
+            });
+        }
+
+        // Add to cart with AJAX (custom handler for product detail page)
         const addToCartForm = document.getElementById('addToCartForm');
         if (addToCartForm) {
             addToCartForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
                 const btn = document.getElementById('addToCartBtn');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...';
-                }
+                const originalBtnText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...';
+                
+                const formData = new FormData(this);
+                
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Cập nhật badge giỏ hàng (sử dụng function từ layout)
+                        if (window.updateCartBadge) {
+                            window.updateCartBadge(data.cart_count || 0);
+                        }
+                        
+                        // Hiển thị thông báo thành công
+                        if (window.showNotification) {
+                            window.showNotification(data.message || 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
+                        }
+                        
+                        // Reset button
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnText;
+                    } else {
+                        if (window.showNotification) {
+                            window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+                        }
+                        btn.disabled = false;
+                        btn.innerHTML = originalBtnText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (window.showNotification) {
+                        window.showNotification('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!', 'error');
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnText;
+                });
             });
         }
     });

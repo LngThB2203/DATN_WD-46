@@ -239,24 +239,120 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const cartForms = document.querySelectorAll('form[action*="cart/add"]');
+    // Load cart count on page load
+    loadCartCount();
+    
+    // Initialize all cart add forms
+    initCartForms();
+});
 
+// Function to load cart count
+function loadCartCount() {
+    fetch('{{ route("cart.count") }}', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateCartBadge(data.count || 0);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading cart count:', error);
+    });
+}
+
+// Function to update cart badge
+function updateCartBadge(count) {
+    const badge = document.getElementById('cartBadge');
+    if (badge) {
+        badge.textContent = count;
+        // Animation effect
+        badge.style.transition = 'transform 0.2s';
+        badge.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            badge.style.transform = 'scale(1)';
+        }, 200);
+    }
+}
+
+// Function to show notification
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+// Initialize all cart add forms to use AJAX
+function initCartForms() {
+    const cartForms = document.querySelectorAll('form[action*="cart.add"]');
+    
     cartForms.forEach(function(form) {
-        form.addEventListener('submit', function() {
-            const btn = form.querySelector('button[type="submit"]');
-            if (btn) {
-                const old = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = old;
-                }, 5000);
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             }
+            
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Cập nhật badge giỏ hàng
+                    updateCartBadge(data.cart_count || 0);
+                    // Hiển thị thông báo
+                    showNotification(data.message || 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
+                } else {
+                    showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng!', 'error');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            });
         });
     });
-});
+}
+
+// Make functions available globally
+window.loadCartCount = loadCartCount;
+window.updateCartBadge = updateCartBadge;
+window.showNotification = showNotification;
 </script>
 
 @endsection
