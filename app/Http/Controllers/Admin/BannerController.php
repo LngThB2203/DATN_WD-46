@@ -13,18 +13,8 @@ class BannerController extends Controller
     // Hiển thị danh sách banner
     public function index()
     {
-        $banners = Banner::latest()->paginate(10);
-
-    $today = now()->toDateString();
-    $expiredBanners = Banner::whereNotNull('end_date')
-                            ->where('end_date', '<', $today)
-                            ->get();
-
-    $alertMessage = null;
-    if ($expiredBanners->count() > 0) {
-        $alertMessage = "Có " . $expiredBanners->count() . " banner đã hết thời gian sử dụng!";
-    }
-        return view('admin.banner.index', compact('banners', 'alertMessage'));
+        $banners = Banner::latest()->paginate(10); // Pagination
+        return view('admin.banner.index', compact('banners'));
     }
 
     // Form thêm mới

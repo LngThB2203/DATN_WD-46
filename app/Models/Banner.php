@@ -11,18 +11,12 @@ class Banner extends Model
 
     protected $table = 'banners';
 
-   protected $fillable = ['image', 'link', 'start_date', 'end_date', 'created_by'];
+   protected $fillable = ['image', 'link', 'start_date', 'end_date', 'created_by', 'status'];
 protected $casts = [
     'start_date' => 'date',
     'end_date' => 'date',
+    'status' => 'boolean',
 ];
-public function index()
-{
-    // Lấy banner đang hoạt động (active)
-    $heroBanners = Banner::active()->get();
-
-    return view('client.home', compact('heroBanners'));
-}
 
     // Mối quan hệ tới người tạo (user)
     public function creator()
