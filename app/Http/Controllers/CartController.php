@@ -113,10 +113,6 @@ class CartController extends Controller
                     'message' => 'Đã cập nhật số lượng!',
                     'cart' => $cartData,
                     'cart_count' => $cartCount,
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Cập nhật số lượng thành công!',
-                    'cart'    => $this->prepareCart($request),
                 ]);
             }
 
@@ -277,21 +273,59 @@ class CartController extends Controller
      */
     private function prepareCart(Request $request): array
     {
-        $cart = session()->get('cart', []);
+        // Ưu tiên lấy từ database
+        $cart = $this->getOrCreateCart($request);
+        $items = $cart->items()->with(['product.galleries', 'variant.size', 'variant.scent', 'variant.concentration'])->get();
 
-        $items    = $cart['items'] ?? [];
-        $subtotal = 0;
-
+        $sessionItems = [];
         foreach ($items as $item) {
-            $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
+            $product = $item->product;
+            if (!$product) {
+                continue; // Bỏ qua sản phẩm đã bị xóa
+            }
+
+            $quantity = max(1, (int) $item->quantity);
+            $price = (float) $item->price;
+
+            $variant = $item->variant;
+            $variantName = '';
+            if ($variant) {
+                $parts = [];
+                if ($variant->size) $parts[] = 'Size: ' . $variant->size->size_name;
+                if ($variant->scent) $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                if ($variant->concentration) $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
+                $variantName = implode(' | ', $parts);
+            }
+            
+            $image = $product->primaryImage() ? $product->primaryImage()->image_path : null;
+            
+            $sessionItems[] = [
+                'cart_item_id' => $item->id,
+                'product_id' => $item->product_id,
+                'variant_id' => $item->variant_id,
+                'quantity' => $quantity,
+                'price' => $price,
+                'subtotal' => $quantity * $price,
+                'name' => $product->name,
+                'variant_name' => $variantName,
+                'image' => $image,
+            ];
         }
 
+        $subtotal = collect($sessionItems)->sum('subtotal');
+        $shippingFee = 30000;
+        $discountTotal = (float) ($request->session()->get('cart.discount_total', 0));
+        $grandTotal = max(($subtotal + $shippingFee) - $discountTotal, 0);
+
+        // Đồng bộ với session
+        $this->syncCartToSession($request, $cart);
+
         return [
-            'items'          => $items,
-            'subtotal'       => $subtotal,
-            'shipping_fee'   => 30000,
-            'discount_total' => 0,
-            'grand_total'    => $subtotal + 30000,
+            'items' => $sessionItems,
+            'subtotal' => $subtotal,
+            'shipping_fee' => $shippingFee,
+            'discount_total' => $discountTotal,
+            'grand_total' => $grandTotal,
         ];
     }
 

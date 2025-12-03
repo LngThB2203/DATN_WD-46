@@ -41,29 +41,41 @@
             <div class="card">
                 <div class="card-header fw-semibold">Thông tin người nhận</div>
                 <div class="card-body">
-                    <div class="col-12">
-                        <label class="form-label">Họ tên</label>
-                        <input type="text" class="form-control" value="{{ $defaultCustomer['name'] ?? '' }}" readonly>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Họ tên <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror" 
+                                value="{{ old('customer_name', $defaultCustomer['name'] ?? '') }}" required>
+                            @error('customer_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="customer_email" class="form-control @error('customer_email') is-invalid @enderror" 
+                                value="{{ old('customer_email', $defaultCustomer['email'] ?? '') }}" required>
+                            @error('customer_email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_phone" class="form-control @error('customer_phone') is-invalid @enderror" 
+                                value="{{ old('customer_phone', $defaultCustomer['phone'] ?? '') }}" 
+                                placeholder="Nhập số điện thoại" required>
+                            @error('customer_phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                            <textarea name="shipping_address_line" class="form-control @error('shipping_address_line') is-invalid @enderror" 
+                                rows="3" placeholder="Nhập địa chỉ giao hàng" required>{{ old('shipping_address_line', $defaultCustomer['address'] ?? '') }}</textarea>
+                            @error('shipping_address_line')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
-                    <div class="col-12">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" value="{{ $defaultCustomer['email'] ?? '' }}" readonly>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Số điện thoại</label>
-                        <input type="text" class="form-control" value="{{ $defaultCustomer['phone'] ?? '' }}" readonly>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Địa chỉ</label>
-                        <input type="text" class="form-control" value="{{ $defaultCustomer['address'] ?? '' }}"
-                            readonly>
-                    </div>
-
-                    {{-- Giữ các input ẩn để gửi form --}}
-                    <input type="hidden" name="customer_name" value="{{ $defaultCustomer['name'] ?? '' }}">
-                    <input type="hidden" name="customer_email" value="{{ $defaultCustomer['email'] ?? '' }}">
-                    <input type="hidden" name="customer_phone" value="{{ $defaultCustomer['phone'] ?? '' }}">
-                    <input type="hidden" name="shipping_address_line" value="{{ $defaultCustomer['address'] ?? '' }}">
                 </div>
             </div>
 
