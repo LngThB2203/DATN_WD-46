@@ -1,11 +1,8 @@
 <?php
-
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 
 class ProductDetailController extends Controller
 {
@@ -14,24 +11,40 @@ class ProductDetailController extends Controller
         $product = Product::with([
             'galleries',
             'category',
+            'brand',
             'reviews.user',
-            'warehouseProducts',
             'variants.size',
             'variants.scent',
             'variants.concentration',
-        ])->where('slug', $slug)->firstOrFail();
+            'warehouseProducts.warehouse',
+        ])
+            ->where('slug', $slug)
+            ->firstOrFail();
 
-        $reviews = $product->reviews()->where('status', 1)->latest()->get();
+        // Tổng tồn kho theo warehouse
+        $totalStock = $product->warehouseProducts->sum('quantity');
 
-        $relatedProducts = Product::where('category_id', $product->category_id)
+        // Reviews: phân trang để phù hợp với view, chỉ review đã duyệt
+        $perPage = (int) request('per_page', 5);
+        if ($perPage < 1) { $perPage = 5; }
+        if ($perPage > 10) { $perPage = 10; }
+        $reviews = $product->reviews()
+            ->with('user')
+            ->where('status', 1)
+            ->latest()
+            ->paginate($perPage);
+
+        $relatedProducts = Product::with('galleries')
+            ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(6)
             ->get();
 
         return view('client.product', [
-            'product' => $product,
-            'galleries' => $product->galleries,
-            'reviews' => $reviews,
+            'product'         => $product,
+            'galleries'       => $product->galleries,
+            'totalStock'      => $totalStock,
+            'reviews'         => $reviews,
             'relatedProducts' => $relatedProducts,
         ]);
     }

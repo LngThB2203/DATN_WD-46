@@ -23,83 +23,68 @@
             </div>
         @endif
 
-        <h2 class="mb-4">Đơn hàng của tôi</h2>
-
         @if(!auth()->check())
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h6 class="card-title">Tìm đơn hàng của bạn</h6>
-                    <p class="text-muted small">Nhập email hoặc số điện thoại bạn đã dùng khi đặt hàng</p>
-                    <form method="GET" action="{{ route('orders.index') }}" class="row g-3">
-                        <div class="col-md-5">
-                            <input type="email" name="email" class="form-control" placeholder="Email" value="{{ request('email') }}">
-                        </div>
-                        <div class="col-md-5">
-                            <input type="text" name="phone" class="form-control" placeholder="Số điện thoại" value="{{ request('phone') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
-                        </div>
-                    </form>
-                </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">Tìm đơn hàng</h6>
+                <form method="GET" action="{{ route('orders.index') }}" class="row g-3">
+                    <div class="col-md-5">
+                        <input type="email" name="email" class="form-control" placeholder="Email" value="{{ request('email') }}">
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="phone" class="form-control" placeholder="Số điện thoại" value="{{ request('phone') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+                    </div>
+                </form>
             </div>
+        </div>
         @endif
 
         @if($orders->count() > 0)
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Mã đơn hàng</th>
-                            <th>Ngày đặt</th>
-                            <th>Sản phẩm</th>
-                            <th>Tổng tiền</th>
-                            <th>Trạng thái</th>
-                            <th>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($orders as $order)
-                            <tr>
-                                <td>
-                                    <strong>#{{ str_pad((string) $order->id, 6, '0', STR_PAD_LEFT) }}</strong>
-                                </td>
-                                <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                                <td>
-                                    {{ $order->details->count() }} sản phẩm
-                                </td>
-                                <td>
-                                    <strong>{{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ</strong>
-                                </td>
-                                <td>
-                                    @php
-                                        $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
-                                        $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
-                                    @endphp
-                                    <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
-                                </td>
-                                <td>
-                                    <a href="{{ route('orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
-                                        Xem chi tiết
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-4">
-                {{ $orders->links() }}
-            </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Ngày đặt</th>
+                        <th>Sản phẩm</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($orders as $order)
+                    <tr>
+                        <td>#{{ str_pad($order->id,6,'0',STR_PAD_LEFT) }}</td>
+                        <td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
+                        <td>{{ $order->details->count() }} sản phẩm</td>
+                        <td>{{ number_format($order->grand_total ?? $order->total_price,0,',','.') }} đ</td>
+                        <td>
+                            @php
+                                $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+                                $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
+                            @endphp
+                            <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ route('orders.show', $order->id) }}" class="btn btn-sm btn-outline-primary">Xem</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4">{{ $orders->links() }}</div>
         @else
-            <div class="text-center py-5">
-                <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
-                <p class="text-muted mt-3 mb-4">Bạn chưa có đơn hàng nào</p>
-                <a href="{{ route('home') }}" class="btn btn-primary">Tiếp tục mua sắm</a>
-            </div>
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size:4rem;color:#ccc;"></i>
+            <p class="text-muted mt-3 mb-4">Bạn chưa có đơn hàng nào</p>
+            <a href="{{ route('home') }}" class="btn btn-primary">Tiếp tục mua sắm</a>
+        </div>
         @endif
     </div>
 </section>
 @endsection
-

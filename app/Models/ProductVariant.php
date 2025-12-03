@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,9 +14,10 @@ class ProductVariant extends Model
         'scent_id',
         'concentration_id',
         'sku',
+        'image',
         'stock',
         'price_adjustment',
-        'gender'
+        'gender',
     ];
 
     public function product()
@@ -38,5 +38,14 @@ class ProductVariant extends Model
     public function concentration()
     {
         return $this->belongsTo(VariantConcentration::class, 'concentration_id');
+    }
+    public function warehouseStock()
+    {
+        return $this->hasMany(WarehouseProduct::class, 'variant_id', 'id');
+    }
+
+    public function getStockAttribute()
+    {
+        return $this->warehouseStock->sum('quantity');
     }
 }
