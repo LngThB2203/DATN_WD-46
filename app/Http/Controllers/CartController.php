@@ -144,11 +144,14 @@ class CartController extends Controller
             $this->syncCartToSession($request, $cart);
 
             if ($request->ajax()) {
+                $cart = $this->getOrCreateCart($request);
+                $cartCount = $cart->items()->count();
                 $cartData = $this->prepareCart($request);
                 return response()->json([
                     'success' => true,
                     'message' => 'Đã cập nhật số lượng!',
                     'cart' => $cartData,
+                    'cart_count' => $cartCount,
                 ]);
             }
 
@@ -187,11 +190,14 @@ class CartController extends Controller
             $this->syncCartToSession($request, $cart);
 
             if ($request->ajax()) {
+                $cart = $this->getOrCreateCart($request);
+                $cartCount = $cart->items()->count();
                 $cartData = $this->prepareCart($request);
                 return response()->json([
                     'success' => true,
                     'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
                     'cart' => $cartData,
+                    'cart_count' => $cartCount,
                 ]);
             }
 
@@ -218,6 +224,7 @@ class CartController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Đã xóa toàn bộ giỏ hàng!',
+                    'cart_count' => 0,
                 ]);
             }
 
@@ -301,6 +308,28 @@ class CartController extends Controller
             'shipping_fee' => 30000,
             'discount_total' => 0,
         ]);
+    }
+
+    /**
+     * Lấy số lượng items trong giỏ hàng
+     */
+    public function getCount(Request $request)
+    {
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $count = $cart->items()->count();
+            
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Cart count error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+            ]);
+        }
     }
 
     /**

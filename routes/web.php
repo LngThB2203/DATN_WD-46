@@ -73,6 +73,7 @@ Route::get('/test-cart', function() {
 })->name('test.cart');
 
 Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
 Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
 Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
