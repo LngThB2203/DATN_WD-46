@@ -16,6 +16,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
 use App\Http\Controllers\Client\ProductDetailController;
+use App\Http\Controllers\Client\ProductListingController;
 use App\Http\Controllers\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProductController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\DiscountController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
 Route::get('/test-form', function () {
     return '<form method="POST" action="/test-form-submit">'
         . csrf_field()
@@ -81,6 +83,7 @@ Route::get('/category', [ClientCategoryController::class, 'index'])->name('categ
 Route::get('/category/{slug}', [ClientCategoryController::class, 'show'])->name('category.show');
 
 // Product
+Route::get('/products', [ProductListingController::class, 'index'])->name('client.products.index');
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
 Route::get('/product/{slug}/reviews', [ReviewController::class, 'index'])->name('product.reviews.index'); // AJAX phân trang đánh giá
