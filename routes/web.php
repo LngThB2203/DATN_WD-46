@@ -14,7 +14,6 @@ use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
 use App\Http\Controllers\Client\HomeController;
@@ -79,7 +78,7 @@ Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('
 // CLIENT ROUTES
 // ========================
 Route::get('/', [HomeController::class, 'index'])->name('home');
-
+Route::get('/search', [HomeController::class, 'search'])->name('home.search');
 // Category
 Route::get('/category', [ClientCategoryController::class, 'index'])->name('category.index');
 Route::get('/category/{slug}', [ClientCategoryController::class, 'show'])->name('category.show');
@@ -128,7 +127,7 @@ Route::get('/login-register', fn() => view('client.login-register'))->name('auth
 Route::get('/order-confirmation', fn() => view('client.order-confirmation'))->name('order.confirmation');
 Route::get('/payment-methods', fn() => view('client.payment-methods'))->name('payment.methods');
 Route::get('/return-policy', fn() => view('client.return-policy'))->name('return.policy');
-Route::get('/search', fn() => view('client.search-results'))->name('search.results');
+// Route::get('/search', fn() => view('client.search-results'))->name('search.results');
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 
