@@ -212,18 +212,18 @@ class CartController extends Controller
             if ($variant) {
                 $parts = [];
                 if ($variant->size) {
-                    $parts[] = 'Size: ' . $variant->size->size_name;
+                    $parts[] = 'Kích thước: ' . $variant->size->size_name;
                 }
 
                 if ($variant->scent) {
-                    $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                    $parts[] = 'Mùi hương: ' . $variant->scent->scent_name;
                 }
 
                 if ($variant->concentration) {
                     $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
                 }
 
-                $variantName = implode(' | ', $parts);
+                $variantName = implode(' • ', $parts);
             }
             $image = $product ? $product->primaryImage() : null;
 
@@ -291,10 +291,10 @@ class CartController extends Controller
             $variantName = '';
             if ($variant) {
                 $parts = [];
-                if ($variant->size) $parts[] = 'Size: ' . $variant->size->size_name;
-                if ($variant->scent) $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                if ($variant->size) $parts[] = 'Kích thước: ' . $variant->size->size_name;
+                if ($variant->scent) $parts[] = 'Mùi hương: ' . $variant->scent->scent_name;
                 if ($variant->concentration) $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
-                $variantName = implode(' | ', $parts);
+                $variantName = implode(' • ', $parts);
             }
             
             $image = $product->primaryImage() ? $product->primaryImage()->image_path : null;
