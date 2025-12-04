@@ -83,9 +83,13 @@
                                                         <div>
                                                             <strong>{{ $item['name'] ?? 'Sản phẩm' }}</strong>
                                                             @if(!empty($item['variant_name']))
-                                                                <br><small class="text-muted">{{ $item['variant_name'] }}</small>
+                                                                <br><small class="text-primary fw-semibold">
+                                                                    <i class="bi bi-tag-fill"></i> Biến thể: {{ $item['variant_name'] }}
+                                                                </small>
                                                             @elseif(isset($item['variant_id']) && $item['variant_id'])
-                                                                <br><small class="text-muted">Biến thể #{{ $item['variant_id'] }}</small>
+                                                                <br><small class="text-primary fw-semibold">
+                                                                    <i class="bi bi-tag-fill"></i> Biến thể #{{ $item['variant_id'] }}
+                                                                </small>
                                                             @endif
                                                         </div>
                                                     </div>
