@@ -11,7 +11,7 @@ class OrderController extends Controller
     // Danh sách đơn hàng
     public function index(Request $request)
     {
-        $query = Order::with(['details.product']);
+        $query = Order::with(['details.product', 'details.variant.size', 'details.variant.scent', 'details.variant.concentration']);
 
         if ($request->user()) {
             $query->where('user_id', $request->user()->id);
@@ -19,9 +19,15 @@ class OrderController extends Controller
             $email = $request->input('email') ?? $request->session()->get('last_order_email');
             $phone = $request->input('phone') ?? $request->session()->get('last_order_phone');
 
-            if ($email) $query->where('customer_email', $email);
-            elseif ($phone) $query->where('customer_phone', $phone);
-            else $orders = collect();
+            if ($email) {
+                $query->where('customer_email', $email);
+            } elseif ($phone) {
+                $query->where('customer_phone', $phone);
+            } else {
+                // Nếu không có email/phone và không đăng nhập, trả về collection rỗng
+                $orders = \Illuminate\Pagination\LengthAwarePaginator::make([], 0, 10);
+                return view('client.orders.index', compact('orders'));
+            }
         }
 
         $orders = $query->orderBy('created_at', 'desc')->paginate(10);
@@ -32,17 +38,21 @@ class OrderController extends Controller
     // Chi tiết đơn hàng
     public function show(Request $request, $id)
     {
-        $query = Order::with(['details.product']);
+        $query = Order::with(['details.product', 'details.variant.size', 'details.variant.scent', 'details.variant.concentration']);
 
         if ($request->user()) {
             $query->where('user_id', $request->user()->id);
         } else {
-            $email = $request->session()->get('last_order_email');
-            $phone = $request->session()->get('last_order_phone');
+            $email = $request->input('email') ?? $request->session()->get('last_order_email');
+            $phone = $request->input('phone') ?? $request->session()->get('last_order_phone');
 
-            if ($email) $query->where('customer_email', $email);
-            elseif ($phone) $query->where('customer_phone', $phone);
-            else abort(404);
+            if ($email) {
+                $query->where('customer_email', $email);
+            } elseif ($phone) {
+                $query->where('customer_phone', $phone);
+            } else {
+                abort(404, 'Không tìm thấy đơn hàng. Vui lòng đăng nhập hoặc nhập email/số điện thoại.');
+            }
         }
 
         $order = $query->findOrFail($id);
