@@ -20,6 +20,7 @@
                 </div>
                 <div class="col-lg-4 d-none d-lg-block">
                     <div class="d-flex justify-content-end">
+                        <!-- Language & Currency Dropdowns -->
                         <div class="top-bar-item dropdown me-3">
                             <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
                                 <i class="bi bi-translate me-2"></i>EN
@@ -55,17 +56,11 @@
                 </a>
 
                 <!-- Header Search Form -->
-                <form class="search-form desktop-search-form" id="headerSearchForm" onsubmit="return false;">
-                    <div class="input-group position-relative">
-                        <input type="text" class="form-control" placeholder="Search for products" id="searchInput">
-                        <button class="btn" type="submit">
-                            <i class="bi bi-search"></i>
-                        </button>
-
-                        <!-- AJAX Search Results -->
-                        <div id="searchResults" class="position-absolute bg-white shadow-sm w-100" style="top:100%; left:0; z-index:1000; display:none;"></div>
-                    </div>
-                </form>
+                <div class="position-relative w-50">
+                    <input type="text" class="form-control" placeholder="Search for products" id="searchInput">
+                    <div id="searchResults" class="position-absolute bg-white shadow-sm w-100 border rounded"
+                         style="top:100%; left:0; z-index:1000; display:none; max-height:400px; overflow-y:auto; padding:10px;"></div>
+                </div>
 
                 <div class="header-actions d-flex align-items-center justify-content-end">
                     <!-- Account -->
@@ -84,18 +79,6 @@
                                         <i class="bi bi-person-circle me-2"></i>
                                         <span>Account</span>
                                     </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-bag-check me-2"></i>
-                                        <span>My Orders</span>
-                                    </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-heart me-2"></i>
-                                        <span>My Wishlist</span>
-                                    </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-gear me-2"></i>
-                                        <span>Settings</span>
-                                    </a>
                                 </div>
                                 <div class="dropdown-footer">
                                     <a href="{{ route('login') }}" class="btn btn-primary w-100 mb-2">Sign In</a>
@@ -104,33 +87,14 @@
                             @else
                                 <div class="dropdown-header text-center">
                                     <h6>Xin chào, {{ Auth::user()->name }}</h6>
-                                    <p class="mb-0">Chúc bạn mua sắm vui vẻ</p>
                                 </div>
                                 <div class="dropdown-body">
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
                                         <i class="bi bi-person-circle me-2"></i>
                                         <span>Account</span>
                                     </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('orders.index') }}">
-                                        <i class="bi bi-bag-check me-2"></i>
-                                        <span>My Orders</span>
-                                    </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-heart me-2"></i>
-                                        <span>My Wishlist</span>
-                                    </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-gear me-2"></i>
-                                        <span>Settings</span>
-                                    </a>
                                 </div>
                                 <div class="dropdown-footer">
-                                    @if(Auth::user()->role === 'admin')
-                                        <a href="{{ url('/admin') }}" class="btn btn-success w-100 d-flex align-items-center justify-content-center mb-2">
-                                            <i class="bi bi-speedometer2 me-2"></i>
-                                            <span>Trang Quản trị</span>
-                                        </a>
-                                    @endif
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
                                         <button type="submit" class="btn btn-danger w-100">
@@ -141,15 +105,10 @@
                             @endguest
                         </div>
                     </div>
-                    <!-- End Account -->
 
-                    <a href="#" class="header-action-btn d-none d-md-block">
-                        <i class="bi bi-heart"></i>
-                        <span class="badge">0</span>
-                    </a>
-                    <a href="{{ route('cart.index') }}" class="header-action-btn">
-                        <i class="bi bi-cart3"></i>
-                        <span class="badge" id="cartBadge">0</span>
+                    <a href="{{ route('cart.index') }}" class="header-action-btn position-relative">
+                        <i class="bi bi-cart3 fs-4"></i>
+                        <span class="badge bg-primary position-absolute top-0 start-100 translate-middle" id="cartBadge">0</span>
                     </a>
                     <i class="mobile-nav-toggle d-xl-none bi bi-list me-0"></i>
                 </div>
@@ -179,7 +138,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchInput');
         const resultsDiv = document.getElementById('searchResults');
-
         let timeout = null;
 
         searchInput.addEventListener('input', function() {
@@ -196,8 +154,52 @@
                 fetch('{{ route("home.search") }}?q=' + encodeURIComponent(query))
                     .then(res => res.json())
                     .then(data => {
-                        resultsDiv.innerHTML = data.html;
+                        resultsDiv.innerHTML = data.html || '<div class="text-center text-muted p-2">Không tìm thấy sản phẩm</div>';
                         resultsDiv.style.display = 'block';
+
+                        // Click vào sản phẩm đóng popup
+                        resultsDiv.querySelectorAll('a').forEach(link=>{
+                            link.addEventListener('click', ()=>{
+                                resultsDiv.style.display = 'none';
+                            });
+                        });
+
+                        // Rebind add-to-cart buttons inside search results
+                        resultsDiv.querySelectorAll('.add-to-cart-btn').forEach(btn=>{
+                            btn.addEventListener('click', function(e){
+                                e.preventDefault();
+                                const productId = this.dataset.productId;
+                                const select = this.closest('.card-body').querySelector('.variant-select');
+                                const variantId = select ? select.value : null;
+                                if(select && !variantId){
+                                    alert('Vui lòng chọn biến thể trước khi thêm vào giỏ');
+                                    return;
+                                }
+
+                                fetch('{{ route("cart.add") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                        'Accept':'application/json'
+                                    },
+                                    body: new URLSearchParams({
+                                        product_id: productId,
+                                        variant_id: variantId,
+                                        quantity: 1
+                                    })
+                                })
+                                .then(res=>res.json())
+                                .then(data=>{
+                                    if(data.success){
+                                        alert(data.message);
+                                        document.getElementById('cartBadge').textContent = data.cart_count;
+                                    } else {
+                                        alert(data.message);
+                                    }
+                                });
+                            });
+                        });
                     });
             }, 300);
         });
