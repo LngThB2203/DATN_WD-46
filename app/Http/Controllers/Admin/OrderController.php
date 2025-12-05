@@ -40,7 +40,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $rules = [
-            'order_status' => 'required|in:pending,confirmed,preparing,awaiting_pickup,shipping,delivered,cancelled,completed,refunded',
+            'order_status' => 'required|in:pending,preparing,awaiting_pickup,delivered,cancelled,completed',
         ];
         
         // Nếu chọn hủy đơn hàng, lý do hủy là bắt buộc

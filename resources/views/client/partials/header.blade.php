@@ -20,6 +20,7 @@
                 </div>
                 <div class="col-lg-4 d-none d-lg-block">
                     <div class="d-flex justify-content-end">
+                        <!-- Language & Currency Dropdowns -->
                         <div class="top-bar-item dropdown me-3">
                             <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown">
                                 <i class="bi bi-translate me-2"></i>EN
@@ -63,86 +64,77 @@
                         </button>
 
                         <!-- AJAX Search Results -->
-                        <div id="searchResults" class="position-absolute bg-white shadow-sm w-100" style="top:100%; left:0; z-index:1000; display:none;"></div>
+                        <div id="searchResults" class="position-absolute bg-white shadow-sm w-100" style="top:100%; left:0; z-index:1000; display:none; max-height:400px; overflow-y:auto;"></div>
                     </div>
                 </form>
 
                 <div class="header-actions d-flex align-items-center justify-content-end">
-                    <!-- Account -->
+                    <!-- Account Dropdown -->
                     <div class="dropdown account-dropdown">
                         <button class="header-action-btn" data-bs-toggle="dropdown">
                             <i class="bi bi-person"></i>
                         </button>
-                        <div class="dropdown-menu">
+                        <div class="dropdown-menu p-0">
                             @guest
-                                <div class="dropdown-header text-center">
+                                <div class="dropdown-header text-center p-3">
                                     <h6>Chào mừng bạn tới <b class="sitename">46 Perfume</b></h6>
                                     <p class="mb-0">Truy cập tài khoản & Quản lý đơn hàng</p>
                                 </div>
-                                <div class="dropdown-body">
+                                <div class="dropdown-body p-2">
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
-                                        <i class="bi bi-person-circle me-2"></i>
-                                        <span>Account</span>
+                                        <i class="bi bi-person-circle me-2"></i>Account
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-bag-check me-2"></i>
-                                        <span>My Orders</span>
+                                        <i class="bi bi-bag-check me-2"></i>My Orders
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-heart me-2"></i>
-                                        <span>My Wishlist</span>
+                                        <i class="bi bi-heart me-2"></i>My Wishlist
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-gear me-2"></i>
-                                        <span>Settings</span>
+                                        <i class="bi bi-gear me-2"></i>Settings
                                     </a>
                                 </div>
-                                <div class="dropdown-footer">
+                                <div class="dropdown-footer p-2">
                                     <a href="{{ route('login') }}" class="btn btn-primary w-100 mb-2">Sign In</a>
                                     <a href="{{ route('register') }}" class="btn btn-outline-primary w-100">Sign Up</a>
                                 </div>
                             @else
-                                <div class="dropdown-header text-center">
+                                <div class="dropdown-header text-center p-3">
                                     <h6>Xin chào, {{ Auth::user()->name }}</h6>
                                     <p class="mb-0">Chúc bạn mua sắm vui vẻ</p>
                                 </div>
-                                <div class="dropdown-body">
+                                <div class="dropdown-body p-2">
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
-                                        <i class="bi bi-person-circle me-2"></i>
-                                        <span>Account</span>
+                                        <i class="bi bi-person-circle me-2"></i>Account
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('orders.index') }}">
-                                        <i class="bi bi-bag-check me-2"></i>
-                                        <span>My Orders</span>
+                                        <i class="bi bi-bag-check me-2"></i>My Orders
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-heart me-2"></i>
-                                        <span>My Wishlist</span>
+                                        <i class="bi bi-heart me-2"></i>My Wishlist
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-gear me-2"></i>
-                                        <span>Settings</span>
+                                        <i class="bi bi-gear me-2"></i>Settings
                                     </a>
                                 </div>
-                                <div class="dropdown-footer">
+                                <div class="dropdown-footer p-2">
                                     @if(Auth::user()->role === 'admin')
                                         <a href="{{ url('/admin') }}" class="btn btn-success w-100 d-flex align-items-center justify-content-center mb-2">
-                                            <i class="bi bi-speedometer2 me-2"></i>
-                                            <span>Trang Quản trị</span>
+                                            <i class="bi bi-speedometer2 me-2"></i>Trang Quản trị
                                         </a>
                                     @endif
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
                                         <button type="submit" class="btn btn-danger w-100">
-                                            <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất
+                                            <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
                                         </button>
                                     </form>
                                 </div>
                             @endguest
                         </div>
                     </div>
-                    <!-- End Account -->
 
+                    <!-- Wishlist & Cart -->
                     <a href="#" class="header-action-btn d-none d-md-block">
                         <i class="bi bi-heart"></i>
                         <span class="badge">0</span>
@@ -198,6 +190,13 @@
                     .then(data => {
                         resultsDiv.innerHTML = data.html;
                         resultsDiv.style.display = 'block';
+
+                        // Bắt click vào sản phẩm
+                        resultsDiv.querySelectorAll('a').forEach(link => {
+                            link.addEventListener('click', () => {
+                                resultsDiv.style.display = 'none';
+                            });
+                        });
                     });
             }, 300);
         });

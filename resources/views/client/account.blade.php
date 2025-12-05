@@ -19,7 +19,7 @@
             <aside class="col-lg-3">
                 <div class="list-group">
                     <a class="list-group-item list-group-item-action active">Thông tin</a>
-                    <a class="list-group-item list-group-item-action">Đơn hàng</a>
+                    <a class="list-group-item list-group-item-action" href="{{ route('orders.index') }}">Đơn hàng</a>
                     <a class="list-group-item list-group-item-action">Địa chỉ</a>
                 </div>
             </aside>

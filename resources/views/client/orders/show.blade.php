@@ -56,7 +56,16 @@
                                                 @if($detail->product && $detail->product->primaryImage())
                                                 <img src="{{ asset('storage/'.$detail->product->primaryImage()->image_path) }}" alt="{{ $detail->product->name }}" class="rounded" style="width:60px;height:60px;object-fit:cover;">
                                                 @endif
-                                                <strong>{{ $detail->product->name ?? 'Sản phẩm đã bị xóa' }}</strong>
+                                                <div>
+                                                    <strong>{{ $detail->product->name ?? 'Sản phẩm đã bị xóa' }}</strong>
+                                                    @if($detail->variant)
+                                                        <div class="small text-muted">
+                                                            @if($detail->variant->size) Kích thước: {{ $detail->variant->size->size_name ?? $detail->variant->size->name ?? '' }} @endif
+                                                            @if($detail->variant->scent) | Mùi: {{ $detail->variant->scent->scent_name ?? $detail->variant->scent->name ?? '' }} @endif
+                                                            @if($detail->variant->concentration) | Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? '' }} @endif
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </td>
                                         <td>{{ number_format($detail->price,0,',','.') }} đ</td>
