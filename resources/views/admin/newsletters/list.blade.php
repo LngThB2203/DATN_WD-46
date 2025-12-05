@@ -34,7 +34,7 @@
                                 <td>{{ $n->email }}</td>
                                 <td>{{ $n->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    <form action="{{ route('admin.newsletters.destroy', $n->id) }}" method="POST" onsubmit="return confirm('Xóa email này?')">
+                                    <form action="{{ route('admin.newsletters.delete', $n->id) }}" method="POST" onsubmit="return confirm('Xóa email này?')">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-sm btn-soft-danger">

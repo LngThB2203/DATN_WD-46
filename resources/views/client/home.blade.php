@@ -11,8 +11,7 @@
             <div class="row align-items-center g-4">
                 <div class="col-lg-6">
                     <h2 class="display-5 fw-bold mb-3">Cửa hàng nước hoa trực tuyến</h2>
-                    <p class="lead mb-4">Khám phá bộ sưu tập nước hoa chính hãng với ưu đãi hấp dẫn. Giao nhanh, đổi trả
-                        dễ dàng.</p>
+                    <p class="lead mb-4">Khám phá bộ sưu tập nước hoa chính hãng với ưu đãi hấp dẫn. Giao nhanh, đổi trả dễ dàng.</p>
                     <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
                 </div>
                 <div class="col-lg-6">
@@ -42,32 +41,8 @@
                         <img src="{{ $imgUrl }}" class="card-img-top"
                             style="height:250px; object-fit:cover; border:1px solid #dee2e6; border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
 
-                        <div class="card-body d-flex flex-column">
+                        <div class="card-body d-flex flex-column" style="margin-top: auto;">
                             <h5 class="card-title mb-1">{{ $product->name }}</h5>
-
-                            <div class="product-price mb-2" id="price-{{ $product->id }}">
-                                @if($product->sale_price)
-                                <span class="text-primary fw-bold">{{ number_format($product->sale_price,0,',','.') }}
-                                    VNĐ</span>
-                                <span class="text-muted text-decoration-line-through ms-2">{{
-                                    number_format($product->price,0,',','.') }} VNĐ</span>
-                                @else
-                                <span class="text-primary fw-bold">{{ number_format($product->price,0,',','.') }}
-                                    VNĐ</span>
-                                @endif
-                            </div>
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-between align-items-center mt-auto">
-                                <button class="btn btn-outline-secondary btn-sm add-to-cart-btn"
-                                    data-product-id="{{ $product->id }}">
-                                    <i class="bi bi-cart3"></i>
-                                </button>
-                                <a href="{{ route('product.show', $product->slug) }}"
-                                    class="btn btn-outline-primary btn-sm">
-                                    Xem chi tiết
-                                </a>
-                            </div>
 
                             <!-- Variant Popup -->
                             @if($product->variants->count())
@@ -81,14 +56,29 @@
                                     </option>
                                     @endforeach
                                 </select>
-                                <button class="btn btn-primary w-100 mb-2 confirm-add-btn"
-                                    data-product-id="{{ $product->id }}">
+                                <button class="btn btn-primary w-100 mb-2 confirm-add-btn" data-product-id="{{ $product->id }}">
                                     <i class="bi bi-cart3"></i> Thêm vào giỏ
                                 </button>
-                                <button class="btn btn-secondary w-100 close-popup-btn"
-                                    data-product-id="{{ $product->id }}">Hủy</button>
+                                <button class="btn btn-secondary w-100 close-popup-btn" data-product-id="{{ $product->id }}">Hủy</button>
                             </div>
                             @endif
+
+                            <!-- Spacer để đẩy giá và nút xuống dưới -->
+                            <div class="mt-auto">
+                                <div class="product-price mb-2" id="price-{{ $product->id }}">
+                                    <span class="text-primary fw-bold">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button class="btn btn-outline-secondary btn-sm add-to-cart-btn" data-product-id="{{ $product->id }}">
+                                        <i class="bi bi-cart3"></i>
+                                    </button>
+                                    <a href="{{ route('product.show', $product->slug) }}" class="btn btn-outline-primary btn-sm">
+                                        Xem chi tiết
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -100,9 +90,9 @@
 </main>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function(){
 
-    // Hàm hiển thị popup biến thể
+    // Hiển thị popup biến thể
     document.querySelectorAll('.add-to-cart-btn').forEach(btn=>{
         btn.addEventListener('click', function(){
             const productId = this.dataset.productId;
@@ -110,7 +100,6 @@
             if(popup){
                 popup.classList.remove('d-none');
             } else {
-                // Không có biến thể, AJAX add trực tiếp
                 ajaxAddToCart(productId, null);
             }
         });
@@ -119,13 +108,12 @@
     // Đóng popup
     document.querySelectorAll('.close-popup-btn').forEach(btn=>{
         btn.addEventListener('click', function(){
-            const productId = this.dataset.productId;
             const popup = this.closest('.variant-popup');
             popup.classList.add('d-none');
         });
     });
 
-    // Xác nhận thêm vào giỏ từ popup
+    // Thêm vào giỏ từ popup
     document.querySelectorAll('.confirm-add-btn').forEach(btn=>{
         btn.addEventListener('click', function(){
             const productId = this.dataset.productId;
@@ -140,7 +128,7 @@
         });
     });
 
-    // Khi chọn biến thể, cập nhật giá
+    // Cập nhật giá khi chọn biến thể
     document.querySelectorAll('.variant-select').forEach(select=>{
         select.addEventListener('change', function(){
             const variantPrice = this.selectedOptions[0]?.dataset?.price ?? null;
@@ -152,6 +140,7 @@
         });
     });
 
+    // Hàm AJAX add to cart
     function ajaxAddToCart(productId, variantId){
         fetch('{{ route("cart.add") }}', {
             method: 'POST',
@@ -177,7 +166,7 @@
         });
     }
 
-    // Notification và badge
+    // Notification
     function showNotification(msg,type){
         const alertClass = type=='success'?'alert-success':'alert-danger';
         const div = document.createElement('div');

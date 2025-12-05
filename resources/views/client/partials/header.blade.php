@@ -1,5 +1,5 @@
 <header id="header" class="header position-absolute top-0 start-0 w-100 bg-white shadow-sm" style="z-index: 999;">
-    <div class="top-bar py-2 border-bottom">
+    {{-- <div class="top-bar py-2 border-bottom">
         <div class="container-fluid container-xl">
             <div class="row align-items-center">
                 <div class="col-lg-4 d-none d-lg-flex">
@@ -46,7 +46,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <div class="main-header">
         <div class="container-fluid container-xl">
@@ -82,20 +82,20 @@
                                 </div>
                                 <div class="dropdown-body p-2">
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
-                                        <i class="bi bi-person-circle me-2"></i>Account
+                                        <i class="bi bi-person-circle me-2"></i>Tài khoản
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
                                         <i class="bi bi-bag-check me-2"></i>
-                                        <span>My Orders</span>
+                                        <span>Đơn hàng</span>
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
                                         <i class="bi bi-heart me-2"></i>
-                                        <span>My Wishlist</span>
+                                        <span>Danh sách yêu thích</span>
                                     </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                    {{-- <a class="dropdown-item d-flex align-items-center" href="#">
                                         <i class="bi bi-gear me-2"></i>
-                                        <span>Settings</span>
-                                    </a>
+                                        <span>Cài</span>
+                                    </a> --}}
                                 </div>
                                 <div class="dropdown-footer p-2">
                                     <a href="{{ route('login') }}" class="btn btn-primary w-100 mb-2">Sign In</a>
@@ -107,20 +107,20 @@
                                 </div>
                                 <div class="dropdown-body p-2">
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
-                                        <i class="bi bi-person-circle me-2"></i>Account
+                                        <i class="bi bi-person-circle me-2"></i>Tài khoản
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('orders.index') }}">
                                         <i class="bi bi-bag-check me-2"></i>
-                                        <span>My Orders</span>
+                                        <span>Đơn hàng</span>
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
                                         <i class="bi bi-heart me-2"></i>
-                                        <span>My Wishlist</span>
+                                        <span>Danh sách yêu thích</span>
                                     </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
+                                    {{-- <a class="dropdown-item d-flex align-items-center" href="#">
                                         <i class="bi bi-gear me-2"></i>
                                         <span>Settings</span>
-                                    </a>
+                                    </a> --}}
                                 </div>
                                 <div class="dropdown-footer">
                                     @if(Auth::user()->role === 'admin')
@@ -158,14 +158,12 @@
         <div class="container-fluid container-xl">
             <nav id="navmenu" class="navmenu">
                 <ul class="d-flex flex-wrap justify-content-center gap-3 py-2 mb-0 list-unstyled">
-                    <li><a href="{{ route('home') }}" class="active">Home</a></li>
-                    <li><a href="{{ route('about') }}">About</a></li>
-                    <li><a href="{{ route('blog.index') }}">Blog</a></li>
-                    <li><a href="{{ route('contact.index') }}">Contact</a></li>
-                    <li><a href="{{ route('client.products.index') }}">Product</a></li>
-                    <li><a href="{{ route('category.index') }}">Category</a></li>
-                    <li><a href="{{ route('cart.index') }}">Cart</a></li>
-                    <li><a href="{{ route('checkout.index') }}">Checkout</a></li>
+                    <li><a href="{{ route('home') }}" class="active">Trang chủ</a></li>
+                    <li><a href="{{ route('about') }}">Giới thiệu</a></li>
+                    <li><a href="{{ route('blog.index') }}">Bài viết</a></li>
+                    <li><a href="{{ route('contact.index') }}">Liên hệ</a></li>
+                    <li><a href="{{ route('client.products.index') }}">Sản phẩm</a></li>
+                    <li><a href="{{ route('category.index') }}">Danh mục</a></li>
                 </ul>
             </nav>
         </div>

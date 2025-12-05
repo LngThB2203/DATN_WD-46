@@ -2,6 +2,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
@@ -132,9 +133,8 @@ Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shippi
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 
 // Blog
-Route::get('/blog', fn() => view('client.blog'))->name('blog.index');
-Route::get('/blog/{slug}', fn($slug) => view('client.blog-details', compact('slug')))->name('blog.show');
-
+Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
 // Contact
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
