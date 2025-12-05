@@ -18,23 +18,21 @@ class ProductDetailController extends Controller
             'variants.scent',
             'variants.concentration',
             'variants.warehouseStock',
-            'warehouseProducts.warehouse',
-        ])
+'variants.warehouseStock',
+'warehouseProducts',
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // Tính tổng tồn kho
-        // Nếu có biến thể: tính tổng từ tất cả biến thể
-        // Nếu không có biến thể: tính từ sản phẩm chính (variant_id = null)
-        if ($product->variants->count() > 0) {
-            $totalStock = $product->variants->sum(function($variant) {
-                return $variant->warehouseStock->sum('quantity');
-            });
-        } else {
-            // Sản phẩm không có biến thể, tính từ warehouse_products với variant_id = null
-            $totalStock = $product->warehouseProducts()
-                ->whereNull('variant_id')
-                ->sum('quantity');
+// Ưu tiên tính tồn kho theo biến thể, nếu không có thì fallback về tồn kho theo product_id
+$variantStock = $product->variants->sum(function ($variant) {
+    return (int) $variant->stock;
+});
+
+if ($variantStock > 0) {
+    $totalStock = $variantStock;
+} else {
+    $totalStock = (int) $product->warehouseProducts->sum('quantity');
+}
         }
 
         // Reviews
