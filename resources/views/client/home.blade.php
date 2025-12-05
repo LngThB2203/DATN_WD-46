@@ -26,66 +26,71 @@
     </section>
 
     <!-- Featured Products -->
-    <section class="py-5 border-top">
-        <div class="container-fluid container-xl">
-            <h3 class="fw-semibold mb-4">Sản phẩm nổi bật</h3>
+<section class="py-5 border-top">
+    <div class="container-fluid container-xl">
+        <h3 class="fw-semibold mb-4">Sản phẩm nổi bật</h3>
 
-            <div class="row g-4" id="productList">
-                @foreach($products as $product)
-                @php
+        <div class="row g-4" id="productList">
+            @foreach($products as $product)
+            @php
                 $img = $product->galleries->where('is_primary', true)->first() ?? $product->galleries->first();
                 $imgUrl = $img ? asset('storage/'.$img->image_path) : asset('assets/client/img/product/product-1.webp');
-                @endphp
-                <div class="col-12 col-sm-6 col-lg-3 mb-4">
-                    <div class="card h-100 position-relative">
-                        <img src="{{ $imgUrl }}" class="card-img-top"
-                            style="height:250px; object-fit:cover; border:1px solid #dee2e6; border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+            @endphp
 
-                        <div class="card-body d-flex flex-column" style="margin-top: auto;">
-                            <h5 class="card-title mb-1">{{ $product->name }}</h5>
+            <div class="col-12 col-sm-6 col-lg-3 mb-4">
+                <div class="card h-100 position-relative">
+                    <img src="{{ $imgUrl }}" class="card-img-top"
+                        style="height:250px; object-fit:cover; border:1px solid #dee2e6; border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
 
-                            <!-- Variant Popup -->
-                            @if($product->variants->count())
-                            <div class="variant-popup border p-2 bg-white shadow position-absolute top-50 start-50 translate-middle d-none"
-                                style="z-index:10; width:90%; max-width:250px;">
-                                <select class="form-select variant-select mb-2" data-product-id="{{ $product->id }}">
-                                    <option value="">Chọn biến thể</option>
-                                    @foreach($product->variants as $variant)
-                                    <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
-                                        {{ $variant->size->size_name ?? '' }} {{ $variant->scent->scent_name ?? '' }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                <button class="btn btn-primary w-100 mb-2 confirm-add-btn" data-product-id="{{ $product->id }}">
-                                    <i class="bi bi-cart3"></i> Thêm vào giỏ
-                                </button>
-                                <button class="btn btn-secondary w-100 close-popup-btn" data-product-id="{{ $product->id }}">Hủy</button>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title mb-1">{{ $product->name }}</h5>
+
+                        @if($product->variants->count())
+                        <div class="variant-popup border p-2 bg-white shadow position-absolute top-50 start-50 translate-middle d-none"
+                            style="z-index:10; width:90%; max-width:250px;">
+                            <select class="form-select variant-select mb-2" data-product-id="{{ $product->id }}">
+                                <option value="">Chọn biến thể</option>
+                                @foreach($product->variants as $variant)
+                                <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
+                                    {{ $variant->size->size_name ?? '' }} {{ $variant->scent->scent_name ?? '' }}
+                                </option>
+                                @endforeach
+                            </select>
+                            <button class="btn btn-primary w-100 mb-2 confirm-add-btn" data-product-id="{{ $product->id }}">
+                                <i class="bi bi-cart3"></i> Thêm vào giỏ
+                            </button>
+                            <button class="btn btn-secondary w-100 close-popup-btn">Hủy</button>
+                        </div>
+                        @endif
+
+                        <div class="mt-auto">
+                            <div class="product-price mb-2">
+                                <span class="text-primary fw-bold">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
                             </div>
-                            @endif
 
-                            <!-- Spacer để đẩy giá và nút xuống dưới -->
-                            <div class="mt-auto">
-                                <div class="product-price mb-2" id="price-{{ $product->id }}">
-                                    <span class="text-primary fw-bold">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
-                                </div>
-
-                                <!-- Action Buttons -->
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <button class="btn btn-outline-secondary btn-sm add-to-cart-btn" data-product-id="{{ $product->id }}">
-                                        <i class="bi bi-cart3"></i>
-                                    </button>
-                                    <a href="{{ route('product.show', $product->slug) }}" class="btn btn-outline-primary btn-sm">
-                                        Xem chi tiết
-                                    </a>
-                                </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button class="btn btn-outline-secondary btn-sm add-to-cart-btn"
+                                    data-product-id="{{ $product->id }}">
+                                    <i class="bi bi-cart3"></i>
+                                </button>
+                                <a href="{{ route('product.show', $product->slug) }}"
+                                   class="btn btn-outline-primary btn-sm">
+                                    Xem chi tiết
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
-                @endforeach
             </div>
+            @endforeach
         </div>
-    </section>
+        <div class="mt-4">
+            {{ $products->links('pagination::bootstrap-5') }}
+        </div>
+
+    </div>
+</section>
+
 
 </main>
 
