@@ -16,13 +16,22 @@ class ProductDetailController extends Controller
             'variants.size',
             'variants.scent',
             'variants.concentration',
-            'warehouseProducts.warehouse',
+            'variants.warehouseStock',
+            'warehouseProducts',
         ])
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // Tổng tồn kho theo warehouse
-        $totalStock = $product->warehouseProducts->sum('quantity');
+        // Ưu tiên tính tồn kho theo biến thể, nếu không có thì fallback về tồn kho theo product_id
+        $variantStock = $product->variants->sum(function ($variant) {
+            return (int) $variant->stock;
+        });
+
+        if ($variantStock > 0) {
+            $totalStock = $variantStock;
+        } else {
+            $totalStock = (int) $product->warehouseProducts->sum('quantity');
+        }
 
         // Reviews: phân trang để phù hợp với view, chỉ review đã duyệt
         $perPage = (int) request('per_page', 5);

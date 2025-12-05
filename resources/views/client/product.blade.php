@@ -86,23 +86,28 @@
                 @if($product->variants->count() > 0)
                     <div class="mb-4">
                         <label class="form-label fw-semibold mb-2">Chọn biến thể:</label>
-                        <select name="variant_id" id="variantSelect" class="form-select">
-                            <option value="">-- Chọn biến thể --</option>
+                        <div id="variantOptions" class="d-flex flex-wrap gap-2">
                             @foreach($product->variants as $variant)
-                                <option value="{{ $variant->id }}"
+                                @php
+                                    $variantLabelParts = [];
+                                    if ($variant->size) { $variantLabelParts[] = 'Kích thước: ' . $variant->size->size_name; }
+                                    if ($variant->scent) { $variantLabelParts[] = 'Mùi: ' . $variant->scent->scent_name; }
+                                    if ($variant->concentration) { $variantLabelParts[] = 'Nồng độ: ' . $variant->concentration->concentration_name; }
+                                    $variantLabel = implode(' | ', $variantLabelParts);
+                                    $variantPrice = $variant->price ?? ($product->price + ($variant->price_adjustment ?? 0));
+                                @endphp
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm variant-option"
+                                        data-id="{{ $variant->id }}"
                                         data-stock="{{ $variant->stock }}"
-                                        data-price="{{ $variant->price ?? ($product->price + ($variant->price_adjustment ?? 0)) }}"
+                                        data-price="{{ $variantPrice }}"
                                         data-size="{{ $variant->size->size_name ?? '' }}"
                                         data-scent="{{ $variant->scent->scent_name ?? '' }}"
                                         data-concentration="{{ $variant->concentration->concentration_name ?? '' }}">
-                                    @if($variant->size) Kích thước: {{ $variant->size->size_name }} @endif
-                                    @if($variant->scent) | Mùi: {{ $variant->scent->scent_name }} @endif
-                                    @if($variant->concentration) | Nồng độ: {{ $variant->concentration->concentration_name }} @endif
-                                    - Giá: {{ number_format($variant->price ?? ($product->price + ($variant->price_adjustment ?? 0)), 0, ',', '.') }} VNĐ
-                                    - Tồn: {{ $variant->stock }}
-                                </option>
+                                    {{ $variantLabel ?: ('Biến thể #' . $variant->id) }}
+                                </button>
                             @endforeach
-                        </select>
+                        </div>
                         <div id="variantInfo" class="mt-2 small text-muted"></div>
                     </div>
                 @endif
@@ -112,7 +117,18 @@
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                     <input type="hidden" name="variant_id" id="selectedVariantId">
-                    <input type="number" name="quantity" id="productQuantity" value="1" min="1" class="form-control w-auto text-center mb-3" style="max-width: 80px;">
+
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="input-group" style="width: 140px;">
+                            <button class="btn btn-outline-secondary quantity-decrease" type="button">-</button>
+                            <input type="number" name="quantity" id="productQuantity" value="1" min="1" class="form-control text-center">
+                            <button class="btn btn-outline-secondary quantity-increase" type="button">+</button>
+                        </div>
+                        <div class="text-muted small" id="availableStockInfo">
+                            {{ $totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng' }}
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $totalStock <= 0 ? 'disabled' : '' }}>
                         <i class="bi bi-cart-plus"></i> {{ $totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
                     </button>
@@ -202,55 +218,103 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const variantSelect = document.getElementById('variantSelect');
+    const defaultTotalStock = @json($totalStock);
+    const defaultAvailableText = @json($totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng');
+
+    const variantButtons = document.querySelectorAll('.variant-option');
     const selectedVariantId = document.getElementById('selectedVariantId');
     const variantInfo = document.getElementById('variantInfo');
     const productPriceSpan = document.querySelector('.product-price');
     const addToCartBtn = document.getElementById('addToCartBtn');
     const quantityInput = document.getElementById('productQuantity');
+    const availableStockInfo = document.getElementById('availableStockInfo');
 
-    if (variantSelect) {
-        variantSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
+    let activeVariantButton = null;
 
-            if(selectedOption.value){
-                selectedVariantId.value = selectedOption.value;
+    if (variantButtons && variantButtons.length > 0) {
+        variantButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                // Nếu click lại nút đang active thì bỏ chọn
+                if (activeVariantButton === this) {
+                    this.classList.remove('btn-primary', 'text-white');
+                    this.classList.add('btn-outline-secondary');
+                    activeVariantButton = null;
+
+                    selectedVariantId.value = '';
+                    if (variantInfo) {
+                        variantInfo.textContent = '';
+                    }
+                    if (productPriceSpan) {
+                        productPriceSpan.textContent = '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
+                    }
+                    if (addToCartBtn) {
+                        addToCartBtn.disabled = defaultTotalStock <= 0;
+                    }
+                    if (quantityInput) {
+                        quantityInput.removeAttribute('max');
+                    }
+                    if (availableStockInfo) {
+                        availableStockInfo.textContent = defaultAvailableText;
+                    }
+                    return;
+                }
+
+                // Bỏ trạng thái active cũ
+                if (activeVariantButton) {
+                    activeVariantButton.classList.remove('btn-primary', 'text-white');
+                    activeVariantButton.classList.add('btn-outline-secondary');
+                }
+
+                // Đánh dấu nút hiện tại là active
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-primary', 'text-white');
+                activeVariantButton = this;
 
                 // Lấy thông tin biến thể
-                const stock = selectedOption.dataset.stock;
-                const price = selectedOption.dataset.price;
-                const size = selectedOption.dataset.size;
-                const scent = selectedOption.dataset.scent;
-                const concentration = selectedOption.dataset.concentration;
+                const variantId = this.dataset.id;
+                const stock = this.dataset.stock;
+                const price = this.dataset.price;
+                const size = this.dataset.size;
+                const scent = this.dataset.scent;
+                const concentration = this.dataset.concentration;
+
+                // Gán vào input hidden
+                if (selectedVariantId) {
+                    selectedVariantId.value = variantId;
+                }
 
                 // Hiển thị thông tin biến thể
-                let infoText = '';
-                if(size) infoText += 'Kích thước: ' + size + ' | ';
-                if(scent) infoText += 'Mùi: ' + scent + ' | ';
-                if(concentration) infoText += 'Nồng độ: ' + concentration + ' | ';
-                infoText += 'Tồn kho: ' + stock;
-                variantInfo.textContent = infoText;
+                if (variantInfo) {
+                    let infoText = '';
+                    if (size) infoText += 'Kích thước: ' + size + ' | ';
+                    if (scent) infoText += 'Mùi: ' + scent + ' | ';
+                    if (concentration) infoText += 'Nồng độ: ' + concentration + ' | ';
+                    infoText += 'Tồn kho: ' + stock;
+                    variantInfo.textContent = infoText;
+                }
 
                 // Cập nhật giá
-                if(productPriceSpan) {
+                if (productPriceSpan && price) {
                     productPriceSpan.textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
                 }
 
                 // Cập nhật nút thêm giỏ hàng
-                addToCartBtn.disabled = parseInt(stock) <= 0;
+                if (addToCartBtn) {
+                    addToCartBtn.disabled = parseInt(stock) <= 0;
+                }
 
                 // Cập nhật max số lượng
-                if(quantityInput) {
+                if (quantityInput) {
                     quantityInput.setAttribute('max', stock);
                 }
-            } else {
-                selectedVariantId.value = '';
-                variantInfo.textContent = '';
-                productPriceSpan.textContent = '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
-                addToCartBtn.disabled = {{ $totalStock <= 0 ? 'true' : 'false' }};
-            }
+                if (availableStockInfo) {
+                    availableStockInfo.textContent = 'Có sẵn: ' + stock + ' sản phẩm';
+                }
+            });
         });
-        var loadMoreBtn = document.getElementById('load-more-reviews');
+    }
+
+    var loadMoreBtn = document.getElementById('load-more-reviews');
         if (loadMoreBtn) {
             loadMoreBtn.addEventListener('click', function () {
                 var nextUrl = loadMoreBtn.getAttribute('data-next-url');
@@ -288,7 +352,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Quantity controls
-        const quantityInput = document.getElementById('productQuantity');
         const decreaseBtn = document.querySelector('.quantity-decrease');
         const increaseBtn = document.querySelector('.quantity-increase');
 
