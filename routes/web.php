@@ -22,6 +22,7 @@ use App\Http\Controllers\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Client\ProductDetailController;
 use App\Http\Controllers\Client\ProductListingController;
 use App\Http\Controllers\Client\VNPayController;
+use App\Http\Controllers\Client\WishlistController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\NewsletterController;
@@ -89,6 +90,12 @@ Route::get('/products', [ProductListingController::class, 'index'])->name('clien
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
 Route::get('/product/{slug}/reviews', [ReviewController::class, 'index'])->name('product.reviews.index'); // AJAX phân trang đánh giá
+
+// Wishlist
+Route::middleware('auth')->group(function () {
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+});
 
 Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
 

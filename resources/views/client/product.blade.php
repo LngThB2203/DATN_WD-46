@@ -111,27 +111,39 @@
                     </div>
                 @endif
 
-                <!-- FORM THÊM GIỎ HÀNG -->
-                <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <input type="hidden" name="variant_id" id="selectedVariantId">
+                <div class="d-flex align-items-center gap-2">
+                    <!-- FORM THÊM GIỎ HÀNG -->
+                    <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}" class="mb-0">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="variant_id" id="selectedVariantId">
 
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="input-group" style="width: 140px;">
-                            <button class="btn btn-outline-secondary quantity-decrease" type="button">-</button>
-                            <input type="number" name="quantity" id="productQuantity" value="1" min="1" class="form-control text-center">
-                            <button class="btn btn-outline-secondary quantity-increase" type="button">+</button>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="input-group" style="width: 140px;">
+                                <button class="btn btn-outline-secondary quantity-decrease" type="button">-</button>
+                                <input type="number" name="quantity" id="productQuantity" value="1" min="1" class="form-control text-center">
+                                <button class="btn btn-outline-secondary quantity-increase" type="button">+</button>
+                            </div>
+                            <div class="text-muted small" id="availableStockInfo">
+                                {{ $totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng' }}
+                            </div>
                         </div>
-                        <div class="text-muted small" id="availableStockInfo">
-                            {{ $totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng' }}
-                        </div>
-                    </div>
 
-                    <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $totalStock <= 0 ? 'disabled' : '' }}>
-                        <i class="bi bi-cart-plus"></i> {{ $totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
-                    </button>
-                </form>
+                        <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $totalStock <= 0 ? 'disabled' : '' }}>
+                            <i class="bi bi-cart-plus"></i> {{ $totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
+                        </button>
+                    </form>
+
+                    @auth
+                        <form action="{{ route('wishlist.toggle', $product) }}" method="POST" class="mb-0">
+                            @csrf
+                            <button type="submit" class="btn {{ $isFavorite ? 'btn-danger' : 'btn-outline-danger' }}">
+                                <i class="bi {{ $isFavorite ? 'bi-heart-fill' : 'bi-heart' }}"></i>
+                                {{ $isFavorite ? 'Bỏ yêu thích' : 'Yêu thích' }}
+                            </button>
+                        </form>
+                    @endauth
+                </div>
             </div>
         </div>
 

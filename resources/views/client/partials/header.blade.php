@@ -140,9 +140,15 @@
                         </div>
                     </div>
 
-                    <a href="#" class="header-action-btn d-none d-md-block">
+                    @php
+                        $wishlistCount = 0;
+                        if(auth()->check()) {
+                            $wishlistCount = \App\Models\Wishlist::where('user_id', auth()->id())->count();
+                        }
+                    @endphp
+                    <a href="{{ route('wishlist.index') }}" class="header-action-btn d-none d-md-block">
                         <i class="bi bi-heart"></i>
-                        <span class="badge">0</span>
+                        <span class="badge">{{ $wishlistCount }}</span>
                     </a>
                     <a href="{{ route('cart.index') }}" class="header-action-btn">
                         <i class="bi bi-cart3"></i>
