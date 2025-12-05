@@ -3,7 +3,8 @@
 @section('title', 'Giỏ hàng')
 
 @section('content')
-<section class="py-4 border-bottom">
+<!-- Nếu navbar của bạn là fixed-top, thêm spacer hoặc padding-top -->
+<section class="py-4 border-bottom" style="padding-top: 100px;">
     <div class="container-fluid container-xl">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
@@ -166,6 +167,7 @@
         </div>
     </div>
 </section>
+@endsection
 
 @section('scripts')
 <script>
@@ -192,282 +194,134 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasSelected = selectedCheckboxes.length > 0;
         checkoutBtn.disabled = !hasSelected;
 
-        // Update hidden input
         document.getElementById('selectedItemsInput').value = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
     }
 
-    document.querySelectorAll('.item-checkbox').forEach(cb => {
-        cb.addEventListener('change', calculateSelectedTotal);
-    });
-
+    document.querySelectorAll('.item-checkbox').forEach(cb => cb.addEventListener('change', calculateSelectedTotal));
     document.getElementById('selectAllHeader')?.addEventListener('change', function() {
         document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
         calculateSelectedTotal();
     });
 
-    // Xử lý nút tăng số lượng
     document.querySelectorAll('.quantity-increase').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
             const form = this.closest('.cart-update-form');
-            if (!form) {
-                console.error('Form not found');
-                return;
-            }
-            
             const input = form.querySelector('.quantity-input');
-            if (!input) {
-                console.error('Input not found');
-                return;
-            }
-            
             const currentValue = parseInt(input.value) || 1;
             const maxValue = parseInt(input.getAttribute('max')) || 100;
             const newValue = Math.min(currentValue + 1, maxValue);
-            
             if (newValue !== currentValue) {
                 input.value = newValue;
-                // Trigger change event với bubbles để đảm bảo event được catch
-                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-                input.dispatchEvent(changeEvent);
+                input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
             }
         });
     });
-    
-    // Xử lý nút giảm số lượng
+
     document.querySelectorAll('.quantity-decrease').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
             const form = this.closest('.cart-update-form');
-            if (!form) {
-                console.error('Form not found');
-                return;
-            }
-            
             const input = form.querySelector('.quantity-input');
-            if (!input) {
-                console.error('Input not found');
-                return;
-            }
-            
             const currentValue = parseInt(input.value) || 1;
             const minValue = parseInt(input.getAttribute('min')) || 1;
             const newValue = Math.max(currentValue - 1, minValue);
-            
             if (newValue !== currentValue) {
                 input.value = newValue;
-                // Trigger change event với bubbles để đảm bảo event được catch
-                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-                input.dispatchEvent(changeEvent);
+                input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
             }
         });
     });
 
-    // Tự động submit khi thay đổi số lượng (AJAX)
+    // Quantity input change (AJAX)
     document.querySelectorAll('.quantity-input').forEach(input => {
         let updateTimeout;
-        const inputElement = input; // Lưu reference
-        
         input.addEventListener('change', function(e) {
             e.stopPropagation();
-            
             const row = this.closest('.cart-item-row');
             const form = this.closest('.cart-update-form');
-            
-            if (!form) {
-                console.error('Form not found for quantity input');
-                return;
-            }
-            
-            if (row) {
-                row.dataset.quantity = this.value;
-                // Tính lại tổng trước khi submit
-                calculateSelectedTotal();
-            }
-            
-            // Clear previous timeout
-            if (updateTimeout) {
-                clearTimeout(updateTimeout);
-            }
-            
-            // Debounce để tránh submit quá nhiều lần
+            if (!form) return;
+            if (row) row.dataset.quantity = this.value;
+            calculateSelectedTotal();
+
+            if (updateTimeout) clearTimeout(updateTimeout);
             updateTimeout = setTimeout(() => {
                 const formData = new FormData(form);
                 const submitBtn = form.querySelector('button[type="submit"]');
-                
-                // Disable input và button trong lúc xử lý
-                inputElement.disabled = true;
+                input.disabled = true;
                 if (submitBtn) submitBtn.disabled = true;
-                
-                // Disable các nút +/-
+
                 const increaseBtn = form.querySelector('.quantity-increase');
                 const decreaseBtn = form.querySelector('.quantity-decrease');
                 if (increaseBtn) increaseBtn.disabled = true;
                 if (decreaseBtn) decreaseBtn.disabled = true;
-                
+
                 fetch(form.action, {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok: ' + response.status);
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Cập nhật badge
-                        if (window.updateCartBadge && data.cart_count !== undefined) {
-                            window.updateCartBadge(data.cart_count);
-                        }
-                        // Cập nhật thành tiền trong row
+                        if (window.updateCartBadge && data.cart_count !== undefined) window.updateCartBadge(data.cart_count);
                         if (row) {
                             const price = parseFloat(row.dataset.price) || 0;
-                            const quantity = parseInt(inputElement.value) || 1;
-                            // Tìm cell thành tiền (td thứ 5, trước td cuối cùng có nút xóa)
+                            const quantity = parseInt(input.value) || 1;
                             const cells = row.querySelectorAll('td');
                             if (cells.length >= 5) {
                                 const subtotalCell = cells[4].querySelector('strong');
-                                if (subtotalCell) {
-                                    subtotalCell.textContent = (price * quantity).toLocaleString('vi-VN') + ' VNĐ';
-                                }
+                                if (subtotalCell) subtotalCell.textContent = (price * quantity).toLocaleString('vi-VN') + ' VNĐ';
                             }
                         }
-                        // Tính lại tổng
                         calculateSelectedTotal();
-                        
-                        // Hiển thị thông báo thành công (không hiển thị để tránh spam)
-                        // if (window.showNotification) {
-                        //     window.showNotification(data.message || 'Đã cập nhật số lượng!', 'success');
-                        // }
                     } else {
-                        // Revert giá trị nếu lỗi
-                        const originalValue = row ? row.dataset.quantity : 1;
-                        inputElement.value = originalValue;
-                        
-                        if (window.showNotification) {
-                            window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
-                        }
+                        input.value = row ? row.dataset.quantity : 1;
+                        if (window.showNotification) window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
                     }
                 })
-                .catch(error => {
-                    console.error('Error updating quantity:', error);
-                    // Revert giá trị nếu lỗi
-                    const originalValue = row ? row.dataset.quantity : 1;
-                    inputElement.value = originalValue;
-                    
-                    if (window.showNotification) {
-                        window.showNotification('Có lỗi xảy ra khi cập nhật số lượng!', 'error');
-                    }
-                })
+                .catch(() => { input.value = row ? row.dataset.quantity : 1; })
                 .finally(() => {
-                    // Re-enable input và button
-                    inputElement.disabled = false;
+                    input.disabled = false;
                     if (submitBtn) submitBtn.disabled = false;
                     if (increaseBtn) increaseBtn.disabled = false;
                     if (decreaseBtn) decreaseBtn.disabled = false;
                 });
-            }, 300); // Debounce 300ms
+            }, 300);
         });
-        
-        // Cập nhật khi blur (rời khỏi input)
-        input.addEventListener('blur', function() {
-            calculateSelectedTotal();
-        });
+
+        input.addEventListener('blur', calculateSelectedTotal);
     });
-    
-    // Xử lý form remove (AJAX)
-    document.querySelectorAll('form[action*="cart.remove"]').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
-                return;
-            }
-            
-            const formData = new FormData(form);
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Cập nhật badge
-                    if (window.updateCartBadge && data.cart_count !== undefined) {
-                        window.updateCartBadge(data.cart_count);
-                    } else if (window.loadCartCount) {
-                        window.loadCartCount();
-                    }
-                    // Reload trang để cập nhật giỏ hàng
-                    window.location.reload();
-                } else {
-                    if (window.showNotification) {
+
+    // Remove & clear cart AJAX
+    ['remove', 'clear'].forEach(type => {
+        document.querySelectorAll(`form[action*="cart.${type}"]`).forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (!confirm(type === 'clear' ? 'Bạn có chắc muốn xóa toàn bộ giỏ hàng?' : 'Bạn có chắc muốn xóa sản phẩm này?')) return;
+
+                const formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (window.updateCartBadge && data.cart_count !== undefined) window.updateCartBadge(data.cart_count);
+                        window.location.reload();
+                    } else if (window.showNotification) {
                         window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
                     }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Fallback: submit form thông thường
-                form.submit();
-            });
-        });
-    });
-    
-    // Xử lý form clear (AJAX)
-    document.querySelectorAll('form[action*="cart.clear"]').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            if (!confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?')) {
-                return;
-            }
-            
-            const formData = new FormData(form);
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Cập nhật badge về 0
-                    if (window.updateCartBadge) {
-                        window.updateCartBadge(0);
-                    }
-                    // Reload trang
-                    window.location.reload();
-                } else {
-                    if (window.showNotification) {
-                        window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Fallback: submit form thông thường
-                form.submit();
+                })
+                .catch(() => form.submit());
             });
         });
     });
 
-    // Calculate total on page load
     calculateSelectedTotal();
 });
 </script>

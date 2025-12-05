@@ -48,4 +48,5 @@ class ProductVariant extends Model
     {
         return $this->warehouseStock->sum('quantity');
     }
+    
 }

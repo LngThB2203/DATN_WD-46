@@ -4,34 +4,35 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Client\ProductDetailController;
 use App\Http\Controllers\Client\ProductListingController;
-use App\Http\Controllers\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\Client\VNPayController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
-use App\Http\Controllers\DiscountController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/test-form', function () {
     return '<form method="POST" action="/test-form-submit">'
-        . csrf_field()
+    . csrf_field()
         . '<button type="submit">Submit</button>'
         . '</form>';
 });
@@ -77,7 +78,7 @@ Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('
 // CLIENT ROUTES
 // ========================
 Route::get('/', [HomeController::class, 'index'])->name('home');
-
+Route::get('/search', [HomeController::class, 'search'])->name('home.search');
 // Category
 Route::get('/category', [ClientCategoryController::class, 'index'])->name('category.index');
 Route::get('/category/{slug}', [ClientCategoryController::class, 'show'])->name('category.show');
@@ -101,6 +102,9 @@ Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear']
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
+Route::get('/payment/vnpay', [VNPayController::class, 'createPayment'])->name('vnpay.create');      // redirect user tới VNPay
+Route::get('/payment/vnpay/return', [VNPayController::class, 'vnpayReturn'])->name('vnpay.return'); // user quay lại
+Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('vnpay.ipn');
 // Orders (Client)
 Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
 Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
@@ -123,7 +127,7 @@ Route::get('/login-register', fn() => view('client.login-register'))->name('auth
 Route::get('/order-confirmation', fn() => view('client.order-confirmation'))->name('order.confirmation');
 Route::get('/payment-methods', fn() => view('client.payment-methods'))->name('payment.methods');
 Route::get('/return-policy', fn() => view('client.return-policy'))->name('return.policy');
-Route::get('/search', fn() => view('client.search-results'))->name('search.results');
+// Route::get('/search', fn() => view('client.search-results'))->name('search.results');
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 

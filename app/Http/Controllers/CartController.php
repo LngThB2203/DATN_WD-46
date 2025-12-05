@@ -246,15 +246,12 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Lấy số lượng items trong giỏ hàng
-     */
     public function getCount(Request $request)
     {
         try {
             $cart = $this->getOrCreateCart($request);
             $count = $cart->items()->count();
-            
+
             return response()->json([
                 'success' => true,
                 'count' => $count,
@@ -296,9 +293,9 @@ class CartController extends Controller
                 if ($variant->concentration) $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
                 $variantName = implode(' • ', $parts);
             }
-            
+
             $image = $product->primaryImage() ? $product->primaryImage()->image_path : null;
-            
+
             $sessionItems[] = [
                 'cart_item_id' => $item->id,
                 'product_id' => $item->product_id,
