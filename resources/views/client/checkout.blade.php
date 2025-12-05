@@ -17,6 +17,7 @@
 
 <section class="py-5">
     <div class="container-fluid container-xl">
+
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
@@ -31,128 +32,113 @@
             </div>
         @endif
 
+
         <form method="POST" action="{{ route('checkout.store') }}">
             @csrf
-            {{-- Hidden input luôn tồn tại --}}
-            <input type="hidden" name="selected_items"
-       value="{{ isset($selectedItems) && !empty($selectedItems)
-           ? implode(',', $selectedItems)
-           : implode(',', collect($cart['items'] ?? [])->pluck('cart_item_id')->all()) }}">
+
+            {{-- Hidden selected cart items --}}
+            <input type="hidden" name="selected_items" value="{{
+                isset($selectedItems) && !empty($selectedItems)
+                    ? implode(',', $selectedItems)
+                    : implode(',', collect($cart['items'] ?? [])->pluck('cart_item_id')->all())
+            }}">
+
+            {{-- CUSTOMER INFO --}}
+            <div class="card mb-4">
+                <div class="card-header fw-semibold">Thông tin người nhận</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Họ tên <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror"
+                                value="{{ old('customer_name', $defaultCustomer['name'] ?? '') }}" required>
+                            @error('customer_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="customer_email" class="form-control @error('customer_email') is-invalid @enderror"
+                                value="{{ old('customer_email', $defaultCustomer['email'] ?? '') }}" required>
+                            @error('customer_email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_phone" class="form-control @error('customer_phone') is-invalid @enderror"
+                                value="{{ old('customer_phone', $defaultCustomer['phone'] ?? '') }}"
+                                placeholder="Nhập số điện thoại" required>
+                            @error('customer_phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                            <textarea name="shipping_address_line" class="form-control @error('shipping_address_line') is-invalid @enderror"
+                                rows="3" placeholder="Nhập địa chỉ giao hàng" required>{{ old('shipping_address_line', $defaultCustomer['address'] ?? '') }}</textarea>
+                            @error('shipping_address_line')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <div class="row g-4">
                 <div class="col-lg-7">
-                    <div class="card">
+
+                    {{-- CUSTOMER NOTE --}}
+                    <div class="card mb-4">
                         <div class="card-header fw-semibold">Thông tin giao hàng</div>
                         <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Họ tên *</label>
-                                    <input class="form-control @error('customer_name') is-invalid @enderror"
-                                           name="customer_name"
-                                           value="{{ old('customer_name', $defaultCustomer['name'] ?? '') }}">
-                                    @error('customer_name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Email</label>
-                                    <input class="form-control @error('customer_email') is-invalid @enderror"
-                                           name="customer_email"
-                                           value="{{ old('customer_email', $defaultCustomer['email'] ?? '') }}">
-                                    @error('customer_email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Số điện thoại *</label>
-                                    <input class="form-control @error('customer_phone') is-invalid @enderror"
-                                           name="customer_phone"
-                                           value="{{ old('customer_phone', $defaultCustomer['phone'] ?? '') }}">
-                                    @error('customer_phone')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Địa chỉ chi tiết *</label>
-                                    <input class="form-control @error('shipping_address_line') is-invalid @enderror"
-                                           name="shipping_address_line"
-                                           value="{{ old('shipping_address_line') }}">
-                                    @error('shipping_address_line')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Phường/Xã</label>
-                                    <input class="form-control @error('shipping_ward') is-invalid @enderror"
-                                           name="shipping_ward"
-                                           value="{{ old('shipping_ward') }}">
-                                    @error('shipping_ward')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Quận/Huyện *</label>
-                                    <input class="form-control @error('shipping_district') is-invalid @enderror"
-                                           name="shipping_district"
-                                           value="{{ old('shipping_district') }}">
-                                    @error('shipping_district')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Tỉnh/Thành phố *</label>
-                                    <input class="form-control @error('shipping_province') is-invalid @enderror"
-                                           name="shipping_province"
-                                           value="{{ old('shipping_province') }}">
-                                    @error('shipping_province')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Ghi chú cho đơn hàng</label>
-                                    <textarea class="form-control @error('customer_note') is-invalid @enderror"
-                                              name="customer_note"
-                                              rows="3">{{ old('customer_note') }}</textarea>
-                                    @error('customer_note')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
+
+                            <label class="form-label">Ghi chú cho đơn hàng</label>
+                            <textarea name="customer_note"
+                                      class="form-control @error('customer_note') is-invalid @enderror"
+                                      rows="3">{{ old('customer_note') }}</textarea>
+
+                            @error('customer_note')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+
                         </div>
                     </div>
 
-                    {{-- Payment --}}
-                    <div class="card mt-4">
+                    {{-- PAYMENT METHODS --}}
+                    <div class="card">
                         <div class="card-header fw-semibold">Phương thức thanh toán</div>
                         <div class="card-body">
-                            <div class="form-check">
-                                <input class="form-check-input"
-                                       type="radio"
-                                       name="payment_method"
-                                       id="payment_cod"
-                                       value="cod"
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method"
+                                       id="payment_cod" value="cod"
                                        {{ old('payment_method', 'cod') === 'cod' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="payment_cod">Thanh toán khi nhận hàng (COD)</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input"
-                                       type="radio"
-                                       name="payment_method"
-                                       id="payment_bank"
-                                       value="bank_transfer"
-                                       {{ old('payment_method') === 'bank_transfer' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="payment_bank">Chuyển khoản ngân hàng</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input"
-                                       type="radio"
-                                       name="payment_method"
-                                       id="payment_online"
-                                       value="online"
-                                       {{ old('payment_method') === 'online' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="payment_online">Thanh toán online (VNPay/MoMo)</label>
+                                <label class="form-check-label" for="payment_cod">
+                                    Thanh toán khi nhận hàng (COD)
+                                </label>
                             </div>
 
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method"
+                                       id="payment_bank" value="bank_transfer"
+                                       {{ old('payment_method') === 'bank_transfer' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="payment_bank">
+                                    Chuyển khoản ngân hàng
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment_method"
+                                       id="payment_online" value="online"
+                                       {{ old('payment_method') === 'online' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="payment_online">
+                                    Thanh toán online (VNPay/MoMo)
+                                </label>
+                            </div>
+
+                            {{-- Bank instruction --}}
                             <div class="alert alert-secondary mt-3" id="bank_instructions" style="display:none">
                                 <h6 class="fw-semibold mb-2">Thông tin chuyển khoản</h6>
                                 <ul class="mb-2 ps-3">
@@ -160,25 +146,36 @@
                                     <li>Số tài khoản: 0123456789</li>
                                     <li>Chủ tài khoản: Công ty TNHH ABC</li>
                                 </ul>
-                                <p class="mb-0">Nội dung chuyển khoản: <strong>Thanh toán đơn hàng #{{ now()->format('His') }}</strong></p>
+                                <p class="mb-0">
+                                    Nội dung chuyển khoản:
+                                    <strong>Thanh toán đơn hàng #{{ now()->format('His') }}</strong>
+                                </p>
                             </div>
 
+                            {{-- Online instruction --}}
                             <div class="alert alert-info mt-3" id="online_instructions" style="display:none">
                                 <h6 class="fw-semibold mb-2">Thanh toán online</h6>
-                                <p class="mb-0">Bạn sẽ được chuyển đến cổng thanh toán VNPay/MoMo để hoàn tất thanh toán.</p>
+                                <p class="mb-0">
+                                    Bạn sẽ được chuyển đến cổng thanh toán VNPay/MoMo để hoàn tất thanh toán.
+                                </p>
                             </div>
+
                         </div>
                     </div>
+
                 </div>
 
-                {{-- Cart summary --}}
+
+                {{-- CART SUMMARY --}}
                 <div class="col-lg-5">
                     <div class="card">
                         <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
                             <span>Đơn hàng</span>
-                            <span class="badge bg-secondary">{{ count($cart['items']) }} sản phẩm</span>
+                            <span class="badge bg-secondary">{{ count($cart['items'] ?? []) }} sản phẩm</span>
                         </div>
+
                         <div class="card-body">
+
                             @if(!empty($cart['items']))
                                 <div class="mb-3">
                                     @foreach($cart['items'] as $item)
@@ -188,7 +185,7 @@
                                                 <small class="text-muted">x{{ $item['quantity'] ?? 1 }}</small>
                                             </div>
                                             <div class="text-end">
-                                                <div>{{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }} đ</div>
+                                                {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }} đ
                                             </div>
                                         </div>
                                     @endforeach
@@ -199,34 +196,38 @@
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Tạm tính</span>
-                                <span>{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }} đ</span>
+                                <span>{{ number_format($cart['subtotal'] ?? 0) }} đ</span>
                             </div>
+
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Giảm giá</span>
-                                <span>- {{ number_format($cart['discount_total'] ?? 0, 0, ',', '.') }} đ</span>
+                                <span>- {{ number_format($cart['discount_total'] ?? 0) }} đ</span>
                             </div>
+
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Phí vận chuyển</span>
-                                <span>{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }} đ</span>
+                                <span>{{ number_format($cart['shipping_fee'] ?? 0) }} đ</span>
                             </div>
+
                             <hr>
+
                             <div class="d-flex justify-content-between fw-semibold mb-3">
                                 <span>Tổng cộng</span>
-                                <span>{{ number_format($cart['grand_total'] ?? 0, 0, ',', '.') }} đ</span>
+                                <span>{{ number_format($cart['grand_total'] ?? 0) }} đ</span>
                             </div>
 
-                            @error('cart')
-                                <div class="alert alert-danger py-2">{{ $message }}</div>
-                            @enderror
-
                             <button class="btn btn-primary w-100" type="submit">Đặt hàng</button>
+
                         </div>
                     </div>
                 </div>
             </div>
+
         </form>
+
     </div>
 </section>
+
 
 @push('scripts')
 <script>
@@ -237,18 +238,16 @@
 
     function togglePaymentBlocks() {
         const selected = document.querySelector('input[name="payment_method"]:checked');
-        if(selected) {
-            bankBlock.style.display = selected.value==='bank_transfer' ? 'block':'none';
-            onlineBlock.style.display = selected.value==='online' ? 'block':'none';
-        } else {
-            bankBlock.style.display='none';
-            onlineBlock.style.display='none';
-        }
+        if (!selected) return;
+
+        bankBlock.style.display = (selected.value === 'bank_transfer') ? 'block' : 'none';
+        onlineBlock.style.display = (selected.value === 'online') ? 'block' : 'none';
     }
 
-    paymentRadios.forEach(r=>r.addEventListener('change', togglePaymentBlocks));
+    paymentRadios.forEach(r => r.addEventListener('change', togglePaymentBlocks));
     togglePaymentBlocks();
 })();
 </script>
 @endpush
+
 @endsection

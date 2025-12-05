@@ -1,5 +1,4 @@
 @extends('client.layouts.app')
-
 @section('title', $product->name ?? 'Chi tiết sản phẩm')
 
 @section('content')
@@ -135,10 +134,12 @@
                 </form>
             </div>
         </div>
+
         <div class="mt-5">
             <h4 class="mb-3">Mô tả chi tiết</h4>
             <p>{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
         </div>
+
         <div class="mt-5">
             <h4 class="mb-3">Đánh giá</h4>
             <div class="mb-3">
@@ -200,7 +201,13 @@
                         <div class="col-6 col-md-4 col-lg-3">
                             <a href="{{ route('product.show', $item->slug ?? $item->id) }}" class="text-decoration-none">
                                 <div class="card h-100">
-                                    @php $img = $item->primaryImage() ? asset('storage/'.$item->primaryImage()->image_path) : ($item->image ? asset('storage/'.$item->image) : asset('assets/client/img/product/product-1.webp')); @endphp
+                                    @php
+                                        $img = $item->primaryImage()
+                                            ? asset('storage/'.$item->primaryImage()->image_path)
+                                            : ($item->image
+                                                ? asset('storage/'.$item->image)
+                                                : asset('assets/client/img/product/product-1.webp'));
+                                    @endphp
                                     <img src="{{ $img }}" class="card-img-top" alt="{{ $item->name }}">
                                     <div class="card-body">
                                         <div class="fw-semibold text-dark">{{ $item->name }}</div>
@@ -315,76 +322,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     var loadMoreBtn = document.getElementById('load-more-reviews');
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', function () {
-                var nextUrl = loadMoreBtn.getAttribute('data-next-url');
-                if (!nextUrl) {
-                    loadMoreBtn.style.display = 'none';
-                    return;
-                }
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.textContent = 'Đang tải...';
-                fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (data && data.html) {
-                            var container = document.getElementById('reviews-list');
-                            var temp = document.createElement('div');
-                            temp.innerHTML = data.html;
-                            var items = temp.children;
-                            while (items.length) {
-                                container.appendChild(items[0]);
-                            }
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function () {
+            var nextUrl = loadMoreBtn.getAttribute('data-next-url');
+            if (!nextUrl) {
+                loadMoreBtn.style.display = 'none';
+                return;
+            }
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.textContent = 'Đang tải...';
+            fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data && data.html) {
+                        var container = document.getElementById('reviews-list');
+                        var temp = document.createElement('div');
+                        temp.innerHTML = data.html;
+                        var items = temp.children;
+                        while (items.length) {
+                            container.appendChild(items[0]);
                         }
-                        if (data && data.next_page_url) {
-                            loadMoreBtn.setAttribute('data-next-url', data.next_page_url);
-                            loadMoreBtn.disabled = false;
-                            loadMoreBtn.textContent = 'Xem thêm';
-                        } else {
-                            loadMoreBtn.style.display = 'none';
-                        }
-                    })
-                    .catch(function () {
+                    }
+                    if (data && data.next_page_url) {
+                        loadMoreBtn.setAttribute('data-next-url', data.next_page_url);
                         loadMoreBtn.disabled = false;
                         loadMoreBtn.textContent = 'Xem thêm';
-                    });
-            });
-        }
+                    } else {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                })
+                .catch(function () {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Xem thêm';
+                });
+        });
+    }
 
-        // Quantity controls
-        const decreaseBtn = document.querySelector('.quantity-decrease');
-        const increaseBtn = document.querySelector('.quantity-increase');
+    // Quantity controls
+    const decreaseBtn = document.querySelector('.quantity-decrease');
+    const increaseBtn = document.querySelector('.quantity-increase');
 
-        if (decreaseBtn) {
-            decreaseBtn.addEventListener('click', function() {
-                const currentValue = parseInt(quantityInput.value);
-                if (currentValue > 1) {
-                    quantityInput.value = currentValue - 1;
-                }
-            });
-        }
+    if (decreaseBtn) {
+        decreaseBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantityInput.value);
+            if (currentValue > 1) {
+                quantityInput.value = currentValue - 1;
+            }
+        });
+    }
 
-        if (increaseBtn) {
-            increaseBtn.addEventListener('click', function() {
-                const currentValue = parseInt(quantityInput.value);
-                const max = parseInt(quantityInput.getAttribute('max')) || 100;
-                if (currentValue < max) {
-                    quantityInput.value = currentValue + 1;
-                }
-            });
-        }
-
-        // Add to cart form submission
-        const addToCartForm = document.getElementById('addToCartForm');
-        if (addToCartForm) {
-            addToCartForm.addEventListener('submit', function(e) {
-                const btn = document.getElementById('addToCartBtn');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...';
-                }
-            });
-        }
-    });
+    if (increaseBtn) {
+        increaseBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantityInput.value);
+            const max = parseInt(quantityInput.getAttribute('max')) || 100;
+            if (currentValue < max) {
+                quantityInput.value = currentValue + 1;
+            }
+        });
+    }
+});
 </script>
 @endsection

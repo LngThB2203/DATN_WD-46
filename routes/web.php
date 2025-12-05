@@ -2,36 +2,38 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Client\ProductDetailController;
 use App\Http\Controllers\Client\ProductListingController;
-use App\Http\Controllers\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\Client\VNPayController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
-use App\Http\Controllers\DiscountController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/test-form', function () {
     return '<form method="POST" action="/test-form-submit">'
-        . csrf_field()
+    . csrf_field()
         . '<button type="submit">Submit</button>'
         . '</form>';
 });
@@ -77,7 +79,7 @@ Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('
 // CLIENT ROUTES
 // ========================
 Route::get('/', [HomeController::class, 'index'])->name('home');
-
+Route::get('/search', [HomeController::class, 'search'])->name('home.search');
 // Category
 Route::get('/category', [ClientCategoryController::class, 'index'])->name('category.index');
 Route::get('/category/{slug}', [ClientCategoryController::class, 'show'])->name('category.show');
@@ -90,17 +92,20 @@ Route::get('/product/{slug}/reviews', [ReviewController::class, 'index'])->name(
 
 Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
 
-// Cart
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
-Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
-Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
+Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 
 // Checkout
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
+Route::get('/payment/vnpay', [VNPayController::class, 'createPayment'])->name('vnpay.create');      // redirect user tới VNPay
+Route::get('/payment/vnpay/return', [VNPayController::class, 'vnpayReturn'])->name('vnpay.return'); // user quay lại
+Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('vnpay.ipn');
 // Orders (Client)
 Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
 Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
@@ -123,14 +128,13 @@ Route::get('/login-register', fn() => view('client.login-register'))->name('auth
 Route::get('/order-confirmation', fn() => view('client.order-confirmation'))->name('order.confirmation');
 Route::get('/payment-methods', fn() => view('client.payment-methods'))->name('payment.methods');
 Route::get('/return-policy', fn() => view('client.return-policy'))->name('return.policy');
-Route::get('/search', fn() => view('client.search-results'))->name('search.results');
+// Route::get('/search', fn() => view('client.search-results'))->name('search.results');
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 
 // Blog
-Route::get('/blog', fn() => view('client.blog'))->name('blog.index');
-Route::get('/blog/{slug}', fn($slug) => view('client.blog-details', compact('slug')))->name('blog.show');
-
+Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
 // Contact
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');

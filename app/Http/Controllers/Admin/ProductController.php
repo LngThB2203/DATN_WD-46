@@ -3,13 +3,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ProductsExport;
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductGallery;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,7 +21,7 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'galleries']);
+        $query = Product::with(['category', 'galleries', 'brand']);
 
         // Search by name or SKU
         if ($request->filled('search')) {
@@ -35,6 +35,11 @@ class ProductController extends Controller
         // Filter by category
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by brand
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
         }
 
         // Filter by status
@@ -62,8 +67,9 @@ class ProductController extends Controller
 
         $products   = $query->paginate(10)->withQueryString();
         $categories = Category::all();
+        $brands     = Brand::all();
 
-        return view('admin.products.list', compact('products', 'categories'));
+        return view('admin.products.list', compact('products', 'categories', 'brands'));
     }
 
     /**
@@ -71,9 +77,10 @@ class ProductController extends Controller
      */
     public function create()
     {
+        $brands     = Brand::all();
         $categories = Category::all();
         $warehouses = \App\Models\Warehouse::all();
-        return view('admin.products.add', compact('categories', 'warehouses'));
+        return view('admin.products.add', compact('categories', 'brands', 'warehouses'));
     }
 
     /**
@@ -82,38 +89,40 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         \Illuminate\Support\Facades\Log::info('Store request data:', [
-            'name'         => $request->name,
-            'warehouse_id' => $request->warehouse_id,
+            'name'           => $request->name,
+            'warehouse_id'   => $request->warehouse_id,
             'stock_quantity' => $request->stock_quantity,
-            'has_images'   => $request->hasFile('images'),
-            'has_image'    => $request->hasFile('image'),
-            'images_count' => $request->hasFile('images') ? count($request->file('images')) : 0,
+            'has_images'     => $request->hasFile('images'),
+            'has_image'      => $request->hasFile('image'),
+            'images_count'   => $request->hasFile('images') ? count($request->file('images')) : 0,
         ]);
 
         $rules = [
-            'name'        => 'required|string|max:200',
-            'sku'         => 'nullable|string|max:100|unique:products,sku',
-            'price'       => 'required|numeric|min:0',
-            'sale_price'  => 'nullable|numeric|min:0',
-            'description' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
-            'status'      => 'boolean',
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'warehouse_id' => 'nullable|exists:warehouse,id',
+            'name'           => 'required|string|max:200',
+            'sku'            => 'nullable|string|max:100|unique:products,sku',
+            'price'          => 'required|numeric|min:0',
+            'sale_price'     => 'nullable|numeric|min:0',
+            'description'    => 'nullable|string',
+            'category_id'    => 'nullable|exists:categories,id',
+            'brand_id'       => 'nullable|exists:brands,id',
+            'status'         => 'boolean',
+            'images.*'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'warehouse_id'   => 'nullable|exists:warehouse,id',
             'stock_quantity' => 'nullable|integer|min:0',
         ];
-        
-        // Nếu chọn kho thì số lượng là bắt buộc
+
         if ($request->warehouse_id) {
             $rules['stock_quantity'] = 'required|integer|min:0';
         }
-        
-        $request->validate($rules, [
-            'warehouse_id.exists' => 'Kho hàng không tồn tại.',
+
+        $messages = [
+            'warehouse_id.exists'     => 'Kho hàng không tồn tại.',
             'stock_quantity.required' => 'Vui lòng nhập số lượng tồn kho khi chọn kho.',
-            'stock_quantity.integer' => 'Số lượng phải là số nguyên.',
-            'stock_quantity.min' => 'Số lượng không được âm.',
-        ]);
+            'stock_quantity.integer'  => 'Số lượng phải là số nguyên.',
+            'stock_quantity.min'      => 'Số lượng không được âm.',
+        ];
+
+        $request->validate($rules, $messages);
 
         DB::beginTransaction();
         try {
@@ -125,6 +134,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
+                'brand_id'    => $request->brand_id,
                 'status'      => $request->has('status'),
             ]);
 
@@ -134,47 +144,21 @@ class ProductController extends Controller
                 $this->handleSingleImageUpload($product, $request->file('image'));
             }
 
-            // Thêm tồn kho nếu có
             if ($request->warehouse_id) {
                 $stockQuantity = $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0;
-                
-                \Illuminate\Support\Facades\Log::info('Creating warehouse product', [
-                    'product_id' => $product->id,
-                    'warehouse_id' => $request->warehouse_id,
-                    'stock_quantity' => $stockQuantity,
-                    'request_stock_quantity' => $request->stock_quantity,
-                ]);
-                
+
                 if ($stockQuantity >= 0) {
-                    try {
-                        $warehouseProduct = \App\Models\WarehouseProduct::updateOrCreate(
-                            [
-                                'warehouse_id' => $request->warehouse_id,
-                                'product_id' => $product->id,
-                                'variant_id' => null,
-                            ],
-                            [
-                                'quantity' => $stockQuantity,
-                                'last_updated' => now(),
-                            ]
-                        );
-                        \Illuminate\Support\Facades\Log::info('Warehouse product created successfully', [
-                            'product_id' => $product->id,
+                    $warehouseProduct = \App\Models\WarehouseProduct::updateOrCreate(
+                        [
                             'warehouse_id' => $request->warehouse_id,
-                            'quantity' => $stockQuantity,
-                            'warehouse_product_id' => $warehouseProduct->id,
-                        ]);
-                    } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::error('Error creating warehouse product', [
-                            'product_id' => $product->id,
-                            'warehouse_id' => $request->warehouse_id,
-                            'stock_quantity' => $stockQuantity,
-                            'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString(),
-                        ]);
-                        // Throw exception để user biết có lỗi
-                        throw new \Exception('Không thể tạo tồn kho: ' . $e->getMessage());
-                    }
+                            'product_id'   => $product->id,
+                            'variant_id'   => null,
+                        ],
+                        [
+                            'quantity'     => $stockQuantity,
+                            'last_updated' => now(),
+                        ]
+                    );
                 }
             }
 
@@ -198,44 +182,45 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product->load(['category', 'galleries']);
+        $product->load(['category', 'galleries', 'brand']);
         return view('admin.products.show', compact('product'));
     }
 
     public function edit(Product $product)
     {
         $categories = Category::all();
+        $brands     = Brand::all();
         $warehouses = \App\Models\Warehouse::all();
         $product->load(['galleries', 'warehouseProducts.warehouse']);
-        return view('admin.products.edit', compact('product', 'categories', 'warehouses'));
+        return view('admin.products.edit', compact('product', 'categories', 'brands', 'warehouses'));
     }
 
     public function update(Request $request, Product $product)
     {
         $rules = [
-            'name'        => 'required|string|max:200',
-            'sku'         => 'nullable|string|max:100|unique:products,sku,' . $product->id,
-            'price'       => 'required|numeric|min:0',
-            'sale_price'  => 'nullable|numeric|min:0',
-            'description' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
-            'status'      => 'boolean',
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'warehouse_id' => 'nullable|exists:warehouse,id',
+            'name'           => 'required|string|max:200',
+            'sku'            => 'nullable|string|max:100|unique:products,sku,' . $product->id,
+            'price'          => 'required|numeric|min:0',
+            'sale_price'     => 'nullable|numeric|min:0',
+            'description'    => 'nullable|string',
+            'category_id'    => 'nullable|exists:categories,id',
+            'brand_id'       => 'nullable|exists:brands,id',
+            'status'         => 'boolean',
+            'images.*'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'warehouse_id'   => 'nullable|exists:warehouse,id',
             'stock_quantity' => 'nullable|integer|min:0',
         ];
 
-        // Nếu chọn kho thì phải nhập số lượng
         if ($request->warehouse_id) {
             $rules['stock_quantity'] = 'required|integer|min:0';
         }
 
         $messages = [
-            'warehouse_id.exists' => 'Kho hàng không tồn tại.',
-            'warehouse_id.required' => 'Vui lòng chọn kho hàng.',
+            'warehouse_id.exists'     => 'Kho hàng không tồn tại.',
+            'warehouse_id.required'   => 'Vui lòng chọn kho hàng.',
             'stock_quantity.required' => 'Vui lòng nhập số lượng tồn kho khi chọn kho.',
-            'stock_quantity.integer' => 'Số lượng phải là số nguyên.',
-            'stock_quantity.min' => 'Số lượng không được âm.',
+            'stock_quantity.integer'  => 'Số lượng phải là số nguyên.',
+            'stock_quantity.min'      => 'Số lượng không được âm.',
         ];
 
         $request->validate($rules, $messages);
@@ -250,6 +235,7 @@ class ProductController extends Controller
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
+                'brand_id'    => $request->brand_id,
                 'status'      => $request->has('status'),
             ]);
 
@@ -257,46 +243,21 @@ class ProductController extends Controller
                 $this->handleImageUpload($product, $request->file('images'));
             }
 
-            // Cập nhật tồn kho nếu có
             if ($request->warehouse_id) {
                 $stockQuantity = $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0;
-                
-                \Log::info('Updating warehouse product', [
-                    'product_id' => $product->id,
-                    'warehouse_id' => $request->warehouse_id,
-                    'stock_quantity' => $stockQuantity,
-                    'request_stock_quantity' => $request->stock_quantity,
-                ]);
-                
+
                 if ($stockQuantity >= 0) {
-                    try {
-                        $warehouseProduct = \App\Models\WarehouseProduct::updateOrCreate(
-                            [
-                                'warehouse_id' => $request->warehouse_id,
-                                'product_id' => $product->id,
-                                'variant_id' => null,
-                            ],
-                            [
-                                'quantity' => $stockQuantity,
-                                'last_updated' => now(),
-                            ]
-                        );
-                        \Log::info('Warehouse product updated/created successfully', [
+                    \App\Models\WarehouseProduct::updateOrCreate(
+                        [
                             'warehouse_id' => $request->warehouse_id,
-                            'product_id' => $product->id,
-                            'quantity' => $stockQuantity,
-                            'warehouse_product_id' => $warehouseProduct->id
-                        ]);
-                    } catch (\Exception $e) {
-                        \Log::error('Error updating warehouse product', [
-                            'error' => $e->getMessage(),
-                            'warehouse_id' => $request->warehouse_id,
-                            'product_id' => $product->id,
-                            'quantity' => $stockQuantity,
-                            'trace' => $e->getTraceAsString(),
-                        ]);
-                        throw $e;
-                    }
+                            'product_id'   => $product->id,
+                            'variant_id'   => null,
+                        ],
+                        [
+                            'quantity'     => $stockQuantity,
+                            'last_updated' => now(),
+                        ]
+                    );
                 }
             }
 
@@ -374,7 +335,7 @@ class ProductController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $query = Product::with(['category', 'galleries']);
+        $query = Product::with(['category', 'galleries', 'brand']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -388,12 +349,12 @@ class ProductController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
         }
 
-        if ($request->filled('brand')) {
-            $query->where('brand', 'like', "%{$request->brand}%");
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
         if ($request->filled('price_min')) {
@@ -411,7 +372,7 @@ class ProductController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $query = Product::with(['category', 'galleries']);
+        $query = Product::with(['category', 'galleries', 'brand']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -425,12 +386,12 @@ class ProductController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        if ($request->filled('brand_id')) {
+            $query->where('brand_id', $request->brand_id);
         }
 
-        if ($request->filled('brand')) {
-            $query->where('brand', 'like', "%{$request->brand}%");
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
         if ($request->filled('price_min')) {

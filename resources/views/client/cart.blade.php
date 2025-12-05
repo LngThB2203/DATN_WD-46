@@ -3,7 +3,8 @@
 @section('title', 'Giỏ hàng')
 
 @section('content')
-<section class="py-4 border-bottom">
+<!-- Nếu navbar của bạn là fixed-top, thêm spacer hoặc padding-top -->
+<section class="py-4 border-bottom" style="padding-top: 100px;">
     <div class="container-fluid container-xl">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
@@ -35,7 +36,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 fw-semibold">Sản phẩm trong giỏ</h5>
                         @if(!empty($cart['items']))
-                            <form method="POST" action="{{ route('cart.clear') }}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?');">
+                            <form method="POST" action="{{ route('cart.clear') }}" class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Xóa tất cả</button>
                             </form>
@@ -83,9 +84,13 @@
                                                         <div>
                                                             <strong>{{ $item['name'] ?? 'Sản phẩm' }}</strong>
                                                             @if(!empty($item['variant_name']))
-                                                                <br><small class="text-muted">{{ $item['variant_name'] }}</small>
+                                                                <br><small class="text-primary fw-semibold">
+                                                                    <i class="bi bi-tag-fill"></i> Biến thể: {{ $item['variant_name'] }}
+                                                                </small>
                                                             @elseif(isset($item['variant_id']) && $item['variant_id'])
-                                                                <br><small class="text-muted">Biến thể #{{ $item['variant_id'] }}</small>
+                                                                <br><small class="text-primary fw-semibold">
+                                                                    <i class="bi bi-tag-fill"></i> Biến thể #{{ $item['variant_id'] }}
+                                                                </small>
                                                             @endif
                                                         </div>
                                                     </div>
@@ -104,7 +109,7 @@
                                                 </td>
                                                 <td><strong>{{ number_format(($item['quantity'] ?? 1) * ($item['price'] ?? 0), 0, ',', '.') }} VNĐ</strong></td>
                                                 <td>
-                                                    <form method="POST" action="{{ route('cart.remove') }}" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa sản phẩm này?');">
+                                                    <form method="POST" action="{{ route('cart.remove') }}" class="d-inline">
                                                         @csrf
                                                         <input type="hidden" name="cart_item_id" value="{{ $item['cart_item_id'] }}">
                                                         <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
@@ -162,8 +167,9 @@
         </div>
     </div>
 </section>
+@endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const shippingFee = parseInt(document.getElementById('cartSummary')?.dataset.shippingFee) || 30000;
@@ -188,38 +194,135 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasSelected = selectedCheckboxes.length > 0;
         checkoutBtn.disabled = !hasSelected;
 
-        // Update hidden input
         document.getElementById('selectedItemsInput').value = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
     }
 
-    document.querySelectorAll('.item-checkbox').forEach(cb => {
-        cb.addEventListener('change', calculateSelectedTotal);
-    });
-
+    document.querySelectorAll('.item-checkbox').forEach(cb => cb.addEventListener('change', calculateSelectedTotal));
     document.getElementById('selectAllHeader')?.addEventListener('change', function() {
         document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
         calculateSelectedTotal();
     });
 
-    document.querySelectorAll('.quantity-increase').forEach(btn => btn.addEventListener('click', function() {
-        const input = btn.closest('.cart-update-form').querySelector('.quantity-input');
-        input.value = Math.min(parseInt(input.value)+1, parseInt(input.max)||100);
-        input.dispatchEvent(new Event('change'));
-    }));
-    document.querySelectorAll('.quantity-decrease').forEach(btn => btn.addEventListener('click', function() {
-        const input = btn.closest('.cart-update-form').querySelector('.quantity-input');
-        input.value = Math.max(parseInt(input.value)-1, parseInt(input.min)||1);
-        input.dispatchEvent(new Event('change'));
-    }));
+    document.querySelectorAll('.quantity-increase').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const form = this.closest('.cart-update-form');
+            const input = form.querySelector('.quantity-input');
+            const currentValue = parseInt(input.value) || 1;
+            const maxValue = parseInt(input.getAttribute('max')) || 100;
+            const newValue = Math.min(currentValue + 1, maxValue);
+            if (newValue !== currentValue) {
+                input.value = newValue;
+                input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+            }
+        });
+    });
 
+    document.querySelectorAll('.quantity-decrease').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const form = this.closest('.cart-update-form');
+            const input = form.querySelector('.quantity-input');
+            const currentValue = parseInt(input.value) || 1;
+            const minValue = parseInt(input.getAttribute('min')) || 1;
+            const newValue = Math.max(currentValue - 1, minValue);
+            if (newValue !== currentValue) {
+                input.value = newValue;
+                input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+            }
+        });
+    });
+
+    // Quantity input change (AJAX)
     document.querySelectorAll('.quantity-input').forEach(input => {
-        input.addEventListener('change', calculateSelectedTotal);
+        let updateTimeout;
+        input.addEventListener('change', function(e) {
+            e.stopPropagation();
+            const row = this.closest('.cart-item-row');
+            const form = this.closest('.cart-update-form');
+            if (!form) return;
+            if (row) row.dataset.quantity = this.value;
+            calculateSelectedTotal();
+
+            if (updateTimeout) clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                input.disabled = true;
+                if (submitBtn) submitBtn.disabled = true;
+
+                const increaseBtn = form.querySelector('.quantity-increase');
+                const decreaseBtn = form.querySelector('.quantity-decrease');
+                if (increaseBtn) increaseBtn.disabled = true;
+                if (decreaseBtn) decreaseBtn.disabled = true;
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (window.updateCartBadge && data.cart_count !== undefined) window.updateCartBadge(data.cart_count);
+                        if (row) {
+                            const price = parseFloat(row.dataset.price) || 0;
+                            const quantity = parseInt(input.value) || 1;
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length >= 5) {
+                                const subtotalCell = cells[4].querySelector('strong');
+                                if (subtotalCell) subtotalCell.textContent = (price * quantity).toLocaleString('vi-VN') + ' VNĐ';
+                            }
+                        }
+                        calculateSelectedTotal();
+                    } else {
+                        input.value = row ? row.dataset.quantity : 1;
+                        if (window.showNotification) window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+                    }
+                })
+                .catch(() => { input.value = row ? row.dataset.quantity : 1; })
+                .finally(() => {
+                    input.disabled = false;
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (increaseBtn) increaseBtn.disabled = false;
+                    if (decreaseBtn) decreaseBtn.disabled = false;
+                });
+            }, 300);
+        });
+
         input.addEventListener('blur', calculateSelectedTotal);
     });
 
-    // Calculate total on page load
+    // Remove & clear cart AJAX
+    ['remove', 'clear'].forEach(type => {
+        document.querySelectorAll(`form[action*="cart.${type}"]`).forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (!confirm(type === 'clear' ? 'Bạn có chắc muốn xóa toàn bộ giỏ hàng?' : 'Bạn có chắc muốn xóa sản phẩm này?')) return;
+
+                const formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (window.updateCartBadge && data.cart_count !== undefined) window.updateCartBadge(data.cart_count);
+                        window.location.reload();
+                    } else if (window.showNotification) {
+                        window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
+                    }
+                })
+                .catch(() => form.submit());
+            });
+        });
+    });
+
     calculateSelectedTotal();
 });
 </script>
-@endpush
 @endsection

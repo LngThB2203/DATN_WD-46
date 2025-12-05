@@ -1,16 +1,15 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Mail\OrderConfirmationMail;
 use App\Models\CartItem;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
+use App\Models\WarehouseProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
@@ -30,9 +29,10 @@ class CheckoutController extends Controller
         }
 
         $defaultCustomer = [
-            'name'  => optional($request->user())->name,
-            'email' => optional($request->user())->email,
-            'phone' => optional($request->user())->phone ?? null,
+            'name'    => optional($request->user())->name,
+            'email'   => optional($request->user())->email,
+            'phone'   => optional($request->user())->phone ?? null,
+            'address' => optional($request->user())->address ?? null,
         ];
 
         return view('client.checkout', [
@@ -48,9 +48,6 @@ class CheckoutController extends Controller
             'customer_name'         => 'required|string|max:150',
             'customer_email'        => 'nullable|email|max:150',
             'customer_phone'        => 'required|string|max:20',
-            'shipping_province'     => 'required|string|max:120',
-            'shipping_district'     => 'required|string|max:120',
-            'shipping_ward'         => 'nullable|string|max:120',
             'shipping_address_line' => 'required|string|max:255',
             'customer_note'         => 'nullable|string|max:1000',
             'payment_method'        => 'required|string|in:cod,bank_transfer,online',
@@ -60,7 +57,6 @@ class CheckoutController extends Controller
         if (is_string($selectedItems)) {
             $selectedItems = explode(',', $selectedItems);
         }
-
         $selectedItems = array_filter(array_map('intval', (array) $selectedItems));
 
         $cart = $this->prepareCart($request, $selectedItems);
@@ -70,9 +66,8 @@ class CheckoutController extends Controller
         }
 
         DB::beginTransaction();
-
         try {
-            $fullAddress = $this->buildFullAddress($validated);
+            $fullAddress = $validated['shipping_address_line'];
             $discountId  = $request->session()->get('cart.discount_id');
 
             // Tạo đơn hàng
@@ -86,9 +81,6 @@ class CheckoutController extends Controller
                 'customer_name'         => $validated['customer_name'],
                 'customer_email'        => $validated['customer_email'] ?? null,
                 'customer_phone'        => $validated['customer_phone'],
-                'shipping_province'     => $validated['shipping_province'],
-                'shipping_district'     => $validated['shipping_district'],
-                'shipping_ward'         => $validated['shipping_ward'] ?? null,
                 'shipping_address_line' => $validated['shipping_address_line'],
                 'customer_note'         => $validated['customer_note'] ?? null,
                 'subtotal'              => $cart['subtotal'],
@@ -97,19 +89,52 @@ class CheckoutController extends Controller
                 'payment_method'        => $validated['payment_method'],
             ]);
 
-            // Tạo order details
+            // Tạo order details và trừ tồn kho
             $orderDetails = [];
             foreach ($cart['items'] as $item) {
+                $productId = $item['product_id'];
+                $variantId = $item['variant_id'] ?? null;
+                $quantity = $item['quantity'];
+
                 $orderDetails[] = [
                     'order_id'   => $order->id,
-                    'product_id' => $item['product_id'],
-                    'variant_id' => $item['variant_id'] ?? null,
-                    'quantity'   => $item['quantity'],
+                    'product_id' => $productId,
+                    'variant_id' => $variantId,
+                    'quantity'   => $quantity,
                     'price'      => $item['price'],
                     'subtotal'   => $item['subtotal'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
+
+                // Trừ tồn kho từ các kho
+                $stockQuery = WarehouseProduct::where('product_id', $productId)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('quantity', 'desc');
+                
+                if ($variantId) {
+                    $stockQuery->where('variant_id', $variantId);
+                } else {
+                    $stockQuery->whereNull('variant_id');
+                }
+                
+                $warehouseProducts = $stockQuery->get();
+                $remainingQuantity = $quantity;
+
+                foreach ($warehouseProducts as $wp) {
+                    if ($remainingQuantity <= 0) {
+                        break;
+                    }
+
+                    $deductAmount = min($remainingQuantity, $wp->quantity);
+                    $wp->quantity -= $deductAmount;
+                    $wp->save();
+                    $remainingQuantity -= $deductAmount;
+                }
+
+                if ($remainingQuantity > 0) {
+                    throw new \Exception("Không đủ tồn kho cho sản phẩm ID: {$productId}");
+                }
             }
             if (! empty($orderDetails)) {
                 OrderDetail::insert($orderDetails);
@@ -125,7 +150,7 @@ class CheckoutController extends Controller
                 'paid_at'          => null,
             ]);
 
-            // Nếu có discount, tăng usage
+            // Discount
             if ($discountId && $discount = Discount::find($discountId)) {
                 $discount->incrementUsage();
             }
@@ -135,30 +160,68 @@ class CheckoutController extends Controller
             // Xóa các item đã thanh toán khỏi cart
             $this->removePaidItemsFromCart($request, $selectedItems);
 
-            // Gửi mail an toàn
-            try {
-                if ($order->customer_email) {
-                    Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+            // ---------- VNPay ----------
+            if ($validated['payment_method'] === 'online') {
+                // dùng config() thay vì env()
+                $vnp_TmnCode    = config('vnpay.vnp_TmnCode');
+                $vnp_HashSecret = config('vnpay.vnp_HashSecret');
+                $vnp_Url        = config('vnpay.vnp_Url');
+                $vnp_ReturnUrl  = config('vnpay.vnp_ReturnUrl');
+                $vnp_IpnUrl     = config('vnpay.vnp_IpnUrl');
+
+                $vnp_TxnRef    = (string) $order->id; // giữ order id để dễ xử lý return/ipn
+                $vnp_OrderInfo = "Thanh toan don hang {$order->id}";
+                $vnp_OrderType = "billpayment";
+                // ép kiểu integer (bắt buộc)
+                $vnp_Amount     = intval(round($order->grand_total * 100));
+                $vnp_Locale     = "vn";
+                $vnp_IpAddr     = $request->ip();
+                $vnp_CreateDate = date('YmdHis');
+
+                $inputData = [
+                    "vnp_Version"    => "2.1.0",
+                    "vnp_TmnCode"    => $vnp_TmnCode,
+                    "vnp_Amount"     => $vnp_Amount,
+                    "vnp_Command"    => "pay",
+                    "vnp_CreateDate" => $vnp_CreateDate,
+                    "vnp_CurrCode"   => "VND",
+                    "vnp_IpAddr"     => $vnp_IpAddr,
+                    "vnp_Locale"     => $vnp_Locale,
+                    "vnp_OrderInfo"  => $vnp_OrderInfo,
+                    "vnp_OrderType"  => $vnp_OrderType,
+                    "vnp_ReturnUrl"  => $vnp_ReturnUrl,
+                    "vnp_TxnRef"     => $vnp_TxnRef,
+                ];
+
+                ksort($inputData);
+
+                $query       = [];
+                $hashDataArr = [];
+
+                foreach ($inputData as $key => $value) {
+                    $query[]       = urlencode($key) . "=" . urlencode($value);
+                    $hashDataArr[] = urlencode($key) . "=" . urlencode($value);
                 }
-            } catch (\Exception $e) {
-                Log::error('Send order email failed: ' . $e->getMessage());
+
+                $queryString = implode("&", $query);
+                $hashData    = implode("&", $hashDataArr);
+
+                $vnpSecureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+                $requestUrl = $vnp_Url . "?" . $queryString . "&vnp_SecureHash=" . $vnpSecureHash;
+
+                // Log để debug nếu redirect không chạy
+                Log::info('VNPay redirect url: ' . $requestUrl, [
+                    'order_id' => $order->id,
+                    'amount'   => $vnp_Amount,
+                ]);
+
+                return redirect()->away($requestUrl);
             }
+            // ---------- end VNPay ----------
 
-            // Lưu thông tin customer vào session
-            if ($validated['customer_email']) {
-                $request->session()->put('last_order_email', $validated['customer_email']);
-            }
-
-            if ($validated['customer_phone']) {
-                $request->session()->put('last_order_phone', $validated['customer_phone']);
-            }
-
-            $orderCode      = '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
-            $successMessage = $validated['payment_method'] === 'bank_transfer'
-                ? "Đơn hàng {$orderCode} đã được ghi nhận. Vui lòng chuyển khoản theo hướng dẫn để hoàn tất thanh toán."
-                : "Đơn hàng {$orderCode} đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.";
-
-            return redirect()->route('orders.index')->with('success', $successMessage);
+            return redirect()->route('orders.index')
+                ->with('success', "Đơn hàng #{$order->id} đã được ghi nhận.");
 
         } catch (\Throwable $exception) {
             DB::rollBack();
@@ -170,9 +233,6 @@ class CheckoutController extends Controller
         }
     }
 
-    /**
-     * Chuẩn bị cart để hiển thị
-     */
     private function prepareCart(Request $request, array $selectedItems = []): array
     {
         $sessionCart = $request->session()->get('cart', ['items' => [], 'shipping_fee' => 30000, 'discount_total' => 0]);
@@ -203,44 +263,25 @@ class CheckoutController extends Controller
         ];
     }
 
-    /**
-     * Xây dựng địa chỉ đầy đủ
-     */
-    private function buildFullAddress(array $data): string
-    {
-        return collect([
-            $data['shipping_address_line'] ?? null,
-            $data['shipping_ward'] ?? null,
-            $data['shipping_district'] ?? null,
-            $data['shipping_province'] ?? null,
-        ])->filter()->implode(', ');
-    }
-
     private function removePaidItemsFromCart(Request $request, array $paidItemIds): void
-{
-    $sessionCart = $request->session()->get('cart', ['items' => []]);
+    {
+        $sessionCart = $request->session()->get('cart', ['items' => []]);
 
-    // Xóa item khỏi SESSION theo cart_item_id
-    $sessionCart['items'] = collect($sessionCart['items'])
-        ->reject(fn($i) => in_array($i['cart_item_id'], $paidItemIds, true))
-        ->values()
-        ->all();
+        $sessionCart['items'] = collect($sessionCart['items'])
+            ->reject(fn($i) => in_array($i['cart_item_id'], $paidItemIds, true))
+            ->values()
+            ->all();
 
-    // Cập nhật lại tổng
-    $subtotal = collect($sessionCart['items'])
-        ->sum(fn($i) => $i['quantity'] * $i['price']);
+        $subtotal = collect($sessionCart['items'])
+            ->sum(fn($i) => $i['quantity'] * $i['price']);
 
-    $sessionCart['subtotal'] = $subtotal;
-    $sessionCart['grand_total'] =
-        max(($subtotal + ($sessionCart['shipping_fee'] ?? 0)) - ($sessionCart['discount_total'] ?? 0), 0);
+        $sessionCart['subtotal']    = $subtotal;
+        $sessionCart['grand_total'] = max(($subtotal + ($sessionCart['shipping_fee'] ?? 0)) - ($sessionCart['discount_total'] ?? 0), 0);
 
-    // Lưu lại session
-    $request->session()->put('cart', $sessionCart);
+        $request->session()->put('cart', $sessionCart);
 
-    // Nếu user đăng nhập → xóa đúng CartItem theo ID
-    if ($request->user()) {
-        CartItem::whereIn('id', $paidItemIds)->delete();
+        if ($request->user()) {
+            CartItem::whereIn('id', $paidItemIds)->delete();
+        }
     }
-}
-
 }

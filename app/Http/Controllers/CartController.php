@@ -105,10 +105,14 @@ class CartController extends Controller
             $this->syncCartToSession($request, $cart);
 
             if ($request->ajax()) {
+                $cart = $this->getOrCreateCart($request);
+                $cartCount = $cart->items()->count();
+                $cartData = $this->prepareCart($request);
                 return response()->json([
                     'success' => true,
-                    'message' => 'Cập nhật số lượng thành công!',
-                    'cart'    => $this->prepareCart($request),
+                    'message' => 'Đã cập nhật số lượng!',
+                    'cart' => $cartData,
+                    'cart_count' => $cartCount,
                 ]);
             }
 
@@ -133,10 +137,14 @@ class CartController extends Controller
             $this->syncCartToSession($request, $cart);
 
             if ($request->ajax()) {
+                $cart = $this->getOrCreateCart($request);
+                $cartCount = $cart->items()->count();
+                $cartData = $this->prepareCart($request);
                 return response()->json([
                     'success' => true,
-                    'message' => 'Xóa sản phẩm thành công!',
-                    'cart'    => $this->prepareCart($request),
+                    'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
+                    'cart' => $cartData,
+                    'cart_count' => $cartCount,
                 ]);
             }
             return back()->with('success', 'Xóa sản phẩm thành công!');
@@ -158,7 +166,11 @@ class CartController extends Controller
             $request->session()->forget('cart_id');
 
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Đã xóa toàn bộ giỏ hàng!']);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã xóa toàn bộ giỏ hàng!',
+                    'cart_count' => 0,
+                ]);
             }
             return redirect()->route('cart.index')->with('success', 'Đã xóa toàn bộ giỏ hàng!');
         } catch (\Exception $e) {
@@ -200,18 +212,18 @@ class CartController extends Controller
             if ($variant) {
                 $parts = [];
                 if ($variant->size) {
-                    $parts[] = 'Size: ' . $variant->size->size_name;
+                    $parts[] = 'Kích thước: ' . $variant->size->size_name;
                 }
 
                 if ($variant->scent) {
-                    $parts[] = 'Mùi: ' . $variant->scent->scent_name;
+                    $parts[] = 'Mùi hương: ' . $variant->scent->scent_name;
                 }
 
                 if ($variant->concentration) {
                     $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
                 }
 
-                $variantName = implode(' | ', $parts);
+                $variantName = implode(' • ', $parts);
             }
             $image = $product ? $product->primaryImage() : null;
 
@@ -234,23 +246,83 @@ class CartController extends Controller
         ]);
     }
 
+    public function getCount(Request $request)
+    {
+        try {
+            $cart = $this->getOrCreateCart($request);
+            $count = $cart->items()->count();
+
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Cart count error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * Chuẩn bị dữ liệu cart để hiển thị
+     */
     private function prepareCart(Request $request): array
     {
-        $cart = session()->get('cart', []);
+        // Ưu tiên lấy từ database
+        $cart = $this->getOrCreateCart($request);
+        $items = $cart->items()->with(['product.galleries', 'variant.size', 'variant.scent', 'variant.concentration'])->get();
 
-        $items    = $cart['items'] ?? [];
-        $subtotal = 0;
-
+        $sessionItems = [];
         foreach ($items as $item) {
-            $subtotal += ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
+            $product = $item->product;
+            if (!$product) {
+                continue; // Bỏ qua sản phẩm đã bị xóa
+            }
+
+            $quantity = max(1, (int) $item->quantity);
+            $price = (float) $item->price;
+
+            $variant = $item->variant;
+            $variantName = '';
+            if ($variant) {
+                $parts = [];
+                if ($variant->size) $parts[] = 'Kích thước: ' . $variant->size->size_name;
+                if ($variant->scent) $parts[] = 'Mùi hương: ' . $variant->scent->scent_name;
+                if ($variant->concentration) $parts[] = 'Nồng độ: ' . $variant->concentration->concentration_name;
+                $variantName = implode(' • ', $parts);
+            }
+
+            $image = $product->primaryImage() ? $product->primaryImage()->image_path : null;
+
+            $sessionItems[] = [
+                'cart_item_id' => $item->id,
+                'product_id' => $item->product_id,
+                'variant_id' => $item->variant_id,
+                'quantity' => $quantity,
+                'price' => $price,
+                'subtotal' => $quantity * $price,
+                'name' => $product->name,
+                'variant_name' => $variantName,
+                'image' => $image,
+            ];
         }
 
+        $subtotal = collect($sessionItems)->sum('subtotal');
+        $shippingFee = 30000;
+        $discountTotal = (float) ($request->session()->get('cart.discount_total', 0));
+        $grandTotal = max(($subtotal + $shippingFee) - $discountTotal, 0);
+
+        // Đồng bộ với session
+        $this->syncCartToSession($request, $cart);
+
         return [
-            'items'          => $items,
-            'subtotal'       => $subtotal,
-            'shipping_fee'   => 30000,
-            'discount_total' => 0,
-            'grand_total'    => $subtotal + 30000,
+            'items' => $sessionItems,
+            'subtotal' => $subtotal,
+            'shipping_fee' => $shippingFee,
+            'discount_total' => $discountTotal,
+            'grand_total' => $grandTotal,
         ];
     }
 
