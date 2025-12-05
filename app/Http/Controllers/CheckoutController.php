@@ -6,6 +6,7 @@ use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
+use App\Models\WarehouseProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -88,19 +89,52 @@ class CheckoutController extends Controller
                 'payment_method'        => $validated['payment_method'],
             ]);
 
-            // Tạo order details
+            // Tạo order details và trừ tồn kho
             $orderDetails = [];
             foreach ($cart['items'] as $item) {
+                $productId = $item['product_id'];
+                $variantId = $item['variant_id'] ?? null;
+                $quantity = $item['quantity'];
+
                 $orderDetails[] = [
                     'order_id'   => $order->id,
-                    'product_id' => $item['product_id'],
-                    'variant_id' => $item['variant_id'] ?? null,
-                    'quantity'   => $item['quantity'],
+                    'product_id' => $productId,
+                    'variant_id' => $variantId,
+                    'quantity'   => $quantity,
                     'price'      => $item['price'],
                     'subtotal'   => $item['subtotal'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
+
+                // Trừ tồn kho từ các kho
+                $stockQuery = WarehouseProduct::where('product_id', $productId)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('quantity', 'desc');
+                
+                if ($variantId) {
+                    $stockQuery->where('variant_id', $variantId);
+                } else {
+                    $stockQuery->whereNull('variant_id');
+                }
+                
+                $warehouseProducts = $stockQuery->get();
+                $remainingQuantity = $quantity;
+
+                foreach ($warehouseProducts as $wp) {
+                    if ($remainingQuantity <= 0) {
+                        break;
+                    }
+
+                    $deductAmount = min($remainingQuantity, $wp->quantity);
+                    $wp->quantity -= $deductAmount;
+                    $wp->save();
+                    $remainingQuantity -= $deductAmount;
+                }
+
+                if ($remainingQuantity > 0) {
+                    throw new \Exception("Không đủ tồn kho cho sản phẩm ID: {$productId}");
+                }
             }
             if (! empty($orderDetails)) {
                 OrderDetail::insert($orderDetails);
