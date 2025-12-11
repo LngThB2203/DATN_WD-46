@@ -97,28 +97,29 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
-Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
+// CART
+Route::middleware('auth')->group(function () {
 
-Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
-Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
-Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
-Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
-Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
+    // CART
+    Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+    Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
+    Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+    Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 
-// Checkout
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    // CHECKOUT
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
-Route::get('/payment/vnpay', [VNPayController::class, 'createPayment'])->name('vnpay.create');      // redirect user tới VNPay
-Route::get('/payment/vnpay/return', [VNPayController::class, 'vnpayReturn'])->name('vnpay.return'); // user quay lại
-Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('vnpay.ipn');
-// Orders (Client)
-Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
-Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
-Route::put('/orders/{order}/update-shipping', [ClientOrderController::class, 'updateShipping'])->name('orders.updateShipping');
-Route::put('/orders/{order}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
-Route::put('/orders/{order}/confirm-received', [ClientOrderController::class, 'confirmReceived'])->name('orders.confirm-received');
+    // ORDERS
+    Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
+    Route::put('/orders/{order}/update-shipping', [ClientOrderController::class, 'updateShipping'])->name('orders.updateShipping');
+    Route::put('/orders/{order}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
+    Route::put('/orders/{order}/confirm-received', [ClientOrderController::class, 'confirmReceived'])->name('orders.confirm-received');
+});
+
 
 // Newsletter
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
