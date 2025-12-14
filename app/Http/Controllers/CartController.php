@@ -239,10 +239,23 @@ class CartController extends Controller
             ];
         }
 
+        $existingCart   = $request->session()->get('cart', []);
+        $shippingFee    = $existingCart['shipping_fee']   ?? 30000;
+        $discountId     = $existingCart['discount_id']    ?? null;
+        $discountTotal  = $existingCart['discount_total'] ?? 0;
+
+        $subtotal    = collect($sessionItems)->sum(function ($i) {
+            return ($i['quantity'] ?? 1) * ($i['price'] ?? 0);
+        });
+        $grandTotal = max(($subtotal + $shippingFee) - $discountTotal, 0);
+
         $request->session()->put('cart', [
             'items'          => $sessionItems,
-            'shipping_fee'   => 30000,
-            'discount_total' => 0,
+            'shipping_fee'   => $shippingFee,
+            'discount_id'    => $discountId,
+            'discount_total' => $discountTotal,
+            'subtotal'       => $subtotal,
+            'grand_total'    => $grandTotal,
         ]);
     }
 

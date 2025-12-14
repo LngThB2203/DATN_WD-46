@@ -123,8 +123,12 @@ Route::put('/orders/{order}/confirm-received', [ClientOrderController::class, 'c
 // Newsletter
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
+// Discounts (Client)
+Route::get('/vouchers', [DiscountController::class, 'index'])->name('client.vouchers.index');
+
 // Discount API
 Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');
+Route::post('/api/apply-discount', [DiscountController::class, 'apply'])->name('api.apply-discount');
 
 // Static Pages
 Route::get('/about', fn() => view('client.about'))->name('about');
