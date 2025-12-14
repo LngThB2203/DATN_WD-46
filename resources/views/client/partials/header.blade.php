@@ -113,6 +113,10 @@
                                         <i class="bi bi-bag-check me-2"></i>
                                         <span>Đơn hàng</span>
                                     </a>
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('client.vouchers.index') }}">
+                                        <i class="bi bi-ticket-perforated me-2"></i>
+                                        <span>Kho voucher</span>
+                                    </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
                                         <i class="bi bi-heart me-2"></i>
                                         <span>Danh sách yêu thích</span>
