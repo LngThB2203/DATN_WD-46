@@ -16,13 +16,7 @@ protected $casts = [
     'start_date' => 'date',
     'end_date' => 'date',
 ];
-public function index()
-{
-    // Lấy banner đang hoạt động (active)
-    $heroBanners = Banner::active()->get();
 
-    return view('client.home', compact('heroBanners'));
-}
 
     // Mối quan hệ tới người tạo (user)
     public function creator()

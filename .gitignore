@@ -23,3 +23,10 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 DATN_WD-46/
+# Uploaded images
+public/assets/admin/images/product/
+public/uploads/
+
+# Laravel storage
+/storage/app/public/*
+!storage/app/public/.gitignore

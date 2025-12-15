@@ -36,7 +36,17 @@
                 @endphp
                 <tr>
                     <td> {{ $key + 1 }} </td>
-                    <td><img src="{{ asset('storage/'.$banner->image) }}" width="120" class="rounded"></td>
+                   <td>
+                    @if($banner->image)
+                        <img src="{{ asset('storage/' . $banner->image) }}" width="120">
+                    @else
+                        <span>Chưa có ảnh</span>
+                    @endif
+                </td>
+
+
+
+
                     <td>{{ $banner->link }}</td>
                     <td>{{ $banner->start_date }}</td>
                     <td class="{{ $isExpired ? 'table-danger fw-bold' : '' }}">

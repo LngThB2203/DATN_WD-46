@@ -1,5 +1,7 @@
 <?php
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
@@ -124,8 +126,8 @@ Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shippi
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 
 // Blog
-Route::get('/blog', fn() => view('client.blog'))->name('blog.index');
-Route::get('/blog/{slug}', fn($slug) => view('client.blog-details', compact('slug')))->name('blog.show');
+Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
 
 // Contact
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
@@ -214,6 +216,14 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('delete');
         Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
+    });
+    Route::prefix('post')->group(function () {
+    Route::get('/', [PostController::class, 'index'])->name('post.index');
+    Route::get('/create', [PostController::class, 'create'])->name('post.create');
+    Route::post('/store', [PostController::class, 'store'])->name('post.store');
+    Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
+    Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
+    Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
     });
 
     // Inventories

@@ -15,14 +15,23 @@
                     <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
                 </div>
                 <div class="col-lg-6">
-                    @if($heroBanner && $heroBanner->image)
-                        <img class="img-fluid rounded" src="{{ asset('storage/' . $heroBanner->image) }}" alt="Hero">
+                    @if(isset($heroBanners) && $heroBanners->count() > 0)
+                    @if($heroBanners->count() == 1)
+                    @foreach($products as $product)
+                        <a href="{{ route('product.show', $product->slug) }}" target="_blank" class="d-block">
+                            <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" class="img-fluid rounded" alt="Hero Banner">
+                        </a>
+                        @endforeach
                     @else
                         <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
                             <div class="carousel-inner">
                                 @foreach($heroBanners as $key => $banner)
                                     <div class="carousel-item @if($key == 0) active @endif">
-                                        <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
+                                        @foreach($products as $product)
+                                        <a href="{{  route('product.show', $product->slug)}}" target="_blank" class="d-block">
+                                            <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
+                                        </a>
+                                        @endforeach
                                     </div>
                                 @endforeach
                             </div>
@@ -36,6 +45,7 @@
                             </button>
                         </div>
                     @endif
+                @endif
                 </div>
             </div>
         </div>
@@ -260,18 +270,18 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const cartForms = document.querySelectorAll('form[action*="cart/add"]');
-
     cartForms.forEach(function(form) {
-        form.addEventListener('submit', function() {
+        form.addEventListener('submit', function(e) {
             const btn = form.querySelector('button[type="submit"]');
             if (btn) {
-                const old = btn.innerHTML;
+                const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = old;
+                setTimeout(function() {
+                    if (btn.disabled) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
                 }, 5000);
             }
         });
