@@ -1,16 +1,15 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Mail\OrderConfirmationMail;
 use App\Models\CartItem;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
+use App\Models\WarehouseProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
@@ -90,21 +89,54 @@ class CheckoutController extends Controller
                 'payment_method'        => $validated['payment_method'],
             ]);
 
-            // Tạo order details
+            // Tạo order details và trừ tồn kho
             $orderDetails = [];
             foreach ($cart['items'] as $item) {
+                $productId = $item['product_id'];
+                $variantId = $item['variant_id'] ?? null;
+                $quantity = $item['quantity'];
+
                 $orderDetails[] = [
                     'order_id'   => $order->id,
-                    'product_id' => $item['product_id'],
-                    'variant_id' => $item['variant_id'] ?? null,
-                    'quantity'   => $item['quantity'],
+                    'product_id' => $productId,
+                    'variant_id' => $variantId,
+                    'quantity'   => $quantity,
                     'price'      => $item['price'],
                     'subtotal'   => $item['subtotal'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
+
+                // Trừ tồn kho từ các kho
+                $stockQuery = WarehouseProduct::where('product_id', $productId)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('quantity', 'desc');
+                
+                if ($variantId) {
+                    $stockQuery->where('variant_id', $variantId);
+                } else {
+                    $stockQuery->whereNull('variant_id');
+                }
+                
+                $warehouseProducts = $stockQuery->get();
+                $remainingQuantity = $quantity;
+
+                foreach ($warehouseProducts as $wp) {
+                    if ($remainingQuantity <= 0) {
+                        break;
+                    }
+
+                    $deductAmount = min($remainingQuantity, $wp->quantity);
+                    $wp->quantity -= $deductAmount;
+                    $wp->save();
+                    $remainingQuantity -= $deductAmount;
+                }
+
+                if ($remainingQuantity > 0) {
+                    throw new \Exception("Không đủ tồn kho cho sản phẩm ID: {$productId}");
+                }
             }
-            if (!empty($orderDetails)) {
+            if (! empty($orderDetails)) {
                 OrderDetail::insert($orderDetails);
             }
 
@@ -118,7 +150,7 @@ class CheckoutController extends Controller
                 'paid_at'          => null,
             ]);
 
-            // Nếu có discount, tăng usage
+            // Discount
             if ($discountId && $discount = Discount::find($discountId)) {
                 $discount->incrementUsage();
             }
@@ -128,21 +160,68 @@ class CheckoutController extends Controller
             // Xóa các item đã thanh toán khỏi cart
             $this->removePaidItemsFromCart($request, $selectedItems);
 
-            // Gửi mail an toàn
-            try {
-                if ($order->customer_email) {
-                    Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+            // ---------- VNPay ----------
+            if ($validated['payment_method'] === 'online') {
+                // dùng config() thay vì env()
+                $vnp_TmnCode    = config('vnpay.vnp_TmnCode');
+                $vnp_HashSecret = config('vnpay.vnp_HashSecret');
+                $vnp_Url        = config('vnpay.vnp_Url');
+                $vnp_ReturnUrl  = config('vnpay.vnp_ReturnUrl');
+                $vnp_IpnUrl     = config('vnpay.vnp_IpnUrl');
+
+                $vnp_TxnRef    = (string) $order->id; // giữ order id để dễ xử lý return/ipn
+                $vnp_OrderInfo = "Thanh toan don hang {$order->id}";
+                $vnp_OrderType = "billpayment";
+                // ép kiểu integer (bắt buộc)
+                $vnp_Amount     = intval(round($order->grand_total * 100));
+                $vnp_Locale     = "vn";
+                $vnp_IpAddr     = $request->ip();
+                $vnp_CreateDate = date('YmdHis');
+
+                $inputData = [
+                    "vnp_Version"    => "2.1.0",
+                    "vnp_TmnCode"    => $vnp_TmnCode,
+                    "vnp_Amount"     => $vnp_Amount,
+                    "vnp_Command"    => "pay",
+                    "vnp_CreateDate" => $vnp_CreateDate,
+                    "vnp_CurrCode"   => "VND",
+                    "vnp_IpAddr"     => $vnp_IpAddr,
+                    "vnp_Locale"     => $vnp_Locale,
+                    "vnp_OrderInfo"  => $vnp_OrderInfo,
+                    "vnp_OrderType"  => $vnp_OrderType,
+                    "vnp_ReturnUrl"  => $vnp_ReturnUrl,
+                    "vnp_TxnRef"     => $vnp_TxnRef,
+                ];
+
+                ksort($inputData);
+
+                $query       = [];
+                $hashDataArr = [];
+
+                foreach ($inputData as $key => $value) {
+                    $query[]       = urlencode($key) . "=" . urlencode($value);
+                    $hashDataArr[] = urlencode($key) . "=" . urlencode($value);
                 }
-            } catch (\Exception $e) {
-                Log::error('Send order email failed: ' . $e->getMessage());
+
+                $queryString = implode("&", $query);
+                $hashData    = implode("&", $hashDataArr);
+
+                $vnpSecureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+                $requestUrl = $vnp_Url . "?" . $queryString . "&vnp_SecureHash=" . $vnpSecureHash;
+
+                // Log để debug nếu redirect không chạy
+                Log::info('VNPay redirect url: ' . $requestUrl, [
+                    'order_id' => $order->id,
+                    'amount'   => $vnp_Amount,
+                ]);
+
+                return redirect()->away($requestUrl);
             }
+            // ---------- end VNPay ----------
 
-            $orderCode      = '#' . str_pad((string)$order->id, 6, '0', STR_PAD_LEFT);
-            $successMessage = $validated['payment_method'] === 'bank_transfer'
-                ? "Đơn hàng {$orderCode} đã được ghi nhận. Vui lòng chuyển khoản theo hướng dẫn để hoàn tất thanh toán."
-                : "Đơn hàng {$orderCode} đã được ghi nhận. Chúng tôi sẽ liên hệ sớm nhất.";
-
-            return redirect()->route('orders.index')->with('success', $successMessage);
+            return redirect()->route('orders.index')
+                ->with('success', "Đơn hàng #{$order->id} đã được ghi nhận.");
 
         } catch (\Throwable $exception) {
             DB::rollBack();
@@ -159,20 +238,20 @@ class CheckoutController extends Controller
         $sessionCart = $request->session()->get('cart', ['items' => [], 'shipping_fee' => 30000, 'discount_total' => 0]);
         $items       = collect($sessionCart['items'] ?? []);
 
-        if (!empty($selectedItems)) {
+        if (! empty($selectedItems)) {
             $items = $items->filter(fn($i) => in_array($i['cart_item_id'], $selectedItems, true));
         }
 
         $items = $items->map(function ($i) {
-            $i['quantity'] = max(1, (int)($i['quantity'] ?? 1));
-            $i['price']    = (float)($i['price'] ?? 0);
+            $i['quantity'] = max(1, (int) ($i['quantity'] ?? 1));
+            $i['price']    = (float) ($i['price'] ?? 0);
             $i['subtotal'] = $i['quantity'] * $i['price'];
             return $i;
         });
 
         $subtotal      = $items->sum('subtotal');
-        $shippingFee   = (float)($sessionCart['shipping_fee'] ?? 0);
-        $discountTotal = (float)($sessionCart['discount_total'] ?? 0);
+        $shippingFee   = (float) ($sessionCart['shipping_fee'] ?? 0);
+        $discountTotal = (float) ($sessionCart['discount_total'] ?? 0);
         $grandTotal    = max(($subtotal + $shippingFee) - $discountTotal, 0);
 
         return [
@@ -196,7 +275,7 @@ class CheckoutController extends Controller
         $subtotal = collect($sessionCart['items'])
             ->sum(fn($i) => $i['quantity'] * $i['price']);
 
-        $sessionCart['subtotal'] = $subtotal;
+        $sessionCart['subtotal']    = $subtotal;
         $sessionCart['grand_total'] = max(($subtotal + ($sessionCart['shipping_fee'] ?? 0)) - ($sessionCart['discount_total'] ?? 0), 0);
 
         $request->session()->put('cart', $sessionCart);

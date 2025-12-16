@@ -1,5 +1,4 @@
 @extends('client.layouts.app')
-
 @section('title', $product->name ?? 'Chi tiết sản phẩm')
 
 @section('content')
@@ -86,6 +85,70 @@
                 @if($product->variants->count() > 0)
                     <div class="mb-4">
                         <label class="form-label fw-semibold mb-2">Chọn biến thể:</label>
+                        <div id="variantOptions" class="d-flex flex-wrap gap-2">
+                            @foreach($product->variants as $variant)
+                                @php
+                                    $variantLabelParts = [];
+                                    if ($variant->size) { $variantLabelParts[] = 'Kích thước: ' . $variant->size->size_name; }
+                                    if ($variant->scent) { $variantLabelParts[] = 'Mùi: ' . $variant->scent->scent_name; }
+                                    if ($variant->concentration) { $variantLabelParts[] = 'Nồng độ: ' . $variant->concentration->concentration_name; }
+                                    $variantLabel = implode(' | ', $variantLabelParts);
+                                    $variantPrice = $variant->price ?? ($product->price + ($variant->price_adjustment ?? 0));
+                                @endphp
+                                <button type="button"
+                                        class="btn btn-outline-secondary btn-sm variant-option"
+                                        data-id="{{ $variant->id }}"
+                                        data-stock="{{ $variant->stock }}"
+                                        data-price="{{ $variantPrice }}"
+                                        data-size="{{ $variant->size->size_name ?? '' }}"
+                                        data-scent="{{ $variant->scent->scent_name ?? '' }}"
+                                        data-concentration="{{ $variant->concentration->concentration_name ?? '' }}">
+                                    {{ $variantLabel ?: ('Biến thể #' . $variant->id) }}
+                                </button>
+                            @endforeach
+                        </div>
+                        <div id="variantInfo" class="mt-2 small text-muted"></div>
+                    </div>
+                @endif
+
+                <div class="d-flex align-items-center gap-2">
+                    <!-- FORM THÊM GIỎ HÀNG -->
+                    <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}" class="mb-0">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <input type="hidden" name="variant_id" id="selectedVariantId">
+
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="input-group" style="width: 140px;">
+                                <button class="btn btn-outline-secondary quantity-decrease" type="button">-</button>
+                                <input type="number" name="quantity" id="productQuantity" value="1" min="1" class="form-control text-center">
+                                <button class="btn btn-outline-secondary quantity-increase" type="button">+</button>
+                            </div>
+                            <div class="text-muted small" id="availableStockInfo">
+                                {{ $totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng' }}
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $totalStock <= 0 ? 'disabled' : '' }}>
+                            <i class="bi bi-cart-plus"></i> {{ $totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
+                        </button>
+                    </form>
+
+                    @auth
+                        <form action="{{ route('wishlist.toggle', $product) }}" method="POST" class="mb-0">
+                            @csrf
+                            <button type="submit" class="btn {{ $isFavorite ? 'btn-danger' : 'btn-outline-danger' }}">
+                                <i class="bi {{ $isFavorite ? 'bi-heart-fill' : 'bi-heart' }}"></i>
+                                {{ $isFavorite ? 'Bỏ yêu thích' : 'Yêu thích' }}
+                            </button>
+                        </form>
+                    @endauth
+                </div>
+
+                <!-- CHỌN BIẾN THỂ -->
+                @if($product->variants->count() > 0)
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold mb-2">Chọn biến thể:</label>
                         <select name="variant_id" id="variantSelect" class="form-select">
                             <option value="">-- Chọn biến thể --</option>
                             @foreach($product->variants as $variant)
@@ -119,6 +182,7 @@
                 </form>
             </div>
         </div>
+
         <div class="mt-5">
             <h4 class="mb-3">Mô tả chi tiết</h4>
             <p>{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
@@ -184,7 +248,13 @@
                         <div class="col-6 col-md-4 col-lg-3">
                             <a href="{{ route('product.show', $item->slug ?? $item->id) }}" class="text-decoration-none">
                                 <div class="card h-100">
-                                    @php $img = $item->primaryImage() ? asset('storage/'.$item->primaryImage()->image_path) : ($item->image ? asset('storage/'.$item->image) : asset('assets/client/img/product/product-1.webp')); @endphp
+                                    @php
+                                        $img = $item->primaryImage()
+                                            ? asset('storage/'.$item->primaryImage()->image_path)
+                                            : ($item->image
+                                                ? asset('storage/'.$item->image)
+                                                : asset('assets/client/img/product/product-1.webp'));
+                                    @endphp
                                     <img src="{{ $img }}" class="card-img-top" alt="{{ $item->name }}">
                                     <div class="card-body">
                                         <div class="fw-semibold text-dark">{{ $item->name }}</div>
@@ -202,126 +272,161 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const variantSelect = document.getElementById('variantSelect');
+    const defaultTotalStock = @json($totalStock);
+    const defaultAvailableText = @json($totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng');
+
+    const variantButtons = document.querySelectorAll('.variant-option');
     const selectedVariantId = document.getElementById('selectedVariantId');
     const variantInfo = document.getElementById('variantInfo');
     const productPriceSpan = document.querySelector('.product-price');
     const addToCartBtn = document.getElementById('addToCartBtn');
     const quantityInput = document.getElementById('productQuantity');
+    const availableStockInfo = document.getElementById('availableStockInfo');
 
-    if (variantSelect) {
-        variantSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
+    let activeVariantButton = null;
 
-            if(selectedOption.value){
-                selectedVariantId.value = selectedOption.value;
+    if (variantButtons && variantButtons.length > 0) {
+        variantButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                // Nếu click lại nút đang active thì bỏ chọn
+                if (activeVariantButton === this) {
+                    this.classList.remove('btn-primary', 'text-white');
+                    this.classList.add('btn-outline-secondary');
+                    activeVariantButton = null;
+
+                    selectedVariantId.value = '';
+                    if (variantInfo) {
+                        variantInfo.textContent = '';
+                    }
+                    if (productPriceSpan) {
+                        productPriceSpan.textContent = '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
+                    }
+                    if (addToCartBtn) {
+                        addToCartBtn.disabled = defaultTotalStock <= 0;
+                    }
+                    if (quantityInput) {
+                        quantityInput.removeAttribute('max');
+                    }
+                    if (availableStockInfo) {
+                        availableStockInfo.textContent = defaultAvailableText;
+                    }
+                    return;
+                }
+
+                // Bỏ trạng thái active cũ
+                if (activeVariantButton) {
+                    activeVariantButton.classList.remove('btn-primary', 'text-white');
+                    activeVariantButton.classList.add('btn-outline-secondary');
+                }
+
+                // Đánh dấu nút hiện tại là active
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-primary', 'text-white');
+                activeVariantButton = this;
 
                 // Lấy thông tin biến thể
-                const stock = selectedOption.dataset.stock;
-                const price = selectedOption.dataset.price;
-                const size = selectedOption.dataset.size;
-                const scent = selectedOption.dataset.scent;
-                const concentration = selectedOption.dataset.concentration;
+                const variantId = this.dataset.id;
+                const stock = this.dataset.stock;
+                const price = this.dataset.price;
+                const size = this.dataset.size;
+                const scent = this.dataset.scent;
+                const concentration = this.dataset.concentration;
+
+                // Gán vào input hidden
+                if (selectedVariantId) {
+                    selectedVariantId.value = variantId;
+                }
 
                 // Hiển thị thông tin biến thể
-                let infoText = '';
-                if(size) infoText += 'Kích thước: ' + size + ' | ';
-                if(scent) infoText += 'Mùi: ' + scent + ' | ';
-                if(concentration) infoText += 'Nồng độ: ' + concentration + ' | ';
-                infoText += 'Tồn kho: ' + stock;
-                variantInfo.textContent = infoText;
+                if (variantInfo) {
+                    let infoText = '';
+                    if (size) infoText += 'Kích thước: ' + size + ' | ';
+                    if (scent) infoText += 'Mùi: ' + scent + ' | ';
+                    if (concentration) infoText += 'Nồng độ: ' + concentration + ' | ';
+                    infoText += 'Tồn kho: ' + stock;
+                    variantInfo.textContent = infoText;
+                }
 
                 // Cập nhật giá
-                if(productPriceSpan) {
+                if (productPriceSpan && price) {
                     productPriceSpan.textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
                 }
 
                 // Cập nhật nút thêm giỏ hàng
-                addToCartBtn.disabled = parseInt(stock) <= 0;
+                if (addToCartBtn) {
+                    addToCartBtn.disabled = parseInt(stock) <= 0;
+                }
 
                 // Cập nhật max số lượng
-                if(quantityInput) {
+                if (quantityInput) {
                     quantityInput.setAttribute('max', stock);
                 }
-            } else {
-                selectedVariantId.value = '';
-                variantInfo.textContent = '';
-                productPriceSpan.textContent = '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
-                addToCartBtn.disabled = {{ $totalStock <= 0 ? 'true' : 'false' }};
-            }
-        });
-        var loadMoreBtn = document.getElementById('load-more-reviews');
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', function () {
-                var nextUrl = loadMoreBtn.getAttribute('data-next-url');
-                if (!nextUrl) {
-                    loadMoreBtn.style.display = 'none';
-                    return;
+                if (availableStockInfo) {
+                    availableStockInfo.textContent = 'Có sẵn: ' + stock + ' sản phẩm';
                 }
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.textContent = 'Đang tải...';
-                fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (data && data.html) {
-                            var container = document.getElementById('reviews-list');
-                            var temp = document.createElement('div');
-                            temp.innerHTML = data.html;
-                            var items = temp.children;
-                            while (items.length) {
-                                container.appendChild(items[0]);
-                            }
+            });
+        });
+    }
+
+    var loadMoreBtn = document.getElementById('load-more-reviews');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function () {
+            var nextUrl = loadMoreBtn.getAttribute('data-next-url');
+            if (!nextUrl) {
+                loadMoreBtn.style.display = 'none';
+                return;
+            }
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.textContent = 'Đang tải...';
+            fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data && data.html) {
+                        var container = document.getElementById('reviews-list');
+                        var temp = document.createElement('div');
+                        temp.innerHTML = data.html;
+                        var items = temp.children;
+                        while (items.length) {
+                            container.appendChild(items[0]);
                         }
-                        if (data && data.next_page_url) {
-                            loadMoreBtn.setAttribute('data-next-url', data.next_page_url);
-                            loadMoreBtn.disabled = false;
-                            loadMoreBtn.textContent = 'Xem thêm';
-                        } else {
-                            loadMoreBtn.style.display = 'none';
-                        }
-                    })
-                    .catch(function () {
+                    }
+                    if (data && data.next_page_url) {
+                        loadMoreBtn.setAttribute('data-next-url', data.next_page_url);
                         loadMoreBtn.disabled = false;
                         loadMoreBtn.textContent = 'Xem thêm';
-                    });
-            });
-        }
+                    } else {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                })
+                .catch(function () {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Xem thêm';
+                });
+        });
+    }
 
-        // Quantity controls
-        const quantityInput = document.getElementById('productQuantity');
-        const decreaseBtn = document.querySelector('.quantity-decrease');
-        const increaseBtn = document.querySelector('.quantity-increase');
+    // Quantity controls
+    const decreaseBtn = document.querySelector('.quantity-decrease');
+    const increaseBtn = document.querySelector('.quantity-increase');
 
-        if (decreaseBtn) {
-            decreaseBtn.addEventListener('click', function() {
-                const currentValue = parseInt(quantityInput.value);
-                if (currentValue > 1) {
-                    quantityInput.value = currentValue - 1;
-                }
-            });
-        }
+    if (decreaseBtn) {
+        decreaseBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantityInput.value);
+            if (currentValue > 1) {
+                quantityInput.value = currentValue - 1;
+            }
+        });
+    }
 
-        if (increaseBtn) {
-            increaseBtn.addEventListener('click', function() {
-                const currentValue = parseInt(quantityInput.value);
-                const max = parseInt(quantityInput.getAttribute('max')) || 100;
-                if (currentValue < max) {
-                    quantityInput.value = currentValue + 1;
-                }
-            });
-        }
-
-        // Add to cart form submission
-        const addToCartForm = document.getElementById('addToCartForm');
-        if (addToCartForm) {
-            addToCartForm.addEventListener('submit', function(e) {
-                const btn = document.getElementById('addToCartBtn');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang thêm...';
-                }
-            });
-        }
-    });
+    if (increaseBtn) {
+        increaseBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantityInput.value);
+            const max = parseInt(quantityInput.getAttribute('max')) || 100;
+            if (currentValue < max) {
+                quantityInput.value = currentValue + 1;
+            }
+        });
+    }
+});
 </script>
 @endsection
