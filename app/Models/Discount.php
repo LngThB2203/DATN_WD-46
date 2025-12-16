@@ -17,6 +17,7 @@ class Discount extends Model
         'usage_limit',
         'used_count',
         'active',
+        'type',
     ];
 
     protected $casts = [
@@ -107,6 +108,11 @@ class Discount extends Model
     public function scopeActive($query)
     {
         return $query->where('active', true);
+    }
+
+    public function userVouchers()
+    {
+        return $this->hasMany(UserVoucher::class);
     }
 
     /**

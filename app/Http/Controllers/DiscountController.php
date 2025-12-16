@@ -14,11 +14,17 @@ class DiscountController extends Controller
     public function index(Request $request)
     {
         $discounts = Discount::valid()
+            ->where('type', 'public')
             ->orderByDesc('created_at')
             ->paginate(12)
             ->withQueryString();
 
-        return view('client.vouchers.index', compact('discounts'));
+        $savedIds = [];
+        if ($request->user()) {
+            $savedIds = $request->user()->userVouchers()->pluck('discount_id')->toArray();
+        }
+
+        return view('client.vouchers.index', compact('discounts', 'savedIds'));
     }
 
     /**
@@ -67,6 +73,19 @@ class DiscountController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage())->withInput();
         }
+    }
+
+    public function myVouchers(Request $request)
+    {
+        $user = $request->user();
+
+        $discounts = Discount::query()
+            ->whereIn('id', $user->userVouchers()->pluck('discount_id'))
+            ->orderByDesc('created_at')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('client.vouchers.my', compact('discounts'));
     }
 
     /**
@@ -267,6 +286,7 @@ class DiscountController extends Controller
         $sessionCart['discount_total'] = $discountAmount;
         $sessionCart['subtotal']       = $subtotal;
         $sessionCart['grand_total']    = max(($subtotal + $shippingFee) - $discountAmount, 0);
+        $sessionCart['code']           = $discount->code;
 
         $request->session()->put('cart', $sessionCart);
 
@@ -280,6 +300,47 @@ class DiscountController extends Controller
                 'grand_total'    => $sessionCart['grand_total'],
                 'code'           => $discount->code,
             ],
+        ]);
+    }
+
+    public function saveForUser(Request $request)
+    {
+        $request->validate([
+            'discount_id' => 'required|exists:discounts,id',
+        ]);
+
+        $user = $request->user();
+
+        $discount = Discount::valid()
+            ->where('type', 'public')
+            ->find($request->discount_id);
+
+        if (! $discount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Voucher không khả dụng hoặc đã hết hạn.',
+            ], 400);
+        }
+
+        $exists = $user->userVouchers()
+            ->where('discount_id', $discount->id)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Bạn đã lưu voucher này rồi.',
+            ]);
+        }
+
+        $user->userVouchers()->create([
+            'discount_id' => $discount->id,
+            'saved_at'    => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã lưu voucher vào kho của bạn.',
         ]);
     }
 }
