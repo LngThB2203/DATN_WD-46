@@ -16,7 +16,10 @@
 
 <section class="py-5">
     <div class="container-fluid container-xl">
-        <h1 class="h4 mb-4">Kho voucher của bạn</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h4 mb-0">Tất cả voucher</h1>
+            <a href="{{ route('client.vouchers.my') }}" class="btn btn-outline-primary btn-sm">Kho voucher của tôi</a>
+        </div>
 
         @if($discounts->isEmpty())
             <p class="text-muted">Hiện tại chưa có mã giảm giá nào khả dụng.</p>
@@ -57,9 +60,20 @@
                                 @endif
 
                                 <div class="mt-auto d-flex justify-content-between align-items-center">
-                                    <button type="button" class="btn btn-sm btn-outline-primary copy-code-btn" data-code="{{ $discount->code }}">
-                                        Sao chép mã
-                                    </button>
+                                    @auth
+                                        @php $isSaved = in_array($discount->id, $savedIds ?? []); @endphp
+                                        <button type="button"
+                                                class="btn btn-sm {{ $isSaved ? 'btn-success' : 'btn-outline-primary' }} save-voucher-btn"
+                                                data-id="{{ $discount->id }}"
+                                                {{ $isSaved ? 'disabled' : '' }}>
+                                            {{ $isSaved ? 'Đã lưu' : 'Lưu voucher' }}
+                                        </button>
+                                    @else
+                                        <a href="{{ route('login') }}" class="btn btn-sm btn-outline-primary">
+                                            Đăng nhập để lưu
+                                        </a>
+                                    @endauth
+
                                     <a href="{{ route('checkout.index') }}" class="btn btn-sm btn-primary">
                                         Dùng ngay
                                     </a>
@@ -78,25 +92,46 @@
 </section>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
 (function () {
-    document.querySelectorAll('.copy-code-btn').forEach(btn => {
+    const buttons = document.querySelectorAll('.save-voucher-btn');
+    buttons.forEach(btn => {
         btn.addEventListener('click', function () {
-            const code = this.dataset.code;
-            if (!navigator.clipboard) {
-                const textarea = document.createElement('textarea');
-                textarea.value = code;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-            } else {
-                navigator.clipboard.writeText(code).catch(() => {});
-            }
-            alert('Đã sao chép mã: ' + code);
+            const id = this.dataset.id;
+            if (!id) return;
+
+            const button = this;
+            button.disabled = true;
+
+            fetch("{{ route('client.vouchers.save') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ discount_id: id })
+            })
+                .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                .then(({ ok, data }) => {
+                    const message = data.message || (ok ? 'Đã lưu voucher.' : 'Không thể lưu voucher.');
+                    alert(message);
+                    if (ok && data.success) {
+                        button.classList.remove('btn-outline-primary');
+                        button.classList.add('btn-success');
+                        button.textContent = 'Đã lưu';
+                    } else {
+                        button.disabled = false;
+                    }
+                })
+                .catch(() => {
+                    alert('Có lỗi xảy ra khi lưu voucher.');
+                    button.disabled = false;
+                });
         });
     });
 })();
+
 </script>
-@endpush
+@endsection

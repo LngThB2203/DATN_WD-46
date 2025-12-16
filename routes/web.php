@@ -125,6 +125,12 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
 
 // Discounts (Client)
 Route::get('/vouchers', [DiscountController::class, 'index'])->name('client.vouchers.index');
+Route::get('/my-vouchers', [DiscountController::class, 'myVouchers'])
+    ->middleware('auth')
+    ->name('client.vouchers.my');
+Route::post('/vouchers/save', [DiscountController::class, 'saveForUser'])
+    ->middleware('auth')
+    ->name('client.vouchers.save');
 
 // Discount API
 Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');

@@ -35,10 +35,22 @@ class CheckoutController extends Controller
             'address' => optional($request->user())->address ?? null,
         ];
 
+        $myVouchers = collect();
+        if ($request->user()) {
+            $voucherIds = $request->user()->userVouchers()->pluck('discount_id');
+            if ($voucherIds->isNotEmpty()) {
+                $myVouchers = Discount::valid()
+                    ->whereIn('id', $voucherIds)
+                    ->orderByDesc('created_at')
+                    ->get();
+            }
+        }
+
         return view('client.checkout', [
             'cart'            => $cart,
             'defaultCustomer' => $defaultCustomer,
             'selectedItems'   => $selectedItems,
+            'myVouchers'      => $myVouchers,
         ]);
     }
 
@@ -260,6 +272,7 @@ class CheckoutController extends Controller
             'shipping_fee'   => $shippingFee,
             'discount_total' => $discountTotal,
             'grand_total'    => $grandTotal,
+            'discount_code'  => $sessionCart['code'] ?? null,
         ];
     }
 
