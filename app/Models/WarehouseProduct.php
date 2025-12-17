@@ -14,8 +14,9 @@ class WarehouseProduct extends Model
         'warehouse_id',
         'product_id',
         'variant_id',
+        'batch_code',
         'quantity',
-        'min_stock_threshold',
+        'expired_at',
     ];
 
     public function warehouse()

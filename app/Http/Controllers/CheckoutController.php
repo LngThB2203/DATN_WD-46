@@ -106,7 +106,7 @@ class CheckoutController extends Controller
             foreach ($cart['items'] as $item) {
                 $productId = $item['product_id'];
                 $variantId = $item['variant_id'] ?? null;
-                $quantity = $item['quantity'];
+                $quantity  = $item['quantity'];
 
                 $orderDetails[] = [
                     'order_id'   => $order->id,
@@ -120,33 +120,20 @@ class CheckoutController extends Controller
                 ];
 
                 // Trừ tồn kho từ các kho
-                $stockQuery = WarehouseProduct::where('product_id', $productId)
-                    ->where('quantity', '>', 0)
-                    ->orderBy('quantity', 'desc');
-                
-                if ($variantId) {
-                    $stockQuery->where('variant_id', $variantId);
-                } else {
-                    $stockQuery->whereNull('variant_id');
-                }
-                
-                $warehouseProducts = $stockQuery->get();
-                $remainingQuantity = $quantity;
+                $totalStock = WarehouseProduct::where('product_id', $productId)
+                    ->when(
+                        $variantId,
+                        fn($q) => $q->where('variant_id', $variantId),
+                        fn($q) => $q->whereNull('variant_id')
+                    )
+                    ->sum('quantity');
 
-                foreach ($warehouseProducts as $wp) {
-                    if ($remainingQuantity <= 0) {
-                        break;
-                    }
-
-                    $deductAmount = min($remainingQuantity, $wp->quantity);
-                    $wp->quantity -= $deductAmount;
-                    $wp->save();
-                    $remainingQuantity -= $deductAmount;
+                if ($totalStock < $quantity) {
+                    throw new \Exception(
+                        "Không đủ tồn kho cho sản phẩm ID {$productId}"
+                    );
                 }
 
-                if ($remainingQuantity > 0) {
-                    throw new \Exception("Không đủ tồn kho cho sản phẩm ID: {$productId}");
-                }
             }
             if (! empty($orderDetails)) {
                 OrderDetail::insert($orderDetails);
