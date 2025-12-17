@@ -24,23 +24,32 @@
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light-subtle">
+                        <thead>
                             <tr>
                                 <th>Sản phẩm</th>
                                 <th>Biến thể</th>
                                 <th>Giá</th>
                                 <th>SL</th>
+                                <th>Tồn kho (Kho đã chọn)</th>
                                 <th>Tạm tính</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($order->details as $item)
+                            @foreach ($order->details as $item)
+                                @php
+                                    $selectedWarehouse = $order->warehouse_id ? $order->warehouse : null;
+                                    $stock = $selectedWarehouse
+                                        ? $item->variant
+                                            ? $item->variant->warehouseStock->where('warehouse_id', $selectedWarehouse->id)->sum('quantity')
+                                            : $item->product->warehouseProducts->where('warehouse_id', $selectedWarehouse->id)->sum('quantity')
+                                        : null;
+                                @endphp
                                 <tr>
                                     <td>{{ $item->product->name }}</td>
                                     <td>
                                         @if($item->variant)
-                                            Size: {{ $item->variant->size->size_name ?? '' }} <br>
-                                            Hương: {{ $item->variant->scent->scent_name ?? '' }} <br>
+                                            Size: {{ $item->variant->size->size_name ?? '' }}<br>
+                                            Hương: {{ $item->variant->scent->scent_name ?? '' }}<br>
                                             Nồng độ: {{ $item->variant->concentration->concentration_name ?? '' }}
                                         @else
                                             —
@@ -48,130 +57,93 @@
                                     </td>
                                     <td>{{ number_format($item->price) }} đ</td>
                                     <td>{{ $item->quantity }}</td>
+                                    <td>
+                                        @if($stock !== null)
+                                            <span class="{{ $stock < $item->quantity ? 'text-danger fw-bold' : '' }}">
+                                                {{ $stock }}
+                                            </span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td>{{ number_format($item->price * $item->quantity) }} đ</td>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Không có sản phẩm nào.</td>
-                                </tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        {{-- Cập nhật trạng thái đơn --}}
+        {{-- Chọn kho --}}
         <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Trạng thái đơn hàng</span>
-                @php
-                    use App\Helpers\OrderStatusHelper;
-                    $statusName = OrderStatusHelper::getStatusName($order->order_status);
-                    $statusClass = OrderStatusHelper::getStatusBadgeClass($order->order_status);
-                    $statusDescription = OrderStatusHelper::getStatusDescription($order->order_status);
-                @endphp
-                <div class="text-end">
-                    <span class="badge {{ $statusClass }} fs-6">{{ $statusName }}</span>
-                    @if($statusDescription)
-                        <br><small class="text-muted">{{ $statusDescription }}</small>
-                    @endif
-                </div>
-            </div>
+            <div class="card-header">Kho xuất hàng</div>
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.orders.update-status', $order->id) }}">
-                    @csrf
-                    @method('PUT')
-                    <select name="order_status" id="orderStatusSelect" class="form-select mb-2">
-                        @php
-                            // Map trạng thái cũ sang trạng thái mới để hiển thị
-                            $mappedCurrentStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
-                        @endphp
-                        @foreach(App\Helpers\OrderStatusHelper::getStatuses() as $value => $label)
-                            @php
-                                $canUpdate = App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $value);
-                                // Hiển thị selected nếu là trạng thái hiện tại (sau khi map)
-                                $isSelected = ($mappedCurrentStatus == $value) || ($order->order_status == $value);
-                            @endphp
-                            <option value="{{ $value }}"
-                                    {{ $isSelected ? 'selected' : '' }}
-                                    {{ !$canUpdate && !$isSelected ? 'disabled' : '' }}
-                                    data-can-update="{{ $canUpdate ? '1' : '0' }}">
-                                {{ $label }}
-                                @if(!$canUpdate && !$isSelected)
-                                    (Không thể chuyển)
-                                @endif
-                            </option>
-                        @endforeach
-                    </select>
-                    <div id="statusWarning" class="alert alert-warning d-none mb-2">
-                        <small>⚠️ Trạng thái này không thể chuyển đổi từ trạng thái hiện tại.</small>
+                @if (!$order->warehouse_id)
+                    <form method="POST" action="{{ route('admin.orders.update-warehouse', $order->id) }}">
+                        @csrf
+                        @method('PUT')
+                        <label class="form-label">Chọn kho</label>
+                        <select name="warehouse_id" class="form-select mb-2" required>
+                            <option value="">-- Chọn kho --</option>
+                            @foreach ($warehouses as $warehouse)
+                                @php
+                                    $warning = false;
+                                    foreach ($order->details as $item) {
+                                        $stock = $item->variant
+                                            ? $item->variant->warehouseStock->where('warehouse_id', $warehouse->id)->sum('quantity')
+                                            : $item->product->warehouseProducts->where('warehouse_id', $warehouse->id)->sum('quantity');
+                                        if ($stock < $item->quantity) {
+                                            $warning = true;
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                <option value="{{ $warehouse->id }}" {{ $warning ? 'disabled' : '' }}>
+                                    {{ $warehouse->warehouse_name }}
+                                    @if($warning) - không đủ hàng @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <button class="btn btn-primary">Xác nhận kho</button>
+                    </form>
+                @else
+                    <div class="alert alert-info mb-0">
+                        Kho: <strong>{{ $order->warehouse->warehouse_name }}</strong>
                     </div>
-
-                    {{-- Lý do hủy (chỉ hiển thị khi chọn "Đã hủy") --}}
-                    <div id="cancellationReasonDiv" class="d-none mb-2">
-                        <label class="form-label">Lý do hủy đơn hàng <span class="text-danger">*</span></label>
-                        <textarea name="cancellation_reason" id="cancellationReason" class="form-control" rows="3"
-                                  placeholder="Nhập lý do hủy đơn hàng...">{{ old('cancellation_reason', $order->cancellation_reason ?? '') }}</textarea>
-                        <small class="text-muted">Lý do hủy sẽ được lưu lại và hiển thị trong lịch sử đơn hàng.</small>
-                    </div>
-
-                    @if($order->cancellation_reason)
-                        <div class="alert alert-info mb-2">
-                            <strong>Lý do hủy:</strong> {{ $order->cancellation_reason }}
-                            @if($order->cancelled_at)
-                                <br><small>Thời gian hủy: {{ $order->cancelled_at->format('d/m/Y H:i') }}</small>
-                            @endif
-                        </div>
-                    @endif
-
-                    <button type="submit" class="btn btn-primary" id="updateStatusBtn">Cập nhật</button>
-                </form>
+                @endif
             </div>
         </div>
+
+        {{-- Trạng thái --}}
+        @if ($order->warehouse_id)
+            @php
+                $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+                $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
+            @endphp
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Trạng thái đơn hàng</span>
+                    <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id) }}">
+                        @csrf
+                        @method('PUT')
+                        <select name="order_status" class="form-select mb-2" required>
+                            @foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label)
+                                @if (\App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key))
+                                    <option value="{{ $key }}" {{ $order->order_status == $key ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <button class="btn btn-success">Cập nhật trạng thái</button>
+                    </form>
+                </div>
+            </div>
+        @endif
     </div>
 </div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const statusSelect = document.getElementById('orderStatusSelect');
-    const warningDiv = document.getElementById('statusWarning');
-    const updateBtn = document.getElementById('updateStatusBtn');
-
-    if (statusSelect && warningDiv && updateBtn) {
-        const cancellationReasonDiv = document.getElementById('cancellationReasonDiv');
-        const cancellationReason = document.getElementById('cancellationReason');
-
-        statusSelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const canUpdate = selectedOption.dataset.canUpdate === '1';
-            const selectedValue = this.value;
-
-            if (!canUpdate) {
-                warningDiv.classList.remove('d-none');
-                updateBtn.disabled = true;
-            } else {
-                warningDiv.classList.add('d-none');
-                updateBtn.disabled = false;
-            }
-
-            // Hiển thị/ẩn form lý do hủy
-            if (cancellationReasonDiv && cancellationReason) {
-                if (selectedValue === 'cancelled') {
-                    cancellationReasonDiv.classList.remove('d-none');
-                    cancellationReason.setAttribute('required', 'required');
-                } else {
-                    cancellationReasonDiv.classList.add('d-none');
-                    cancellationReason.removeAttribute('required');
-                }
-            }
-        });
-
-        // Trigger on load
-        statusSelect.dispatchEvent(new Event('change'));
-    }
-});
-</script>
-@endpush
 @endsection
