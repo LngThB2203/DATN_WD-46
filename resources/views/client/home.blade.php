@@ -4,25 +4,30 @@
 
 @section('content')
 <main class="main">
-@if(Auth::check() && $notifications->count())
-    <div class="container mt-4">
-        <div class="alert alert-info">
-            <h5 class="mb-2">🔔 Thông báo mới</h5>
-
-            <ul class="mb-0">
-                @foreach($notifications as $notification)
-                    <li class="mb-1">
-                        <strong>{{ $notification->data['title'] ?? 'Thông báo' }}</strong> :
-                        {{ $notification->data['message'] ?? '' }}
-                        <small class="text-muted">
-                            ({{ $notification->created_at->diffForHumans() }})
-                        </small>
-                    </li>
-                @endforeach
-            </ul>
+<div class="notifications">
+    @foreach(auth()->user()->notifications as $notification)
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-2">
+            <div>
+                <strong>{{ $notification->data['title'] }}:</strong>
+                {{ $notification->data['message'] }}
+               
+                <small class="text-muted">({{ $notification->created_at->diffForHumans() }})</small>
+            </div>
+            <!-- Nút sao chép mã voucher -->
+            @php
+                // Lấy code từ message
+                preg_match('/Voucher "(.*?)"/', $notification->data['message'], $matches);
+                $code = $matches[1] ?? '';
+            @endphp
+            @if($code)
+                <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{{ $code }}')">
+                    Sao chép mã
+                </button>
+            @endif
         </div>
-    </div>
-@endif
+    @endforeach
+</div>
+
 
     <!-- Hero Section -->
     <section class="hero py-5">
@@ -213,4 +218,14 @@ document.addEventListener('DOMContentLoaded', function(){
 
 });
 </script>
+<script>
+function copyToClipboard(code) {
+    navigator.clipboard.writeText(code).then(function() {
+        alert('Đã sao chép mã: ' + code); // thông báo cho user
+    }, function(err) {
+        alert('Không thể sao chép: ' + err);
+    });
+}
+</script>
+
 @endsection

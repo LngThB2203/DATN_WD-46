@@ -144,54 +144,73 @@ class DiscountController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Discount $discount)
-    {
-        $request->validate([
-            'code'            => 'required|string|max:100|unique:discounts,code,' . $discount->id,
-            'discount_type'   => 'required|in:percent,fixed',
-            'discount_value'  => 'required|numeric|min:0',
-            'min_order_value' => 'nullable|numeric|min:0',
-            'start_date'      => 'nullable|date',
-            'expiry_date'     => 'nullable|date|after_or_equal:start_date',
-            'usage_limit'     => 'nullable|integer|min:1',
-        ], [
-            'code.required'              => 'Vui lòng nhập mã giảm giá',
-            'code.unique'                => 'Mã giảm giá đã tồn tại',
-            'discount_type.required'     => 'Vui lòng chọn loại giảm giá',
-            'discount_value.required'    => 'Vui lòng nhập giá trị giảm giá',
-            'expiry_date.after_or_equal' => 'Ngày hết hạn phải sau hoặc bằng ngày bắt đầu',
+   public function update(Request $request, Discount $discount)
+{
+    $request->validate([
+        'code'            => 'required|string|max:100|unique:discounts,code,' . $discount->id,
+        'discount_type'   => 'required|in:percent,fixed',
+        'discount_value'  => 'required|numeric|min:0',
+        'min_order_value' => 'nullable|numeric|min:0',
+        'start_date'      => 'nullable|date',
+        'expiry_date'     => 'nullable|date|after_or_equal:start_date',
+        'usage_limit'     => 'nullable|integer|min:1',
+    ], [
+        'code.required'              => 'Vui lòng nhập mã giảm giá',
+        'code.unique'                => 'Mã giảm giá đã tồn tại',
+        'discount_type.required'     => 'Vui lòng chọn loại giảm giá',
+        'discount_value.required'    => 'Vui lòng nhập giá trị giảm giá',
+        'expiry_date.after_or_equal' => 'Ngày hết hạn phải sau hoặc bằng ngày bắt đầu',
+    ]);
+
+    try {
+        $discount->update([
+            'code'            => strtoupper($request->code),
+            'discount_type'   => $request->discount_type,
+            'discount_value'  => $request->discount_value,
+            'min_order_value' => $request->min_order_value,
+            'start_date'      => $request->start_date,
+            'expiry_date'     => $request->expiry_date,
+            'usage_limit'     => $request->usage_limit,
+            'active'          => $request->has('active'),
         ]);
 
-        try {
-            $discount->update([
-                'code'            => strtoupper($request->code),
-                'discount_type'   => $request->discount_type,
-                'discount_value'  => $request->discount_value,
-                'min_order_value' => $request->min_order_value,
-                'start_date'      => $request->start_date,
-                'expiry_date'     => $request->expiry_date,
-                'usage_limit'     => $request->usage_limit,
-                'active'          => $request->has('active'),
-            ]);
+        // ==========================
+        // Tạo Notification mới cho tất cả user
+        $users = User::all();
+        foreach ($users as $user) {
+            // Xóa Notification cũ của voucher này (tùy chọn)
+            $user->notifications()->where('data->discount_id', $discount->id)->delete();
 
-            return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được cập nhật thành công!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage())->withInput();
+            // Gửi Notification mới
+            $user->notify(new DiscountCreatedNotification($discount));
         }
+        // ==========================
+
+        return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được cập nhật và thông báo cho user!');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage())->withInput();
     }
+}
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(Discount $discount)
-    {
-        try {
-            $discount->delete();
-            return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được xóa thành công!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
-        }
+{
+    try {
+        // Xóa Notification cũ liên quan voucher này
+        User::all()->each(function($user) use ($discount) {
+            $user->notifications()->where('data->discount_id', $discount->id)->delete();
+        });
+
+        // Xóa voucher
+        $discount->delete();
+
+        return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được xóa thành công!');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
     }
+}
 
     /**
      * Check discount code (API endpoint for checkout)
