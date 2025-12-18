@@ -68,132 +68,6 @@
                     </ul>
                 </div>
             </li>
-            <li class="nav-item">
-                <a class="nav-link menu-arrow" href="#sidebarVariants" data-bs-toggle="collapse" role="button"
-                    aria-expanded="false" aria-controls="sidebarVariants">
-                    <span class="nav-icon">
-                        <iconify-icon icon="solar:flask-bold-duotone"></iconify-icon>
-                    </span>
-                    <span class="nav-text"> Product Variants </span>
-                </a>
-                <div class="collapse" id="sidebarVariants">
-                    <ul class="nav sub-navbar-nav">
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('variants.index') }}">List</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('variants.create') }}">Add New</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-
-<!-- quan li kkhach hag-->
-<li class="nav-item">
-    <a class="nav-link menu-arrow" href="#sidebarCustomer" data-bs-toggle="collapse"
-        role="button" aria-expanded="false" aria-controls="sidebarCustomer">
-       <span class="nav-icon">
-            <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
-        </span>
-        <span class="nav-text"> Customer </span>
-    </a>
-    <div class="collapse" id="sidebarCustomer">
-        <ul class="nav sub-navbar-nav">
-            <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('admin.customers.list') }}">Danh sách khách hàng</a>
-        </ul>
-        <ul class="nav sub-navbar-nav">
-            <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('admin.customers.create') }}">Thêm khách hàng</a>
-        </ul>
-    </div>
-</li>
-
-
-<!-- quan li newletter-->
-<li class="nav-item">
-    <a class="nav-link menu-arrow" href="#sidebarNewsletter" data-bs-toggle="collapse"
-        role="button" aria-expanded="false" aria-controls="sidebarNewsletter">
-        <span class="nav-icon">
-            <iconify-icon icon="solar:envelope-bold-duotone" style="color:black;"></iconify-icon>
-        </span>
-        <span class="nav-text"> Newsletter </span>
-    </a>
-    <div class="collapse" id="sidebarNewsletter">
-        <ul class="nav sub-navbar-nav">
-            <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('admin.newsletters.list') }}">Danh sách email</a>
-            </li>
-        </ul>
-    </div>
-</li>
-
-            <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarBanner" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarBanner">
-                    <span class="nav-icon">
-                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
-                    </span>
-                    <span class="nav-text"> Banner </span>
-                </a>
-                <div class="collapse" id="sidebarBanner">
-                    <ul class="nav sub-navbar-nav">
-
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('banner.index') }}">Danh sách Banner</a>
-                        </li>
-
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('banner.create') }}">Thêm Banner mới</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-
-
-            <li class="nav-item">
-                <a class="nav-link menu-arrow" href="category-list.html#sidebarBrand" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="sidebarBrand">
-                    <span class="nav-icon">
-                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
-                    </span>
-                    <span class="nav-text"> Brand </span>
-                </a>
-                <div class="collapse" id="sidebarBrand">
-                    <ul class="nav sub-navbar-nav">
-
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('brand.index') }}">Danh sách Brand</a>
-                        </li>
-
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('brand.create') }}">Thêm Banner mới</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link menu-arrow" href="#sidebarInventory" data-bs-toggle="collapse" role="button"
-                    aria-expanded="false" aria-controls="sidebarInventory">
-                    <span class="nav-icon">
-                        <iconify-icon icon="solar:box-bold-duotone"></iconify-icon>
-                    </span>
-                    <span class="nav-text"> Blog </span>
-                </a>
-                <div class="collapse" id="sidebarInventory">
-                    <ul class="nav sub-navbar-nav">
-
-                        <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('post.index') }}">Danh sách Blog</a>
-            </li>
-
-            <li class="sub-nav-item">
-                <a class="sub-nav-link" href="{{ route('post.create') }}">Thêm Blog mới</a>
-            </li>
-                    </ul>
-                </div>
-            </li>
 
             <!-- Biến thể sản phẩm -->
             <li class="nav-item">
@@ -249,7 +123,7 @@
                 <div class="collapse" id="sidebarNewsletter">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.newsletters.list') }}">Danh sách email</a>
+                            <a class="sub-nav-link" href="{{ route('post.index') }}">Danh sách tin</a>
                         </li>
                     </ul>
                 </div>
@@ -306,7 +180,6 @@
                     </span>
                     <span class="nav-text"> Kho hàng </span>
                 </a>
-
                 <div class="collapse" id="sidebarInventory">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">

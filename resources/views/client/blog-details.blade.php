@@ -3,7 +3,8 @@
 @section('title', $post->title)
 
 @section('content')
-<section class="py-2 border-bottom bg-light">
+<section class="py-2">
+    <section class="py-2 border-bottom bg-light">
     <div class="container-fluid container-xl">
        
     </div>

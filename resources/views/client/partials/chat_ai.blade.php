@@ -156,15 +156,23 @@ function appendOne(m) {
     let message = m.message;
 
     if (m.sender === 'bot') {
-        const linkRegex = /([^\n]*?)\/products\/(\d+)/g;
-        message = message.replace(linkRegex, function(match, before, productId) {
-            const cleanBefore = before.replace(/\.?\s*Xem tại:\s*/i, '').trim();
-            const linkText = cleanBefore ? cleanBefore + ' ' : '';
-            return `${linkText}<a href="{{route('product.show', $product->slug)}}" class="chat-link" target="_blank">Xem sản phẩm ↗</a>`;
-        });
+    // 1. Tạo một URL mẫu từ Laravel Blade (dùng một giá trị giả định như 'ID_HERE')
+    const baseUrl = "{{ route('product.show', $product->slug) }}";
+
+    const linkRegex = /([^\n]*?)\/products\/(\d+)/g;
+    
+    message = message.replace(linkRegex, function(match, before, productId) {
+        const cleanBefore = before.replace(/\.?\s*Xem tại:\s*/i, '').trim();
+        const linkText = cleanBefore ? cleanBefore + ' ' : '';
         
-        message = message.replace(/\n/g, '<br>');
-    }
+        
+        const finalUrl = baseUrl.replace(':slug', productId);
+
+        return `${linkText}<a href="${finalUrl}" class="chat-link" target="_blank">Xem sản phẩm ↗</a>`;
+    });
+    
+    message = message.replace(/\n/g, '<br>');
+}
 
     $("#chat-messages").append($('<div class="' + cls + '"></div>').html(message));
     scrollBottom();

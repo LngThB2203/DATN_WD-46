@@ -53,12 +53,17 @@ class ChatbotController extends Controller
 
     // 2. Chuẩn bị Dữ liệu sản phẩm & System Instruction
     $productsData = DB::table('products')
-        ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
-        ->join('variants_scents', 'product_variants.scent_id', '=', 'variants_scents.id')
-        ->select('products.id', 'products.name', 'products.brand', 'products.price', 'product_variants.gender', 'variants_scents.scent_name')
-        ->limit(15)->get()
-        ->map(fn($p) => "- {$p->name} ({$p->brand}). Giá: " . number_format($p->price) . "đ. Link: /products/{$p->id}")
-        ->implode("\n");
+    ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
+    ->join('variants_scents', 'product_variants.scent_id', '=', 'variants_scents.id')
+    // Loại bỏ products.brand nếu nó gây lỗi, hoặc đổi thành tên cột đúng trong DB của bạn
+    ->select('products.id', 'products.name', 'products.price', 'variants_scents.name as scent_name')
+    ->distinct()
+    ->limit(5) 
+    ->get()
+    ->map(function($p) {
+        return "- {$p->name} (Mùi: {$p->scent_name}). Giá: " . number_format($p->price, 0, ',', '.') . "đ. Link: /products/{$p->id}";
+    })
+    ->implode("\n");
 
     $systemInstruction = "Bạn là trợ lý ảo chuyên nghiệp của shop 46 Perfume.\n";
     $systemInstruction .= "Nhiệm vụ: Tư vấn nhiệt tình, ngắn gọn.\n";

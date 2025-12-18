@@ -382,29 +382,6 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
     });
 
-    // Banners
-    Route::prefix('banner')->group(function () {
-        Route::get('/', [BannerController::class, 'index'])->name('banner.index');
-        Route::get('/create', [BannerController::class, 'create'])->name('banner.create');
-        Route::post('/store', [BannerController::class, 'store'])->name('banner.store');
-        Route::get('/edit/{banner}', [BannerController::class, 'edit'])->name('banner.edit');
-        Route::post('/update/{banner}', [BannerController::class, 'update'])->name('banner.update');
-        Route::get('/delete/{banner}', [BannerController::class, 'destroy'])->name('banner.delete');
-        Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])->name('banner.toggleStatus');
-    });
-
-    // Brands
-    Route::prefix('brand')->group(function () {
-        Route::get('/', [BrandController::class, 'index'])->name('brand.index');
-        Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
-        Route::post('/store', [BrandController::class, 'store'])->name('brand.store');
-        Route::get('/edit/{brand}', [BrandController::class, 'edit'])->name('brand.edit');
-        Route::post('/update/{brand}', [BrandController::class, 'update'])->name('brand.update');
-        Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
-        Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
-        Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
-    });
-
     // Discounts
     Route::prefix('discounts')->name('admin.discounts.')->group(function () {
         Route::get('/', [AdminDiscountController::class, 'index'])->name('index');

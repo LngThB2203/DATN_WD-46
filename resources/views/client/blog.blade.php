@@ -3,7 +3,7 @@
 @section('title', 'Blog')
 
 @section('content')
-<section class="py-5">
+<section class="py-2">
     <section class="py-2 border-bottom bg-light">
     <div class="container-fluid container-xl">
        
@@ -76,7 +76,6 @@
 
 @push('styles')
 <style>
-/* Đảm bảo sidebar và container hoạt động tốt */
 .container-fluid.container-xl {
     overflow-x: hidden;
 }
@@ -84,17 +83,14 @@
     max-width: 100%;
     overflow: hidden; 
 }
-/* Đảm bảo tất cả card có chiều cao đồng nhất */
 .d-flex.align-items-stretch .card {
     height: 100%;
 }
-/* Giới hạn ảnh card */
 .post-image-ratio {
     width: 100%;
     aspect-ratio: 16 / 9; 
     object-fit: cover;
 }
-/* Giới hạn số dòng cho tiêu đề và nội dung */
 .text-truncate-2-lines {
     overflow: hidden;
     display: -webkit-box;
@@ -111,6 +107,5 @@
 @endpush
 @push('scripts')
 <script>
-    // Tùy chỉnh JavaScript nếu cần
 </script>
 @endpush
