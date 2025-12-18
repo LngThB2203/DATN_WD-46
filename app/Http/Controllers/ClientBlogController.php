@@ -2,9 +2,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
-use Illuminate\Support\Carbon;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request; // đúng Request
+use App\Http\Controllers\Controller;
 
 class ClientBlogController extends Controller
 {
@@ -20,24 +19,18 @@ class ClientBlogController extends Controller
 
         // Lấy 6 bài viết/trang, mới nhất
         $posts = $query->latest()->paginate(6);
-        $latestPosts = Post::latest()
-            ->limit(10) 
-            ->get();
-        return view('client.blog', compact('posts', 'latestPosts'));
+
+        return view('client.blog', compact('posts'));
     }
 
     // Trang chi tiết bài viết
     public function show($slug)
     {
         $post = Post::where('slug', $slug)->firstOrFail();
-        $relatedPosts = Post::where('id', '!=', $post->id)
-                        ->latest()
-                        ->take(4)
-                        ->get();
-        $latestPosts = Post::latest()
-                ->limit(10) 
-                ->get();
 
-    return view('client.blog-details', compact('post','relatedPosts','latestPosts'));
+        // Optional: lấy 4 bài viết liên quan
+        $relatedPosts = Post::where('id', '!=', $post->id)->latest()->take(4)->get();
+
+        return view('client.blog-details', compact('post', 'relatedPosts'));
     }
 }

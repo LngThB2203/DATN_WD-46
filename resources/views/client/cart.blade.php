@@ -167,66 +167,6 @@
         </div>
     </div>
 </section>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const shippingFee = parseInt(document.getElementById('cartSummary')?.dataset.shippingFee) || 30000;
-    const discountTotal = parseInt(document.getElementById('cartSummary')?.dataset.discountTotal) || 0;
-
-    function calculateSelectedTotal() {
-        let subtotal = 0;
-        const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
-        selectedCheckboxes.forEach(cb => {
-            const row = cb.closest('.cart-item-row');
-            const price = parseFloat(row.dataset.price) || 0;
-            const quantity = parseInt(row.querySelector('.quantity-input').value) || 1;
-            subtotal += price * quantity;
-        });
-
-        const grandTotal = Math.max(subtotal + shippingFee - discountTotal, 0);
-        document.getElementById('selectedSubtotal').textContent = subtotal.toLocaleString('vi-VN') + ' VNĐ';
-        document.getElementById('selectedShipping').textContent = shippingFee.toLocaleString('vi-VN') + ' VNĐ';
-        document.getElementById('selectedTotal').textContent = grandTotal.toLocaleString('vi-VN') + ' VNĐ';
-
-        const checkoutBtn = document.getElementById('checkoutBtn');
-        const hasSelected = selectedCheckboxes.length > 0;
-        checkoutBtn.disabled = !hasSelected;
-
-        // Update hidden input
-        document.getElementById('selectedItemsInput').value = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
-    }
-
-    document.querySelectorAll('.item-checkbox').forEach(cb => {
-        cb.addEventListener('change', calculateSelectedTotal);
-    });
-
-    document.getElementById('selectAllHeader')?.addEventListener('change', function() {
-        document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
-        calculateSelectedTotal();
-    });
-
-    document.querySelectorAll('.quantity-increase').forEach(btn => btn.addEventListener('click', function() {
-        const input = btn.closest('.cart-update-form').querySelector('.quantity-input');
-        input.value = Math.min(parseInt(input.value)+1, parseInt(input.max)||100);
-        input.dispatchEvent(new Event('change'));
-    }));
-    document.querySelectorAll('.quantity-decrease').forEach(btn => btn.addEventListener('click', function() {
-        const input = btn.closest('.cart-update-form').querySelector('.quantity-input');
-        input.value = Math.max(parseInt(input.value)-1, parseInt(input.min)||1);
-        input.dispatchEvent(new Event('change'));
-    }));
-
-    document.querySelectorAll('.quantity-input').forEach(input => {
-        input.addEventListener('change', calculateSelectedTotal);
-        input.addEventListener('blur', calculateSelectedTotal);
-    });
-
-    // Calculate total on page load
-    calculateSelectedTotal();
-});
-</script>
-@endpush
 @endsection
 
 @section('scripts')

@@ -144,42 +144,6 @@
                         </form>
                     @endauth
                 </div>
-
-                <!-- CHỌN BIẾN THỂ -->
-                @if($product->variants->count() > 0)
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold mb-2">Chọn biến thể:</label>
-                        <select name="variant_id" id="variantSelect" class="form-select">
-                            <option value="">-- Chọn biến thể --</option>
-                            @foreach($product->variants as $variant)
-                                <option value="{{ $variant->id }}"
-                                        data-stock="{{ $variant->stock }}"
-                                        data-price="{{ $variant->price ?? ($product->price + ($variant->price_adjustment ?? 0)) }}"
-                                        data-size="{{ $variant->size->size_name ?? '' }}"
-                                        data-scent="{{ $variant->scent->scent_name ?? '' }}"
-                                        data-concentration="{{ $variant->concentration->concentration_name ?? '' }}">
-                                    @if($variant->size) Kích thước: {{ $variant->size->size_name }} @endif
-                                    @if($variant->scent) | Mùi: {{ $variant->scent->scent_name }} @endif
-                                    @if($variant->concentration) | Nồng độ: {{ $variant->concentration->concentration_name }} @endif
-                                    - Giá: {{ number_format($variant->price ?? ($product->price + ($variant->price_adjustment ?? 0)), 0, ',', '.') }} VNĐ
-                                    - Tồn: {{ $variant->stock }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <div id="variantInfo" class="mt-2 small text-muted"></div>
-                    </div>
-                @endif
-
-                <!-- FORM THÊM GIỎ HÀNG -->
-                <form id="addToCartForm" method="POST" action="{{ route('cart.add') }}">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <input type="hidden" name="variant_id" id="selectedVariantId">
-                    <input type="number" name="quantity" id="productQuantity" value="1" min="1" class="form-control w-auto text-center mb-3" style="max-width: 80px;">
-                    <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $totalStock <= 0 ? 'disabled' : '' }}>
-                        <i class="bi bi-cart-plus"></i> {{ $totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
-                    </button>
-                </form>
             </div>
         </div>
 
@@ -187,6 +151,7 @@
             <h4 class="mb-3">Mô tả chi tiết</h4>
             <p>{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
         </div>
+
         <div class="mt-5">
             <h4 class="mb-3">Đánh giá</h4>
             <div class="mb-3">

@@ -260,6 +260,7 @@
     const warehouseSelect = document.getElementById('warehouse_id');
     const stockQuantityInput = document.getElementById('stock_quantity');
     const stockRequired = document.getElementById('stockRequired');
+
     if (warehouseSelect && stockQuantityInput) {
         warehouseSelect.addEventListener('change', function() {
             if (this.value) {
@@ -271,6 +272,7 @@
                 stockQuantityInput.value = '';
             }
         });
+
         // Trigger on load
         if (warehouseSelect.value) {
             warehouseSelect.dispatchEvent(new Event('change'));

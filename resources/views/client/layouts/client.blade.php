@@ -27,7 +27,7 @@
     <link href="{{asset ('assets/client/vendor/aos/aos.css')}}" rel="stylesheet">
     <link href="{{asset ('assets/client/vendor/glightbox/css/glightbox.min.css')}}" rel="stylesheet">
     <link href="{{asset ('assets/client/vendor/drift-zoom/drift-basic.css')}}" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
     <!-- Main CSS File -->
     <link href="{{asset ('assets/client/css/main.css')}}" rel="stylesheet">
 </head>
@@ -40,7 +40,6 @@
         @yield('content')
 
     </main>
-        @include('client.partials.chat_ai')
 
         @include('client.partials.footer')
 
