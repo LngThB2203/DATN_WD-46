@@ -3,45 +3,48 @@
 @section('title', $post->title)
 
 @section('content')
-<section class="py-2 border-bottom bg-light">
+<!-- Breadcrumb -->
+<section class="py-4 border-bottom bg-light">
     <div class="container-fluid container-xl">
-       
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('blog.index') }}">Blog</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ $post->title }}</li>
+            </ol>
+        </nav>
     </div>
 </section>
 
+<!-- Main content -->
 <section class="py-5">
     <div class="container-fluid container-xl">
 
         <div class="row g-4">
-            <div class="col-lg-8 col-12"> 
+            <!-- Ảnh bên trái -->
+            <div class="col-lg-5 col-12">
                 @if($post->image)
-                    <div class="mb-4">
-                        <img src="{{ asset('storage/' . $post->image) }}" class="img-fluid rounded shadow-sm w-100" alt="{{ $post->title }}">
-                    </div>
+                    <img src="{{ asset('storage/' . $post->image) }}" 
+                         class="img-fluid rounded shadow-sm w-100 mb-4 mb-lg-0" 
+                         alt="{{ $post->title }}">
+                @else
+                    <img src="{{ asset('assets/client/img/default-post.webp') }}" 
+                         class="img-fluid rounded shadow-sm w-100 mb-4 mb-lg-0" 
+                         alt="{{ $post->title }}">
                 @endif
-                <div class="text-center mb-4">
-                    <h1 class="fw-bold display-5 mb-2">{{ $post->title }}</h1> 
-                    <p class="text-muted mb-4 small">
-                        <i class="fas fa-calendar-alt me-1"></i> Ngày đăng: {{ $post->created_at->format('d/m/Y') }}
-                    </p>
-                </div>
-                <hr class="text-black-50 mt-2 mb-4">
-                
-                <div class="post-content mb-5 text-start">
+            </div>
+
+            <!-- Nội dung bên phải -->
+            <div class="col-lg-7 col-12">
+                <h1 class="fw-bold display-4 mb-3">{{ $post->title }}</h1>
+                <div class="post-content mb-5">
                     {!! $post->content !!}
                 </div>
-            </div> <div class="col-lg-4 sidebar-wrapper"> 
-                <h4 class="fw-bold mb-3 text-primary">Bài viết</h4> 
-                <hr class="text-black-50 mt-2 mb-4">
-                @foreach($latestPosts as $item)
-                    <div class="mb-3 pb-2 border-bottom border-black-50 "> 
-                        <a href="{{ route('blog.show', $item->slug) }}" class="text-decoration-none">
-                            <h6 class="mb-1" style="color: #1b8db0;"> 
-                                <span class="text-truncate d-block">{{ $item->title }}</span> 
-                            </h6>
-                        </a>
-                    </div>
-                @endforeach
-            </div> </div> </div>
+            </div>
+        </div>
+
+        
+
+    </div>
 </section>
 @endsection
