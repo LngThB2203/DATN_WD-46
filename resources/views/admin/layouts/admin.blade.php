@@ -22,6 +22,7 @@
     <!-- Theme Config js (Require in all Page) -->
     <script src="{{ asset('assets/admin/js/config.js')}}"></script>
 
+    @stack('styles')
 
 </head>
 
@@ -48,20 +49,18 @@
 
     </div>
 
-    <!-- Larkon JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="{{ asset('assets/admin/js/vendor.js')}}"></script>
 
     <!-- App Javascript (Require in all Page) -->
     <script src="{{ asset('assets/admin/js/app.js')}}"></script>
-    
     @stack('scripts')
 </body>
 
 </html>
 <style>
     section {
-    padding-bottom: 100px;
-}
+        padding-bottom: 100px;
+    }
 </style>

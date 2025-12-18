@@ -22,6 +22,16 @@ class OrderStatusHelper
     {
         return [
             self::PENDING => 'Chờ xác nhận',
+<<<<<<< HEAD
+            self::CONFIRMED => 'Đã xác nhận',
+            self::PREPARING => 'Đang chuẩn bị hàng',
+            self::AWAITING_PICKUP => 'Chờ lấy hàng',
+            self::SHIPPING => 'Đang giao hàng',
+            self::DELIVERED => 'Đã giao hàng',
+            self::COMPLETED => 'Hoàn thành',
+            self::CANCELLED => 'Đã hủy',
+            self::REFUNDED => 'Đã hoàn tiền',
+=======
             // Đã bỏ CONFIRMED (Đã xác nhận) theo yêu cầu
             self::PREPARING => 'Đang chuẩn bị hàng',
             self::AWAITING_PICKUP => 'Chờ lấy hàng',
@@ -30,6 +40,7 @@ class OrderStatusHelper
             self::COMPLETED => 'Hoàn thành',
             self::CANCELLED => 'Đã hủy',
             // Đã bỏ trạng thái REFUNDED theo yêu cầu
+>>>>>>> origin/main
         ];
     }
 
@@ -38,6 +49,8 @@ class OrderStatusHelper
      */
     public static function getStatusName(string $status): string
     {
+<<<<<<< HEAD
+=======
         // Xử lý đặc biệt cho các trạng thái đã bỏ khỏi dropdown nhưng vẫn hiển thị nếu có đơn hàng cũ
         if ($status === self::REFUNDED) {
             return 'Đã hoàn tiền';
@@ -49,6 +62,7 @@ class OrderStatusHelper
             return 'Đang giao hàng';
         }
         
+>>>>>>> origin/main
         // Map trạng thái cũ sang trạng thái mới trước khi lấy tên
         $mappedStatus = self::mapOldStatus($status);
         return self::getStatuses()[$mappedStatus] ?? $status;
@@ -81,9 +95,15 @@ class OrderStatusHelper
     public static function mapOldStatus(string $oldStatus): string
     {
         return match($oldStatus) {
+<<<<<<< HEAD
+            'processing' => self::CONFIRMED,        // processing -> Đã xác nhận
+            'awaiting_payment' => self::PENDING,   // awaiting_payment -> Chờ xác nhận
+            'shipped' => self::SHIPPING,           // shipped -> Đang giao hàng
+=======
             'processing' => self::PREPARING,        // processing -> Đang chuẩn bị hàng (bỏ qua CONFIRMED)
             'awaiting_payment' => self::PENDING,   // awaiting_payment -> Chờ xác nhận
             'shipped' => self::DELIVERED,           // shipped -> Đã giao hàng (bỏ qua SHIPPING)
+>>>>>>> origin/main
             default => $oldStatus,
         };
     }
@@ -108,9 +128,15 @@ class OrderStatusHelper
         if ($currentStatus !== $mappedCurrentStatus) {
             // Cho phép chuyển từ trạng thái cũ sang trạng thái mới tương ứng hoặc các trạng thái tiếp theo
             $allowedFromOldStatus = [
+<<<<<<< HEAD
+                'processing' => [self::CONFIRMED, self::PREPARING, self::CANCELLED],
+                'awaiting_payment' => [self::PENDING, self::CONFIRMED, self::CANCELLED],
+                'shipped' => [self::SHIPPING, self::DELIVERED, self::CANCELLED],
+=======
                 'processing' => [self::PREPARING, self::CANCELLED], // Bỏ qua CONFIRMED
                 'awaiting_payment' => [self::PENDING, self::PREPARING, self::CANCELLED], // Bỏ qua CONFIRMED
                 'shipped' => [self::DELIVERED, self::CANCELLED], // Bỏ qua SHIPPING
+>>>>>>> origin/main
             ];
             
             if (isset($allowedFromOldStatus[$currentStatus])) {
@@ -120,14 +146,30 @@ class OrderStatusHelper
 
         // Logic chuyển đổi trạng thái hợp lệ theo quy trình Shopee
         $allowedTransitions = [
+<<<<<<< HEAD
+            // Chờ xác nhận: có thể xác nhận, hủy
+            self::PENDING => [self::CONFIRMED, self::CANCELLED],
+            
+            // Đã xác nhận: có thể chuẩn bị hàng, hủy
+            self::CONFIRMED => [self::PREPARING, self::CANCELLED],
+=======
             // Chờ xác nhận: có thể chuẩn bị hàng, hủy (bỏ qua CONFIRMED)
             self::PENDING => [self::PREPARING, self::CANCELLED],
+>>>>>>> origin/main
             
             // Đang chuẩn bị hàng: có thể chờ lấy hàng, hủy
             self::PREPARING => [self::AWAITING_PICKUP, self::CANCELLED],
             
+<<<<<<< HEAD
+            // Chờ lấy hàng: có thể đang giao hàng, hủy
+            self::AWAITING_PICKUP => [self::SHIPPING, self::CANCELLED],
+            
+            // Đang giao hàng: có thể đã giao hàng, hủy (trước khi giao)
+            self::SHIPPING => [self::DELIVERED, self::CANCELLED],
+=======
             // Chờ lấy hàng: có thể đã giao hàng, hủy (bỏ qua SHIPPING)
             self::AWAITING_PICKUP => [self::DELIVERED, self::CANCELLED],
+>>>>>>> origin/main
             
             // Đã giao hàng: có thể hoàn thành
             self::DELIVERED => [self::COMPLETED],
@@ -144,9 +186,16 @@ class OrderStatusHelper
         // Chỉ có thể hủy ở các trạng thái trước khi giao hàng
         return in_array($status, [
             self::PENDING,
+<<<<<<< HEAD
+            self::CONFIRMED,
+            self::PREPARING,
+            self::AWAITING_PICKUP,
+            self::SHIPPING, // Có thể hủy nếu chưa giao thực tế
+=======
             self::PREPARING,
             self::AWAITING_PICKUP,
             // Đã bỏ CONFIRMED và SHIPPING theo yêu cầu
+>>>>>>> origin/main
         ]);
     }
     

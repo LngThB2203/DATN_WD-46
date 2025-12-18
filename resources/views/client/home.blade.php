@@ -15,74 +15,39 @@
                     <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
                 </div>
                 <div class="col-lg-6">
-                    @if($heroBanner && $heroBanner->image)
-                    <img class="img-fluid rounded" src="{{ asset('storage/' . $heroBanner->image) }}" alt="Hero">
+                    @if(isset($heroBanners) && $heroBanners->count() > 0)
+                    @if($heroBanners->count() == 1)
+                    @foreach($products as $product)
+                        <a href="{{ route('product.show', $product->slug) }}" target="_blank" class="d-block">
+                            <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" class="img-fluid rounded" alt="Hero Banner">
+                        </a>
+                        @endforeach
                     @else
-                    <img class="img-fluid rounded" src="{{ asset('assets/client/img/default-hero.webp') }}" alt="Hero">
-                    @endif
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Featured Products -->
-<section class="py-5 border-top">
-    <div class="container-fluid container-xl">
-        <h3 class="fw-semibold mb-4">Sản phẩm nổi bật</h3>
-
-        <div class="row g-4" id="productList">
-            @foreach($products as $product)
-            @php
-                $img = $product->galleries->where('is_primary', true)->first() ?? $product->galleries->first();
-                $imgUrl = $img ? asset('storage/'.$img->image_path) : asset('assets/client/img/product/product-1.webp');
-            @endphp
-
-            <div class="col-12 col-sm-6 col-lg-3 mb-4">
-                <div class="card h-100 position-relative">
-                    <img src="{{ $imgUrl }}" class="card-img-top"
-                        style="height:250px; object-fit:cover; border:1px solid #dee2e6; border-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
-
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title mb-1">{{ $product->name }}</h5>
-
-                        @if($product->variants->count())
-                        <div class="variant-popup border p-2 bg-white shadow position-absolute top-50 start-50 translate-middle d-none"
-                            style="z-index:10; width:90%; max-width:250px;">
-                            <select class="form-select variant-select mb-2" data-product-id="{{ $product->id }}">
-                                <option value="">Chọn biến thể</option>
-                                @foreach($product->variants as $variant)
-                                <option value="{{ $variant->id }}" data-price="{{ $variant->price }}">
-                                    {{ $variant->size->size_name ?? '' }} {{ $variant->scent->scent_name ?? '' }}
-                                </option>
+                        <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @foreach($heroBanners as $key => $banner)
+                                    <div class="carousel-item @if($key == 0) active @endif">
+                                        @foreach($products as $product)
+                                        <a href="{{  route('product.show', $product->slug)}}" target="_blank" class="d-block">
+                                            <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
+                                        </a>
+                                        @endforeach
+                                    </div>
                                 @endforeach
-                            </select>
-                            <button class="btn btn-primary w-100 mb-2 confirm-add-btn" data-product-id="{{ $product->id }}">
-                                <i class="bi bi-cart3"></i> Thêm vào giỏ
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                                <span class="visually-hidden"></span>
                             </button>
-                            <button class="btn btn-secondary w-100 close-popup-btn">Hủy</button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                                <span class="visually-hidden"></span>
+                            </button>
                         </div>
-                        @endif
-
-                        <div class="mt-auto">
-                            <div class="product-price mb-2">
-                                <span class="text-primary fw-bold">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center">
-                                <button class="btn btn-outline-secondary btn-sm add-to-cart-btn"
-                                    data-product-id="{{ $product->id }}">
-                                    <i class="bi bi-cart3"></i>
-                                </button>
-                                <a href="{{ route('product.show', $product->slug) }}"
-                                   class="btn btn-outline-primary btn-sm">
-                                    Xem chi tiết
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    @endif
+                @endif
                 </div>
             </div>
-            @endforeach
         </div>
         <div class="mt-4">
             {{ $products->links('pagination::bootstrap-5') }}
@@ -195,3 +160,16 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 @endsection
+<style>
+    #heroCarousel .carousel-item {
+    height: 400px; /* chiều cao cố định cho carousel */
+    overflow: hidden;
+}
+
+#heroCarousel .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* ảnh sẽ tự dãn và cắt để lấp đầy khung */
+}
+
+</style>
