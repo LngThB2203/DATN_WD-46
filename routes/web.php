@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
@@ -144,6 +145,9 @@ Route::get('/return-policy', fn() => view('client.return-policy'))->name('return
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 
+// Chat AI
+Route::get('/chat/messages', [ChatbotController::class, 'fetchMessages']);
+Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
 // Blog
 Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
