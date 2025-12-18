@@ -6,172 +6,194 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Warehouse;
 use App\Models\WarehouseProduct;
+use App\Services\StockService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class WarehouseProductController extends Controller
 {
-    /** Danh sách tồn kho */
     public function index(Request $request)
     {
-        $query = WarehouseProduct::with(['warehouse', 'product', 'variant.size', 'variant.scent', 'variant.concentration']);
+        $inventories = WarehouseProduct::select(
+            'product_id',
+            'variant_id',
+            DB::raw('SUM(quantity) as total_quantity')
+        )
+            ->with([
+                'product',
+                'variant.size',
+                'variant.scent',
+                'variant.concentration',
+            ])
+            ->groupBy('product_id', 'variant_id');
 
-        // Tìm kiếm theo tên sản phẩm
+        // search
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('product', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $inventories->whereHas('product', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%');
             });
         }
 
-        // Lọc theo kho
-        if ($request->filled('warehouse_id')) {
-            $query->where('warehouse_id', $request->warehouse_id);
-        }
-
-        // Lọc theo sản phẩm
+        // filter product
         if ($request->filled('product_id')) {
-            $query->where('product_id', $request->product_id);
+            $inventories->where('product_id', $request->product_id);
         }
 
-        // Lọc tồn kho thấp
+        // low stock
         if ($request->filled('low_stock')) {
-            $query->where('quantity', '<=', 10);
+            $inventories->havingRaw('SUM(quantity) <= 10');
         }
 
-        $inventories = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $inventories = $inventories
+            ->paginate(15)
+            ->withQueryString();
 
-        // Lọc tồn kho thấp cho cảnh báo
-        $lowStockItems = WarehouseProduct::with(['warehouse', 'product', 'variant'])
-            ->get()
-            ->filter(function ($item) {
-                return $item->quantity <= 10;
-            });
+        /* ===============================
+        DASHBOARD STATS (BẮT BUỘC)
+    =============================== */
 
-        // Thống kê
-        $totalProducts = \App\Models\Product::count();
-        $totalVariants = \App\Models\ProductVariant::count();
-        $totalWarehouses = \App\Models\Warehouse::count();
-        $totalStockItems = WarehouseProduct::count();
+        $totalProducts = Product::count();
+        $totalVariants = ProductVariant::count();
         $totalQuantity = WarehouseProduct::sum('quantity');
-        $productsWithStock = WarehouseProduct::distinct('product_id')->count('product_id');
 
-        // Dữ liệu cho filter
+        $productsWithStock = WarehouseProduct::select('product_id')
+            ->groupBy('product_id')
+            ->havingRaw('SUM(quantity) > 0')
+            ->count();
+
+        $totalStockItems = WarehouseProduct::count(); // số dòng batch
+
+        /* ===============================
+        LOW STOCK LIST
+    =============================== */
+
+        $lowStockItems = WarehouseProduct::select(
+            'product_id',
+            'variant_id',
+            DB::raw('SUM(quantity) as total_quantity')
+        )
+            ->with(['product', 'variant'])
+            ->groupBy('product_id', 'variant_id')
+            ->having('total_quantity', '<=', 10)
+            ->get();
+
+        /* ===============================
+        FILTER DATA
+    =============================== */
+
         $warehouses = Warehouse::all();
-        $products = Product::all();
+        $products   = Product::all();
 
         return view('admin.inventories.received-orders', compact(
-            'inventories', 
-            'lowStockItems',
+            'inventories',
             'totalProducts',
             'totalVariants',
-            'totalWarehouses',
-            'totalStockItems',
             'totalQuantity',
             'productsWithStock',
+            'totalStockItems',
+            'lowStockItems',
             'warehouses',
             'products'
         ));
     }
 
-    /** API lấy biến thể theo sản phẩm */
-    public function getVariantsByProduct($productId)
+    public function show($productId, $variantId = null)
     {
-        $variants = ProductVariant::where('product_id', $productId)->get();
-        return response()->json($variants);
-    }
+        $product = Product::findOrFail($productId);
 
-    /** Form nhập kho */
-    public function createImport()
-    {
-        $warehouses = Warehouse::all();
-        $products   = Product::all();
-
-        return view('admin.inventories.import', compact('warehouses', 'products'));
-    }
-
-    /** Xử lý nhập kho */
-    public function import(Request $request)
-    {
-        $request->validate([
-            'warehouse_id' => 'required|exists:warehouse,id',
-            'product_id'   => 'required|exists:products,id',
-            'variant_id'   => 'nullable|exists:product_variants,id',
-            'quantity'     => 'required|integer|min:1',
-        ]);
-
-        // Nếu có variant_id, kiểm tra variant thuộc về product
-        if ($request->variant_id) {
-            $variant = ProductVariant::where('id', $request->variant_id)
-                ->where('product_id', $request->product_id)
+        $variant = null;
+        if ($variantId) {
+            $variant = ProductVariant::where('id', $variantId)
+                ->where('product_id', $productId)
                 ->firstOrFail();
         }
 
-        $stock = WarehouseProduct::firstOrCreate([
-            'warehouse_id' => $request->warehouse_id,
-            'product_id'   => $request->product_id,
-            'variant_id'   => $request->variant_id ?? null,
-        ]);
+        $batches = WarehouseProduct::with('warehouse')
+            ->where('product_id', $productId)
+            ->when($variantId, function ($q) use ($variantId) {
+                $q->where('variant_id', $variantId);
+            }, function ($q) {
+                $q->whereNull('variant_id');
+            })
+            ->where('quantity', '>', 0)
+            ->orderBy('expired_at')
+            ->paginate(15);
 
-        $stock->quantity += $request->quantity;
-        $stock->save();
+        // Tổng tồn để hiển thị header
+        $totalQuantity = $batches->sum('quantity');
 
-        return back()->with('success', 'Nhập kho thành công!');
+        return view('admin.inventories.show', compact(
+            'product',
+            'variant',
+            'batches',
+            'totalQuantity'
+        ));
     }
 
-    /** Form xuất kho */
-    public function createExport()
+    public function getVariants($productId)
     {
-        $warehouses = Warehouse::all();
-        $products   = Product::all();
-
-        return view('admin.inventories.export', compact('warehouses', 'products'));
+        return ProductVariant::where('product_id', $productId)
+            ->get(['id', 'sku as name']);
     }
 
-    /** Xử lý xuất kho */
-    public function export(Request $request)
+    public function createImport()
+    {
+        return view('admin.inventories.import', [
+            'warehouses' => Warehouse::all(),
+            'products'   => Product::all(),
+        ]);
+    }
+
+    public function import(Request $request, StockService $stockService)
     {
         $request->validate([
-            'warehouse_id' => 'required|exists:warehouse,id',
-            'product_id'   => 'required|exists:products,id',
-            'variant_id'   => 'nullable|exists:product_variants,id',
+            'warehouse_id' => 'required',
+            'product_id'   => 'required',
+            'variant_id'   => 'nullable',
+            'batch_code'   => 'required',
             'quantity'     => 'required|integer|min:1',
         ]);
 
-        $stock = WarehouseProduct::where('warehouse_id', $request->warehouse_id)
-            ->where('product_id', $request->product_id)
-            ->where('variant_id', $request->variant_id ?? null)
-            ->first();
+        $stockService->import(
+            [
+                'warehouse_id' => $request->warehouse_id,
+                'product_id'   => $request->product_id,
+                'variant_id'   => $request->variant_id,
+                'batch_code'   => $request->batch_code,
+                'quantity'     => $request->quantity,
+                'expired_at'   => $request->expired_at,
+            ],
+            'manual_import',
+            auth()->id()
+        );
 
-        if (!$stock) {
-            return back()->with('error', 'Không tìm thấy sản phẩm trong kho này!');
-        }
-
-        if ($stock->quantity < $request->quantity) {
-            return back()->with('error', 'Không đủ hàng trong kho! Hiện có: ' . $stock->quantity);
-        }
-
-        $stock->quantity -= $request->quantity;
-        $stock->save();
-
-        return back()->with('success', 'Xuất kho thành công!');
+        return back()->with('success', 'Nhập kho thành công');
     }
 
-    /** Cập nhật số lượng tồn kho */
-    public function updateQuantity(Request $request, $id)
+    public function createExport()
     {
-        $request->validate(['quantity' => 'required|integer|min:0']);
-
-        $item           = WarehouseProduct::findOrFail($id);
-        $item->quantity = $request->quantity;
-        $item->save();
-
-        return back()->with('success', 'Cập nhật số lượng thành công!');
+        return view('admin.inventories.export', [
+            'warehouses' => Warehouse::all(),
+            'products'   => Product::all(),
+        ]);
     }
-    public function getVariants($productId)
-{
-    $variants = ProductVariant::where('product_id', $productId)
-        ->get(['id', 'sku as name']);
 
-    return response()->json($variants);
-}
+    public function export(Request $request, StockService $stockService)
+    {
+        $request->validate([
+            'warehouse_id' => 'required',
+            'product_id'   => 'required',
+            'variant_id'   => 'nullable',
+            'quantity'     => 'required|integer|min:1',
+        ]);
+
+        $stockService->exportManual(
+            $request->warehouse_id,
+            $request->product_id,
+            $request->variant_id,
+            $request->quantity
+        );
+
+        return back()->with('success', 'Xuất kho thành công');
+    }
 }

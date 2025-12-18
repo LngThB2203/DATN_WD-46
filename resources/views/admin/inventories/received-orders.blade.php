@@ -8,10 +8,10 @@
 
         {{-- Thông báo --}}
         @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         @endif
 
         {{-- Thống kê tổng quan --}}
@@ -41,7 +41,8 @@
                                 <h4 class="mb-0">{{ $totalVariants }}</h4>
                             </div>
                             <div class="avatar-sm bg-success bg-opacity-10 rounded">
-                                <iconify-icon icon="solar:widget-4-bold-duotone" class="fs-24 text-success"></iconify-icon>
+                                <iconify-icon icon="solar:widget-4-bold-duotone" class="fs-24 text-success">
+                                </iconify-icon>
                             </div>
                         </div>
                     </div>
@@ -73,7 +74,8 @@
                                 <h4 class="mb-0">{{ $productsWithStock }}/{{ $totalProducts }}</h4>
                             </div>
                             <div class="avatar-sm bg-warning bg-opacity-10 rounded">
-                                <iconify-icon icon="solar:check-circle-bold-duotone" class="fs-24 text-warning"></iconify-icon>
+                                <iconify-icon icon="solar:check-circle-bold-duotone" class="fs-24 text-warning">
+                                </iconify-icon>
                             </div>
                         </div>
                     </div>
@@ -84,20 +86,22 @@
         {{-- Cảnh báo tồn kho thấp --}}
         @if($lowStockItems->count() > 0)
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h5 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Cảnh báo tồn kho thấp ({{ $lowStockItems->count() }} sản phẩm)</h5>
+            <h5 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Cảnh báo tồn kho thấp ({{
+                $lowStockItems->count() }} sản phẩm)</h5>
             <ul class="mb-0">
-                @foreach($lowStockItems->take(5) as $item)
-                    <li>
-                        <strong>{{ $item->product->name ?? 'Sản phẩm?' }}</strong>
-                        @if($item->variant)
-                            <span class="badge bg-secondary">SKU: {{ $item->variant->sku }}</span>
-                        @endif
-                        tại <strong>{{ $item->warehouse->warehouse_name ?? 'Kho?' }}</strong> 
-                        còn <span class="badge bg-danger">{{ $item->quantity }}</span>
-                    </li>
+                @foreach($lowStockItems as $item)
+                <li>
+                    <strong>{{ $item->product->name }}</strong>
+                    @if($item->variant)
+                    <span class="badge bg-secondary">SKU: {{ $item->variant->sku }}</span>
+                    @endif
+                    còn tổng cộng
+                    <span class="badge bg-danger">{{ $item->total_quantity }}</span>
+                </li>
                 @endforeach
+
                 @if($lowStockItems->count() > 5)
-                    <li class="text-muted">... và {{ $lowStockItems->count() - 5 }} sản phẩm khác</li>
+                <li class="text-muted">... và {{ $lowStockItems->count() - 5 }} sản phẩm khác</li>
                 @endif
             </ul>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -110,18 +114,17 @@
                 <form method="GET" action="{{ route('inventories.received-orders') }}" class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label">Tìm kiếm</label>
-                        <input type="text" name="search" class="form-control" 
-                               value="{{ request('search') }}" 
-                               placeholder="Tên sản phẩm...">
+                        <input type="text" name="search" class="form-control" value="{{ request('search') }}"
+                            placeholder="Tên sản phẩm...">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Kho</label>
                         <select name="warehouse_id" class="form-select">
                             <option value="">Tất cả kho</option>
                             @foreach($warehouses as $w)
-                                <option value="{{ $w->id }}" {{ request('warehouse_id') == $w->id ? 'selected' : '' }}>
-                                    {{ $w->warehouse_name }}
-                                </option>
+                            <option value="{{ $w->id }}" {{ request('warehouse_id')==$w->id ? 'selected' : '' }}>
+                                {{ $w->warehouse_name }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -130,9 +133,9 @@
                         <select name="product_id" class="form-select">
                             <option value="">Tất cả sản phẩm</option>
                             @foreach($products as $p)
-                                <option value="{{ $p->id }}" {{ request('product_id') == $p->id ? 'selected' : '' }}>
-                                    {{ $p->name }}
-                                </option>
+                            <option value="{{ $p->id }}" {{ request('product_id')==$p->id ? 'selected' : '' }}>
+                                {{ $p->name }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -173,165 +176,93 @@
                     </a>
                 </div>
             </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0 table-hover table-centered">
-                <thead class="bg-light-subtle">
-                    <tr>
-                        <th>ID</th>
-                        <th>Sản phẩm</th>
-                        <th>Biến thể</th> <!-- Thêm cột biến thể -->
-                        <th>Kho</th>
-                        <th>Số lượng</th>
-                        <th>Ngưỡng</th>
-                        <th>Trạng thái</th>
-                        <th>Cập nhật</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($inventories as $inv)
-                    <tr>
-                        <td>{{ $inv->id }}</td>
-                        <td>{{ $inv->product->name ?? 'N/A' }}</td>
-                        <td>
-                            @if($inv->variant)
-                                <div class="small">
-                                    <strong class="text-primary">SKU:</strong> {{ $inv->variant->sku }}<br>
-                                    @if($inv->variant->size)
-                                        <span class="badge bg-info">{{ $inv->variant->size->size_name ?? $inv->variant->size->name ?? '' }}</span>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 table-hover table-centered">
+                        <thead class="bg-light-subtle">
+                            <tr>
+                                <th>#</th>
+                                <th>Sản phẩm</th>
+                                <th>Biến thể</th>
+                                <th>Tổng tồn</th>
+                                <th>Trạng thái</th>
+                                <th>Chi tiết</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($inventories as $index => $inv)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+
+                                <td>
+                                    <strong>{{ $inv->product->name }}</strong>
+                                </td>
+
+                                <td>
+                                    @if($inv->variant)
+                                    <div class="small">
+                                        <span class="badge bg-secondary">SKU: {{ $inv->variant->sku }}</span><br>
+
+                                        @if($inv->variant->size)
+                                        <span class="badge bg-info">{{ $inv->variant->size->size_name ??
+                                            $inv->variant->size->name }}</span>
+                                        @endif
+                                        @if($inv->variant->scent)
+                                        <span class="badge bg-success">{{ $inv->variant->scent->scent_name ??
+                                            $inv->variant->scent->name }}</span>
+                                        @endif
+                                        @if($inv->variant->concentration)
+                                        <span class="badge bg-warning text-dark">
+                                            {{ $inv->variant->concentration->concentration_name ??
+                                            $inv->variant->concentration->name }}
+                                        </span>
+                                        @endif
+                                    </div>
+                                    @else
+                                    <span class="text-muted">Sản phẩm chính</span>
                                     @endif
-                                    @if($inv->variant->scent)
-                                        <span class="badge bg-success">{{ $inv->variant->scent->scent_name ?? $inv->variant->scent->name ?? '' }}</span>
-                                    @endif
-                                    @if($inv->variant->concentration)
-                                        <span class="badge bg-warning text-dark">{{ $inv->variant->concentration->concentration_name ?? $inv->variant->concentration->name ?? '' }}</span>
-                                    @endif
-                                </div>
-                            @else
-                                <span class="text-muted">Sản phẩm chính</span>
-                            @endif
-                        </td>
-                        <td>
-                            <strong>{{ $inv->warehouse->warehouse_name ?? 'N/A' }}</strong>
-                        </td>
-                        <td>
-                            <strong class="text-primary">{{ number_format($inv->quantity, 0, ',', '.') }}</strong>
-                        </td>
-                        <td>
-                            <span class="text-muted">—</span>
-                        </td>
-                        <td>
-                            @php
-                                $threshold = 10;
-                                $isLowStock = $inv->quantity <= $threshold;
-                            @endphp
-                            @if($isLowStock)
-                                <span class="badge bg-danger">
-                                    <i class="bi bi-exclamation-triangle me-1"></i>Sắp hết hàng
-                                </span>
-                            @elseif($inv->quantity <= $threshold * 2)
-                                <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-info-circle me-1"></i>Cần bổ sung
-                                </span>
-                            @else
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-circle me-1"></i>Đủ hàng
-                                </span>
-                            @endif
-                        </td>
-                        <td>
-                            <form action="{{ route('inventories.updateQuantity', $inv->id) }}" method="POST">
-                                @csrf @method('PUT')
-                                <div class="input-group input-group-sm">
-                                    <input type="number" name="quantity" value="{{ $inv->quantity }}" min="0" class="form-control" style="max-width:80px;">
-                                    <button class="btn btn-primary btn-sm">Lưu</button>
-                                </div>
-                            </form>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" class="text-center py-5">
-                            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                            <p class="text-muted mt-3 mb-0">Không tìm thấy sản phẩm nào</p>
-                            <a href="{{ route('inventories.import.create') }}" class="btn btn-primary mt-3">
-                                <i class="bi bi-plus-circle me-1"></i> Nhập kho ngay
-                            </a>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer border-top">
-            {{ $inventories->links() }}
+                                </td>
+
+                                <td>
+                                    <strong class="text-primary">
+                                        {{ number_format($inv->total_quantity) }}
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    @php
+                                    $threshold = 10;
+                                    @endphp
+
+                                    @if($inv->total_quantity <= $threshold) <span class="badge bg-danger">Sắp hết
+                                        hàng</span>
+                                        @elseif($inv->total_quantity <= $threshold * 2) <span
+                                            class="badge bg-warning text-dark">Cần bổ sung</span>
+                                            @else
+                                            <span class="badge bg-success">Đủ hàng</span>
+                                            @endif
+                                </td>
+
+                                <td>
+                                    <a href="{{ route('inventories.stock.show', [
+    $inv->product_id,
+    $inv->variant_id
+]) }}" class="btn btn-sm btn-outline-info">
+                                        Xem
+                                    </a>
+
+                                </td>
+                            </tr>
+                            @endforeach
+
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer border-top">
+                    {{ $inventories->links() }}
+                </div>
+            </div>
+
         </div>
     </div>
-
-    </div>
-</div>
-@endif
-
-<div class="card">
-    <div class="card-header d-flex justify-content-between">
-        <h5>Tồn kho hiện tại</h5>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0 table-hover table-centered">
-                <thead class="bg-light-subtle">
-                    <tr>
-                        <th>ID</th>
-                        <th>Sản phẩm</th>
-                        <th>Biến thể</th> <!-- Thêm cột biến thể -->
-                        <th>Kho</th>
-                        <th>Số lượng</th>
-                        <th>Ngưỡng</th>
-                        <th>Trạng thái</th>
-                        <th>Cập nhật</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($inventories as $inv)
-                    <tr>
-                        <td>{{ $inv->id }}</td>
-                        <td>{{ $inv->product->name ?? 'N/A' }}</td>
-                        <td>
-                            @if($inv->variant)
-                                {{ $inv->variant->size->size_name ?? '' }}
-                                {{ $inv->variant->scent ? ' | '.$inv->variant->scent->scent_name : '' }}
-                                {{ $inv->variant->concentration ? ' | '.$inv->variant->concentration->concentration_name : '' }}
-                            @else
-                                —
-                            @endif
-                        </td>
-                        <td>{{ $inv->warehouse->warehouse_name ?? 'N/A' }}</td>
-                        <td>{{ $inv->quantity }}</td>
-                        <td>{{ $inv->min_stock_threshold }}</td>
-                        <td>
-                            @if($inv->quantity <= $inv->min_stock_threshold)
-                                <span class="badge bg-danger">Sắp hết hàng</span>
-                            @else
-                                <span class="badge bg-success">Đủ hàng</span>
-                            @endif
-                        </td>
-                        <td>
-                            <form action="{{ route('inventories.updateQuantity', $inv->id) }}" method="POST">
-                                @csrf @method('PUT')
-                                <div class="input-group input-group-sm">
-                                    <input type="number" name="quantity" value="{{ $inv->quantity }}" min="0" class="form-control" style="max-width:80px;">
-                                    <button class="btn btn-primary btn-sm">Lưu</button>
-                                </div>
-                            </form>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer border-top">{{ $inventories->links() }}</div>
-    </div>
-</div>
-
-</div></div>
-@endsection
+    @endsection
