@@ -5,28 +5,30 @@
 @section('content')
 <main class="main">
 <div class="notifications">
-    @foreach(auth()->user()->notifications as $notification)
-        <div class="alert alert-info d-flex justify-content-between align-items-center mb-2">
-            <div>
-                <strong>{{ $notification->data['title'] }}:</strong>
-                {{ $notification->data['message'] }}
-               
-                <small class="text-muted">({{ $notification->created_at->diffForHumans() }})</small>
+    @auth
+        @foreach(auth()->user()->notifications as $notification)
+            <div class="alert alert-info d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>{{ $notification->data['title'] ?? '' }}:</strong>
+                    {{ $notification->data['message'] ?? '' }}
+                    <small class="text-muted">({{ $notification->created_at->diffForHumans() }})</small>
+                </div>
+
+                @php
+                    $message = $notification->data['message'] ?? '';
+                    preg_match('/Voucher "(.*?)"/', $message, $matches);
+                    $code = $matches[1] ?? '';
+                @endphp
+                @if($code)
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{{ $code }}')">
+                        Sao chép mã
+                    </button>
+                @endif
             </div>
-            <!-- Nút sao chép mã voucher -->
-            @php
-                // Lấy code từ message
-                preg_match('/Voucher "(.*?)"/', $notification->data['message'], $matches);
-                $code = $matches[1] ?? '';
-            @endphp
-            @if($code)
-                <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{{ $code }}')">
-                    Sao chép mã
-                </button>
-            @endif
-        </div>
-    @endforeach
+        @endforeach
+    @endauth
 </div>
+
 
 
     <!-- Hero Section -->
