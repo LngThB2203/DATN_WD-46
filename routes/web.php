@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\InventoryExportController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
@@ -15,12 +16,15 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
 use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Client\ProductDetailController;
 use App\Http\Controllers\Client\ProductListingController;
 use App\Http\Controllers\Client\VNPayController;
+use App\Http\Controllers\Client\WishlistController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\NewsletterController;
@@ -89,6 +93,12 @@ Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('p
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
 Route::get('/product/{slug}/reviews', [ReviewController::class, 'index'])->name('product.reviews.index'); // AJAX phân trang đánh giá
 
+// Wishlist
+Route::middleware('auth')->group(function () {
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+});
+
 Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
 
 Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
@@ -115,8 +125,18 @@ Route::put('/orders/{order}/confirm-received', [ClientOrderController::class, 'c
 // Newsletter
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
+// Discounts (Client)
+Route::get('/vouchers', [DiscountController::class, 'index'])->name('client.vouchers.index');
+Route::get('/my-vouchers', [DiscountController::class, 'myVouchers'])
+    ->middleware('auth')
+    ->name('client.vouchers.my');
+Route::post('/vouchers/save', [DiscountController::class, 'saveForUser'])
+    ->middleware('auth')
+    ->name('client.vouchers.save');
+
 // Discount API
 Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');
+Route::post('/api/apply-discount', [DiscountController::class, 'apply'])->name('api.apply-discount');
 
 // Static Pages
 Route::get('/about', fn() => view('client.about'))->name('about');
@@ -132,9 +152,8 @@ Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shippi
 Route::get('/support', fn() => view('client.support'))->name('support.index');
 
 // Blog
-Route::get('/blog', fn() => view('client.blog'))->name('blog.index');
-Route::get('/blog/{slug}', fn($slug) => view('client.blog-details', compact('slug')))->name('blog.show');
-
+Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
 // Contact
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
@@ -239,6 +258,10 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/received-orders', [WarehouseProductController::class, 'index'])->name('received-orders');
         Route::put('/received-orders/{id}', [WarehouseProductController::class, 'updateQuantity'])->name('updateQuantity');
         Route::get('/get-variants/{product}', [WarehouseProductController::class, 'getVariants'])->name('getVariants');
+        Route::get(
+            '/stock/{product}/{variant?}',
+            [WarehouseProductController::class, 'show']
+        )->name('stock.show');
 
         // Import
         Route::get('/import', [WarehouseProductController::class, 'createImport'])->name('import.create');
@@ -248,9 +271,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/export', [WarehouseProductController::class, 'createExport'])->name('export.create');
         Route::post('/export', [WarehouseProductController::class, 'export'])->name('export.store');
 
-        // Transactions
-        Route::get('/transactions', [StockTransactionController::class, 'log'])->name('transactions');
-        Route::get('/transactions/{id}/print', [StockTransactionController::class, 'printInvoice'])->name('transactions.print');
+        Route::get(
+            '/stock-transactions',
+            [StockTransactionController::class, 'index']
+        )->name('stock-transactions.index');
+
+        Route::get(
+            '/export/stock-transactions',
+            [InventoryExportController::class, 'stockTransactions']
+        )->name('export.stock-transactions');
     });
 
     // Contacts
@@ -262,15 +291,17 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::delete('/{contact}', [ContactController::class, 'adminDestroy'])->name('destroy');
     });
 
-    // Orders (Admin)
     Route::prefix('orders')->name('admin.orders.')->group(function () {
-        Route::get('/list', [App\Http\Controllers\Admin\OrderController::class, 'index'])->name('list');
-        Route::get('/show/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('show');
-        Route::put('/update-status/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('update-status');
-        Route::post('/update-shipment/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateShipment'])->name('update-shipment');
-        Route::get('/cart', fn() => view('admin.orders.cart'))->name('cart');
-        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
-    });
+    Route::get('/list', [OrderController::class, 'index'])->name('list');
+    Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
+
+    Route::put('/update-status/{id}', [OrderController::class, 'updateStatus'])
+        ->name('update-status');
+
+    Route::put('/update-warehouse/{id}', [OrderController::class, 'updateWarehouse'])
+        ->name('update-warehouse');
+});
+
 
     Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
         Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');

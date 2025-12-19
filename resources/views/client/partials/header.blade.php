@@ -1,5 +1,5 @@
 <header id="header" class="header position-absolute top-0 start-0 w-100 bg-white shadow-sm" style="z-index: 999;">
-    <div class="top-bar py-2 border-bottom">
+    {{-- <div class="top-bar py-2 border-bottom">
         <div class="container-fluid container-xl">
             <div class="row align-items-center">
                 <div class="col-lg-4 d-none d-lg-flex">
@@ -46,7 +46,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <div class="main-header">
         <div class="container-fluid container-xl">
@@ -64,7 +64,7 @@
                         </button>
 
                         <!-- AJAX Search Results -->
-                        <div id="searchResults" class="position-absolute bg-white shadow-sm w-100" style="top:100%; left:0; z-index:1000; display:none; max-height:400px; overflow-y:auto;"></div>
+                        <div id="searchResults" class="position-absolute bg-white shadow-sm w-100" style="top:100%; left:0; z-index:1000; display:none;"></div>
                     </div>
                 </form>
 
@@ -82,17 +82,20 @@
                                 </div>
                                 <div class="dropdown-body p-2">
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
-                                        <i class="bi bi-person-circle me-2"></i>Account
+                                        <i class="bi bi-person-circle me-2"></i>Tài khoản
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-bag-check me-2"></i>My Orders
+                                        <i class="bi bi-bag-check me-2"></i>
+                                        <span>Đơn hàng</span>
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-heart me-2"></i>My Wishlist
+                                        <i class="bi bi-heart me-2"></i>
+                                        <span>Danh sách yêu thích</span>
                                     </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-gear me-2"></i>Settings
-                                    </a>
+                                    {{-- <a class="dropdown-item d-flex align-items-center" href="#">
+                                        <i class="bi bi-gear me-2"></i>
+                                        <span>Cài</span>
+                                    </a> --}}
                                 </div>
                                 <div class="dropdown-footer p-2">
                                     <a href="{{ route('login') }}" class="btn btn-primary w-100 mb-2">Sign In</a>
@@ -101,26 +104,37 @@
                             @else
                                 <div class="dropdown-header text-center p-3">
                                     <h6>Xin chào, {{ Auth::user()->name }}</h6>
-                                    <p class="mb-0">Chúc bạn mua sắm vui vẻ</p>
                                 </div>
                                 <div class="dropdown-body p-2">
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('account.show') }}">
-                                        <i class="bi bi-person-circle me-2"></i>Account
+                                        <i class="bi bi-person-circle me-2"></i>Tài khoản
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="{{ route('orders.index') }}">
-                                        <i class="bi bi-bag-check me-2"></i>My Orders
+                                        <i class="bi bi-bag-check me-2"></i>
+                                        <span>Đơn hàng</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('client.vouchers.my') }}">
+                                        <i class="bi bi-ticket-perforated me-2"></i>
+                                        <span>Kho voucher của tôi</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('client.vouchers.index') }}">
+                                        <i class="bi bi-ticket-detailed me-2"></i>
+                                        <span>Tất cả voucher</span>
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-heart me-2"></i>My Wishlist
+                                        <i class="bi bi-heart me-2"></i>
+                                        <span>Danh sách yêu thích</span>
                                     </a>
-                                    <a class="dropdown-item d-flex align-items-center" href="#">
-                                        <i class="bi bi-gear me-2"></i>Settings
-                                    </a>
+                                    {{-- <a class="dropdown-item d-flex align-items-center" href="#">
+                                        <i class="bi bi-gear me-2"></i>
+                                        <span>Settings</span>
+                                    </a> --}}
                                 </div>
-                                <div class="dropdown-footer p-2">
+                                <div class="dropdown-footer">
                                     @if(Auth::user()->role === 'admin')
                                         <a href="{{ url('/admin') }}" class="btn btn-success w-100 d-flex align-items-center justify-content-center mb-2">
-                                            <i class="bi bi-speedometer2 me-2"></i>Trang Quản trị
+                                            <i class="bi bi-speedometer2 me-2"></i>
+                                            <span>Trang Quản trị</span>
                                         </a>
                                     @endif
                                     <form method="POST" action="{{ route('logout') }}">
@@ -134,10 +148,15 @@
                         </div>
                     </div>
 
-                    <!-- Wishlist & Cart -->
-                    <a href="#" class="header-action-btn d-none d-md-block">
+                    @php
+                        $wishlistCount = 0;
+                        if(auth()->check()) {
+                            $wishlistCount = \App\Models\Wishlist::where('user_id', auth()->id())->count();
+                        }
+                    @endphp
+                    <a href="{{ route('wishlist.index') }}" class="header-action-btn d-none d-md-block">
                         <i class="bi bi-heart"></i>
-                        <span class="badge">0</span>
+                        <span class="badge">{{ $wishlistCount }}</span>
                     </a>
                     <a href="{{ route('cart.index') }}" class="header-action-btn">
                         <i class="bi bi-cart3"></i>
@@ -153,14 +172,12 @@
         <div class="container-fluid container-xl">
             <nav id="navmenu" class="navmenu">
                 <ul class="d-flex flex-wrap justify-content-center gap-3 py-2 mb-0 list-unstyled">
-                    <li><a href="{{ route('home') }}" class="active">Home</a></li>
-                    <li><a href="{{ route('about') }}">About</a></li>
-                    <li><a href="{{ route('blog.index') }}">Blog</a></li>
-                    <li><a href="{{ route('contact.index') }}">Contact</a></li>
-                    <li><a href="{{ route('client.products.index') }}">Product</a></li>
-                    <li><a href="{{ route('category.index') }}">Category</a></li>
-                    <li><a href="{{ route('cart.index') }}">Cart</a></li>
-                    <li><a href="{{ route('checkout.index') }}">Checkout</a></li>
+                    <li><a href="{{ route('home') }}" class="active">Trang chủ</a></li>
+                    <li><a href="{{ route('about') }}">Giới thiệu</a></li>
+                    <li><a href="{{ route('blog.index') }}">Bài viết</a></li>
+                    <li><a href="{{ route('contact.index') }}">Liên hệ</a></li>
+                    <li><a href="{{ route('client.products.index') }}">Sản phẩm</a></li>
+                    <li><a href="{{ route('category.index') }}">Danh mục</a></li>
                 </ul>
             </nav>
         </div>
@@ -171,7 +188,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchInput');
         const resultsDiv = document.getElementById('searchResults');
-
         let timeout = null;
 
         searchInput.addEventListener('input', function() {
@@ -188,15 +204,8 @@
                 fetch('{{ route("home.search") }}?q=' + encodeURIComponent(query))
                     .then(res => res.json())
                     .then(data => {
-                        resultsDiv.innerHTML = data.html;
+                        resultsDiv.innerHTML = data.html || '<div class="text-center text-muted p-2">Không tìm thấy sản phẩm</div>';
                         resultsDiv.style.display = 'block';
-
-                        // Bắt click vào sản phẩm
-                        resultsDiv.querySelectorAll('a').forEach(link => {
-                            link.addEventListener('click', () => {
-                                resultsDiv.style.display = 'none';
-                            });
-                        });
                     });
             }, 300);
         });

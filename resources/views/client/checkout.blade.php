@@ -194,6 +194,46 @@
                                 <p class="text-muted mb-3">Giỏ hàng của bạn đang trống.</p>
                             @endif
 
+                            <div class="mb-3">
+                                <label class="form-label">Mã giảm giá</label>
+                                <div class="input-group">
+                                    <input type="text" id="discount_code" class="form-control" placeholder="Nhập mã giảm giá" autocomplete="off" value="{{ $cart['discount_code'] ?? '' }}">
+                                    <button class="btn btn-outline-primary" type="button" id="applyDiscountBtn">Áp dụng</button>
+                                </div>
+
+                                @auth
+                                    @if(isset($myVouchers) && $myVouchers->count())
+                                        <div class="mt-2">
+                                            <label class="form-label small mb-1">Hoặc chọn từ voucher của bạn</label>
+                                            <select id="savedVoucherSelect" class="form-select form-select-sm">
+                                                <option value="">-- Chọn voucher --</option>
+                                                @foreach($myVouchers as $voucher)
+                                                    <option value="{{ $voucher->code }}">
+                                                        {{ $voucher->code }} -
+                                                        @if($voucher->discount_type === 'percent')
+                                                            Giảm {{ $voucher->discount_value }}%
+                                                        @else
+                                                            Giảm {{ number_format($voucher->discount_value, 0, ',', '.') }} đ
+                                                        @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
+                                @endauth
+
+                                @if(!empty($cart['discount_code']))
+                                    <div class="mt-1 small text-success">
+                                        Đang áp dụng mã: <strong>{{ $cart['discount_code'] }}</strong>
+                                    </div>
+                                @endif
+
+                                <div class="mt-1 small">
+                                    <a href="{{ route('client.vouchers.index') }}" class="text-decoration-underline">Xem kho voucher</a>
+                                </div>
+                                <div id="discountMessage" class="mt-2 small"></div>
+                            </div>
+
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Tạm tính</span>
                                 <span>{{ number_format($cart['subtotal'] ?? 0) }} đ</span>
@@ -229,7 +269,7 @@
 </section>
 
 
-@push('scripts')
+@section('scripts')
 <script>
 (function () {
     const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
@@ -246,8 +286,68 @@
 
     paymentRadios.forEach(r => r.addEventListener('change', togglePaymentBlocks));
     togglePaymentBlocks();
+
+    const applyBtn = document.getElementById('applyDiscountBtn');
+    const codeInput = document.getElementById('discount_code');
+    const messageEl = document.getElementById('discountMessage');
+    const savedSelect = document.getElementById('savedVoucherSelect');
+
+    if (savedSelect && codeInput) {
+        savedSelect.addEventListener('change', function () {
+            const code = this.value;
+            if (!code) return;
+            codeInput.value = code;
+            if (applyBtn) {
+                applyBtn.click();
+            }
+        });
+    }
+
+    if (applyBtn && codeInput && messageEl) {
+        applyBtn.addEventListener('click', function () {
+            const code = codeInput.value.trim();
+            if (!code) {
+                messageEl.textContent = 'Vui lòng nhập mã giảm giá.';
+                messageEl.className = 'mt-2 small text-danger';
+                return;
+            }
+
+            applyBtn.disabled = true;
+            messageEl.textContent = 'Đang kiểm tra mã giảm giá...';
+            messageEl.className = 'mt-2 small text-muted';
+
+            fetch('{{ route('api.apply-discount') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ code })
+            })
+                .then(res => res.json().then(data => ({ ok: res.ok, status: res.status, data })))
+                .then(({ ok, data }) => {
+                    if (ok && data.success) {
+                        messageEl.textContent = data.message || 'Áp dụng mã giảm giá thành công!';
+                        messageEl.className = 'mt-2 small text-success';
+                        window.location.reload();
+                    } else {
+                        messageEl.textContent = data.message || 'Mã giảm giá không hợp lệ.';
+                        messageEl.className = 'mt-2 small text-danger';
+                    }
+                })
+                .catch(() => {
+                    messageEl.textContent = 'Có lỗi xảy ra khi áp dụng mã giảm giá.';
+                    messageEl.className = 'mt-2 small text-danger';
+                })
+                .finally(() => {
+                    applyBtn.disabled = false;
+                });
+        });
+    }
 })();
+
 </script>
-@endpush
+@endsection
 
 @endsection

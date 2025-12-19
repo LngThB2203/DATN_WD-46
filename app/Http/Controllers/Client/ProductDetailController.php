@@ -1,9 +1,10 @@
 <?php
+
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use Illuminate\Http\Request;
+use App\Models\Wishlist;
 
 class ProductDetailController extends Controller
 {
@@ -18,58 +19,101 @@ class ProductDetailController extends Controller
             'variants.scent',
             'variants.concentration',
             'variants.warehouseStock',
-            'warehouseProducts.warehouse',
-        ])
-            ->where('slug', $slug)
-            ->firstOrFail();
+            'warehouseProducts',
+        ])->where('slug', $slug)->firstOrFail();
 
-        // Tính tổng tồn kho
-        // Nếu có biến thể: tính tổng từ tất cả biến thể
-        // Nếu không có biến thể: tính từ sản phẩm chính (variant_id = null)
-        if ($product->variants->count() > 0) {
-            $totalStock = $product->variants->sum(function($variant) {
-                return $variant->warehouseStock->sum('quantity');
-            });
+        // Ưu tiên tính tồn kho theo biến thể
+        $variantStock = $product->variants->sum(function ($variant) {
+            return (int) $variant->stock;
+        });
+
+        if ($variantStock > 0) {
+            $totalStock = $variantStock;
         } else {
-            // Sản phẩm không có biến thể, tính từ warehouse_products với variant_id = null
-            $totalStock = $product->warehouseProducts()
-                ->whereNull('variant_id')
-                ->sum('quantity');
+            $totalStock = (int) $product->warehouseProducts->sum('quantity');
         }
 
         // Reviews
         $perPage = (int) request('per_page', 5);
-        $reviews = $product->reviews()->with('user')->where('status', 1)->latest()->paginate($perPage);
+        $reviews = $product->reviews()
+            ->with('user')
+            ->where('status', 1)
+            ->latest()
+            ->paginate($perPage);
 
         // Related
         $relatedProducts = Product::with('galleries')
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
-            ->take(6)->get();
+            ->take(6)
+            ->get();
 
         $galleries = $product->galleries;
 
-        // Lấy dữ liệu biến thể
+        /*
+        |--------------------------------------------------------------------------
+        | FIX PHẦN BIẾN THỂ (CHỈ SỬA ĐOẠN NÀY)
+        |--------------------------------------------------------------------------
+        */
+
         $variantMatrix = $product->variants->map(function ($v) use ($product) {
             return [
                 'id'            => $v->id,
-                'size'          => $v->size->size_name ?? null,
-                'scent'         => $v->scent->scent_name ?? null,
-                'concentration' => $v->concentration->concentration_name ?? null,
-                'price'         => $v->price ?? ($product->price + ($v->price_adjustment ?? 0)),
-                'stock'         => $v->stock,
-                'image'         => $v->image ? asset('storage/' . $v->image) : null,
+                'size'          => $v->size?->name,
+                'scent'         => $v->scent?->name,
+                'concentration' => $v->concentration?->name,
+                'price'         => $v->price
+                    ?? ($product->price + ($v->price_adjustment ?? 0)),
+                'stock'         => (int) $v->stock,
+                'image'         => $v->image
+                    ? asset('storage/' . $v->image)
+                    : null,
             ];
-        });
+        })->values();
 
-        // Lấy unique nhóm biến thể
-        $sizes          = $product->variants->pluck('size.size_name')->unique()->filter();
-        $scents         = $product->variants->pluck('scent.scent_name')->unique()->filter();
-        $concentrations = $product->variants->pluck('concentration.concentration_name')->unique()->filter();
+        $sizes = $product->variants
+            ->pluck('size.name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $scents = $product->variants
+            ->pluck('scent.name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $concentrations = $product->variants
+            ->pluck('concentration.name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | END FIX BIẾN THỂ
+        |--------------------------------------------------------------------------
+        */
+
+        // Wishlist
+        $isFavorite = false;
+        if (auth()->check()) {
+            $isFavorite = Wishlist::where('user_id', auth()->id())
+                ->where('product_id', $product->id)
+                ->exists();
+        }
 
         return view('client.product', compact(
-            'product', 'galleries', 'totalStock', 'reviews', 'relatedProducts',
-            'variantMatrix', 'sizes', 'scents', 'concentrations'
+            'product',
+            'galleries',
+            'totalStock',
+            'reviews',
+            'relatedProducts',
+            'variantMatrix',
+            'sizes',
+            'scents',
+            'concentrations',
+            'isFavorite'
         ));
     }
 }

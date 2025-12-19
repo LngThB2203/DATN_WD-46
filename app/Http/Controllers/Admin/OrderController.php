@@ -1,13 +1,13 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\OrderStatusHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Shipment;
+use App\Models\Warehouse;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -30,7 +30,7 @@ class OrderController extends Controller
         return view('admin.orders.list', compact('orders', 'statuses', 'selectedStatus'));
     }
 
-    // Xem chi tiết đơn hàng
+    // Chi tiết đơn hàng
     public function show($id)
     {
         $order = Order::with([
@@ -41,152 +41,93 @@ class OrderController extends Controller
             'details.product.galleries',
             'details.variant.size',
             'details.variant.scent',
-            'details.variant.concentration'
+            'details.variant.concentration',
+            'warehouse',
+            'user',
         ])->findOrFail($id);
 
-        return view('admin.orders.show', compact('order'));
-    }
+        // Lấy tất cả kho để chọn
+        $warehouses = Warehouse::all();
 
-    // Cập nhật trạng thái đơn hàng
-    public function updateStatus(Request $request, $id)
-    {
-        $rules = [
-            'order_status' => 'required|in:pending,preparing,awaiting_pickup,delivered,cancelled,completed',
-        ];
-        
-        // Nếu chọn hủy đơn hàng, lý do hủy là bắt buộc
-        if ($request->order_status === 'cancelled') {
-            $rules['cancellation_reason'] = 'required|string|max:500';
-        } else {
-            $rules['cancellation_reason'] = 'nullable|string|max:500';
-        }
-        
-        $request->validate($rules, [
-            'cancellation_reason.required' => 'Vui lòng nhập lý do hủy đơn hàng.',
-            'cancellation_reason.max' => 'Lý do hủy không được vượt quá 500 ký tự.',
-        ]);
-
-        $order = Order::with(['details.product', 'details.variant', 'payment'])->findOrFail($id);
-        $oldStatus = $order->order_status;
-        $newStatus = $request->order_status;
-        
-        // Kiểm tra xem có thể cập nhật trạng thái không
-        if (!\App\Helpers\OrderStatusHelper::canUpdateStatus($oldStatus, $newStatus)) {
-            return back()->with('error', 'Không thể chuyển đổi từ trạng thái "' . \App\Helpers\OrderStatusHelper::getStatusName($oldStatus) . '" sang "' . \App\Helpers\OrderStatusHelper::getStatusName($newStatus) . '".');
-        }
-
-        DB::beginTransaction();
-        try {
-            // Nếu hủy đơn hàng, cần hoàn trả tồn kho
-            if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
-                $this->restoreInventory($order);
-                
-                // Cập nhật trạng thái thanh toán nếu đã thanh toán
-                if ($order->payment) {
-                    $order->payment->update([
-                        'status' => 'refunded',
-                        'refunded_at' => now(),
-                    ]);
-                }
-                
-                // Lưu lý do hủy
-                $order->update([
-                    'order_status' => $newStatus,
-                    'cancellation_reason' => $request->cancellation_reason ?? 'Đơn hàng bị hủy bởi quản trị viên',
-                    'cancelled_at' => now(),
-                ]);
-            } else {
-                // Cập nhật trạng thái bình thường
-                $order->update([
-                    'order_status' => $newStatus,
-                ]);
-                
-                // Nếu chuyển từ cancelled sang trạng thái khác, xóa thông tin hủy
-                if ($oldStatus === 'cancelled' && $newStatus !== 'cancelled') {
-                    $order->update([
-                        'cancellation_reason' => null,
-                        'cancelled_at' => null,
-                    ]);
-                }
-            }
-
-            DB::commit();
-            return back()->with('success', 'Cập nhật trạng thái đơn hàng thành công!');
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Error updating order status', [
-                'order_id' => $id,
-                'error' => $e->getMessage(),
-            ]);
-            return back()->with('error', 'Có lỗi xảy ra khi cập nhật trạng thái: ' . $e->getMessage());
-        }
+        return view('admin.orders.show', compact('order', 'warehouses'));
     }
 
     /**
-     * Hoàn trả tồn kho khi hủy đơn hàng
+     * Gán kho – Chỉ 1 lần
      */
-    private function restoreInventory(Order $order)
+    public function updateWarehouse(Request $request, $id)
     {
-        foreach ($order->details as $detail) {
-            if (!$detail->product_id) {
-                continue;
-            }
-
-            // Tìm warehouse product để hoàn trả
-            // Nếu có variant, tìm theo variant_id, không thì tìm theo product_id
-            $warehouseProduct = null;
-            
-            if ($detail->variant_id) {
-                // Tìm warehouse product theo variant
-                $warehouseProduct = \App\Models\WarehouseProduct::where('product_id', $detail->product_id)
-                    ->where('variant_id', $detail->variant_id)
-                    ->first();
-            } else {
-                // Tìm warehouse product không có variant (variant_id = null)
-                $warehouseProduct = \App\Models\WarehouseProduct::where('product_id', $detail->product_id)
-                    ->whereNull('variant_id')
-                    ->first();
-            }
-
-            if ($warehouseProduct) {
-                // Hoàn trả số lượng
-                $warehouseProduct->increment('quantity', $detail->quantity);
-                $warehouseProduct->update(['last_updated' => now()]);
-                
-                Log::info('Restored inventory for cancelled order', [
-                    'order_id' => $order->id,
-                    'product_id' => $detail->product_id,
-                    'variant_id' => $detail->variant_id,
-                    'quantity' => $detail->quantity,
-                ]);
-            } else {
-                Log::warning('Could not find warehouse product to restore', [
-                    'order_id' => $order->id,
-                    'product_id' => $detail->product_id,
-                    'variant_id' => $detail->variant_id,
-                ]);
-            }
-        }
-    }
-
-    // Cập nhật trạng thái giao hàng
-    public function updateShipment(Request $request, $id)
-    {
-        $request->validate([
-            'shipping_status' => 'required'
-        ]);
-
         $order = Order::findOrFail($id);
 
-        Shipment::updateOrCreate(
-            ['order_id' => $id],
-            [
-                'shipping_status' => $request->shipping_status,
-                'tracking_number' => $request->tracking_number,
-                'carrier' => $request->carrier,
-            ]
-        );
+        if ($order->warehouse_id) {
+            return back()->withErrors('Đơn hàng đã được gán kho, không thể thay đổi');
+        }
 
-        return back()->with('success', 'Cập nhật trạng thái giao hàng thành công!');
+        $request->validate([
+            'warehouse_id' => 'required|exists:warehouse,id',
+        ]);
+
+        $order->update([
+            'warehouse_id' => $request->warehouse_id,
+        ]);
+
+        return back()->with('success', 'Đã chọn kho xuất hàng');
+    }
+
+    /**
+     * Cập nhật trạng thái
+     */
+    public function updateStatus(Request $request, $id, StockService $stockService)
+    {
+        $order = Order::with('details')->findOrFail($id);
+
+        // Lấy trạng thái mới
+        $newStatus = $request->input('order_status');
+
+        // Không cho null
+        if (! $newStatus) {
+            return back()->withErrors('Trạng thái đơn hàng không hợp lệ');
+        }
+
+        // Bắt buộc chọn kho trước khi PREPARING
+        if (
+            $newStatus === OrderStatusHelper::PREPARING &&
+            ! $order->warehouse_id
+        ) {
+            return back()->withErrors('Vui lòng chọn kho trước khi chuẩn bị hàng');
+        }
+
+        // Kiểm tra trạng thái có thể cập nhật
+        if (! OrderStatusHelper::canUpdateStatus($order->order_status, $newStatus)) {
+            return back()->withErrors('Không thể chuyển trạng thái này');
+        }
+
+        DB::transaction(function () use ($order, $newStatus, $stockService, $request) {
+            // Trừ kho khi chuyển từ PENDING → PREPARING
+            if (
+                $order->order_status === OrderStatusHelper::PENDING &&
+                $newStatus === OrderStatusHelper::PREPARING
+            ) {
+                try {
+                    $stockService->exportByOrder($order);
+                } catch (\Exception $e) {
+                    return back()->withErrors($e->getMessage());
+                }
+            }
+            // Hủy → hoàn kho
+            if ($newStatus === OrderStatusHelper::CANCELLED) {
+                $stockService->cancelOrder($order);
+
+                $order->update([
+                    'cancellation_reason' => $request->input('cancellation_reason'),
+                    'cancelled_at'        => now(),
+                ]);
+            }
+            // Cập nhật trạng thái
+            $order->update([
+                'order_status' => $newStatus,
+            ]);
+        });
+        return back()->with('success', 'Cập nhật trạng thái thành công');
     }
 }
