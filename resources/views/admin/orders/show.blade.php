@@ -26,6 +26,7 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light-subtle">
                             <tr>
+                                <th style="width: 80px;">Hình ảnh</th>
                                 <th>Sản phẩm</th>
                                 <th>Biến thể</th>
                                 <th>Giá</th>
@@ -35,8 +36,19 @@
                         </thead>
                         <tbody>
                             @forelse ($order->details as $item)
+                                @php
+                                    $product = $item->product;
+                                    $primaryImage = $product ? ($product->galleries->where('is_primary', true)->first() ?? $product->galleries->first()) : null;
+                                    $imageUrl = $primaryImage ? (file_exists(storage_path('app/public/' . $primaryImage->image_path)) ? asset('storage/' . $primaryImage->image_path) : asset('assets/client/img/product/product-1.webp')) : asset('assets/client/img/product/product-1.webp');
+                                @endphp
                                 <tr>
-                                    <td>{{ $item->product->name }}</td>
+                                    <td>
+                                        <img src="{{ $imageUrl }}" alt="{{ $product->name ?? 'N/A' }}" 
+                                             class="rounded border" 
+                                             style="width: 60px; height: 60px; object-fit: cover;"
+                                             onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}'">
+                                    </td>
+                                    <td>{{ $product->name ?? 'N/A' }}</td>
                                     <td>
                                         @if($item->variant)
                                             Size: {{ $item->variant->size->size_name ?? '' }} <br>
@@ -46,17 +58,72 @@
                                             —
                                         @endif
                                     </td>
-                                    <td>{{ number_format($item->price) }} đ</td>
+                                    <td>{{ number_format($item->price, 0, ',', '.') }} đ</td>
                                     <td>{{ $item->quantity }}</td>
-                                    <td>{{ number_format($item->price * $item->quantity) }} đ</td>
+                                    <td><strong>{{ number_format($item->subtotal ?? ($item->price * $item->quantity), 0, ',', '.') }} đ</strong></td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">Không có sản phẩm nào.</td>
+                                    <td colspan="6" class="text-center text-muted">Không có sản phẩm nào.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- Tổng tiền chi tiết --}}
+        <div class="card mb-4">
+            <div class="card-header">Tổng tiền đơn hàng</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 offset-md-6">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="text-end"><strong>Tạm tính:</strong></td>
+                                    <td class="text-end">{{ number_format($order->subtotal ?? $order->details->sum(function($item) { return $item->subtotal ?? ($item->price * $item->quantity); }), 0, ',', '.') }} đ</td>
+                                </tr>
+                                @if($order->shipping_cost > 0)
+                                <tr>
+                                    <td class="text-end"><strong>Phí vận chuyển:</strong></td>
+                                    <td class="text-end">{{ number_format($order->shipping_cost, 0, ',', '.') }} đ</td>
+                                </tr>
+                                @endif
+                                @if($order->discount)
+                                <tr>
+                                    <td class="text-end">
+                                        <strong>Mã giảm giá 
+                                            <span class="badge bg-success ms-2">{{ $order->discount->code }}</span>:
+                                        </strong>
+                                    </td>
+                                    <td class="text-end text-danger">
+                                        - {{ number_format($order->discount_total ?? 0, 0, ',', '.') }} đ
+                                        @if($order->discount->discount_type === 'percent')
+                                            <br><small class="text-muted">({{ $order->discount->discount_value }}% giảm)</small>
+                                        @else
+                                            <br><small class="text-muted">(Giảm {{ number_format($order->discount->discount_value, 0, ',', '.') }} đ)</small>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @elseif($order->discount_total > 0)
+                                <tr>
+                                    <td class="text-end"><strong>Giảm giá:</strong></td>
+                                    <td class="text-end text-danger">- {{ number_format($order->discount_total, 0, ',', '.') }} đ</td>
+                                </tr>
+                                @endif
+                                <tr class="border-top">
+                                    <td class="text-end"><strong class="fs-5">Tổng cộng:</strong></td>
+                                    <td class="text-end">
+                                        <strong class="fs-5 text-primary">
+                                            {{ number_format($order->grand_total ?? $order->total_price, 0, ',', '.') }} đ
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

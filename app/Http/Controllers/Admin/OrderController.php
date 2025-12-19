@@ -12,11 +12,22 @@ use Illuminate\Support\Facades\Log;
 class OrderController extends Controller
 {
     // Danh sách đơn hàng
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with('user')->orderBy('id', 'DESC')->paginate(15);
+        $query = Order::with(['user', 'details.product.galleries']);
 
-        return view('admin.orders.list', compact('orders'));
+        // Filter theo trạng thái
+        if ($request->filled('status')) {
+            $query->where('order_status', $request->status);
+        }
+
+        $orders = $query->orderBy('id', 'DESC')->paginate(15)->withQueryString();
+
+        // Lấy danh sách trạng thái để hiển thị trong filter
+        $statuses = \App\Helpers\OrderStatusHelper::getStatuses();
+        $selectedStatus = $request->status ?? null;
+
+        return view('admin.orders.list', compact('orders', 'statuses', 'selectedStatus'));
     }
 
     // Xem chi tiết đơn hàng
@@ -27,7 +38,7 @@ class OrderController extends Controller
             'discount',
             'payment',
             'shipment',
-            'details.product',
+            'details.product.galleries',
             'details.variant.size',
             'details.variant.scent',
             'details.variant.concentration'
