@@ -1,3 +1,4 @@
+
 @extends('admin.layouts.admin')
 
 @section('title', 'Danh sách Banner')

@@ -17,7 +17,6 @@ protected $casts = [
     'end_date' => 'date',
 ];
 
-
     // Mối quan hệ tới người tạo (user)
     public function creator()
     {

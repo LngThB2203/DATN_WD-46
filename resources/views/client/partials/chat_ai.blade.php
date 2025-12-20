@@ -1,3 +1,4 @@
+
 <div id="chat-widget">
     <div id="chat-toggle">✨</div>
 

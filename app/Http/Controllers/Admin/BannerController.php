@@ -13,18 +13,8 @@ class BannerController extends Controller
     // Hiển thị danh sách banner
     public function index()
     {
-        $banners = Banner::latest()->paginate(10);
-
-    $today = now()->toDateString();
-    $expiredBanners = Banner::whereNotNull('end_date')
-                            ->where('end_date', '<', $today)
-                            ->get();
-
-    $alertMessage = null;
-    if ($expiredBanners->count() > 0) {
-        $alertMessage = "Có " . $expiredBanners->count() . " banner đã hết thời gian sử dụng!";
-    }
-        return view('admin.banner.index', compact('banners', 'alertMessage'));
+        $banners = Banner::latest()->paginate(10); // Pagination
+        return view('admin.banner.index', compact('banners'));
     }
 
     // Form thêm mới
@@ -35,28 +25,26 @@ class BannerController extends Controller
 
     // Lưu banner mới
     public function store(Request $request)
-{
-    $request->validate([
-        'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
-        'link' => 'nullable|url|max:255',
-        'start_date' => 'nullable|date',
-        'end_date' => 'nullable|date|after_or_equal:start_date',
-    ]);
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'link' => 'nullable|url|max:255',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
 
-    $path = $request->file('image')->store('banners', 'public');
+        $path = $request->file('image')->store('uploads/banners', 'public');
 
-    Banner::create([
-        'image' => $path, 
-        'link' => $request->link,
-        'start_date' => $request->start_date,
-        'end_date' => $request->end_date,
-        'created_by' => Auth::id(),
-    ]);
+        Banner::create([
+            'image' => $path,
+            'link' => $request->link,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'created_by' => Auth::id(),
+        ]);
 
-    return redirect()->route('banner.index')->with('success', 'Thêm banner thành công!');
-}
-
-
+        return redirect()->route('banner.index')->with('success', 'Thêm banner thành công!');
+    }
 
     // Form sửa banner
     public function edit(Banner $banner)
@@ -66,29 +54,28 @@ class BannerController extends Controller
 
     // Cập nhật banner
     public function update(Request $request, Banner $banner)
-{
-    $request->validate([
-        'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        'link' => 'nullable|url|max:255',
-        'start_date' => 'nullable|date',
-        'end_date' => 'nullable|date|after_or_equal:start_date',
-    ]);
+    {
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'link' => 'nullable|url|max:255',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
 
-    $data = $request->only(['link', 'start_date', 'end_date']);
+        $data = $request->only(['link', 'start_date', 'end_date']);
 
-    if ($request->hasFile('image')) {
-    if ($banner->image && Storage::disk('public')->exists($banner->image)) {
-        Storage::disk('public')->delete($banner->image);
+        if ($request->hasFile('image')) {
+            // Xóa ảnh cũ nếu tồn tại
+            if ($banner->image && Storage::disk('public')->exists($banner->image)) {
+                Storage::disk('public')->delete($banner->image);
+            }
+            $data['image'] = $request->file('image')->store('uploads/banners', 'public');
+        }
+
+        $banner->update($data);
+
+        return redirect()->route('banner.index')->with('success', 'Cập nhật banner thành công!');
     }
-
-    $data['image'] = $request->file('image')->store('banners', 'public');
-}
-
-    $banner->update($data);
-
-    return redirect()->route('banner.index')->with('success', 'Cập nhật banner thành công!');
-}
-
 
     public function toggleStatus(Banner $banner)
 {

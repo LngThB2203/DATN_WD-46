@@ -41,7 +41,6 @@
 
     </main>
         @include('client.partials.chat_ai')
-
         @include('client.partials.footer')
 
     <script src="{{asset ('assets/client/vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>

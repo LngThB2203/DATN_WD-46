@@ -12,17 +12,33 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     // Danh sách đơn hàng
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::latest()->paginate(20);
-        return view('admin.orders.list', compact('orders'));
+        $query = Order::with(['user', 'details.product.galleries']);
+
+        // Filter theo trạng thái
+        if ($request->filled('status')) {
+            $query->where('order_status', $request->status);
+        }
+
+        $orders = $query->orderBy('id', 'DESC')->paginate(15)->withQueryString();
+
+        // Lấy danh sách trạng thái để hiển thị trong filter
+        $statuses = \App\Helpers\OrderStatusHelper::getStatuses();
+        $selectedStatus = $request->status ?? null;
+
+        return view('admin.orders.list', compact('orders', 'statuses', 'selectedStatus'));
     }
 
     // Chi tiết đơn hàng
     public function show($id)
     {
         $order = Order::with([
-            'details.product',
+            'user',
+            'discount',
+            'payment',
+            'shipment',
+            'details.product.galleries',
             'details.variant.size',
             'details.variant.scent',
             'details.variant.concentration',

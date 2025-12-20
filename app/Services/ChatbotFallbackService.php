@@ -401,29 +401,61 @@ if (
      * Xử lý câu hỏi về mùi hương
      */
     private function handleScentQuestion(string $question): string
-    {
-        $scents = DB::table('variants_scents')
-            ->join('product_variants', 'variants_scents.id', '=', 'product_variants.scent_id')
-            ->join('products', 'product_variants.product_id', '=', 'products.id')
-            ->select('variants_scents.scent_name', 'products.id', 'products.name', 'products.brand')
-            ->distinct()
-            ->limit(10)
-            ->get();
-        
-        $scentList = [];
-        foreach ($scents as $scent) {
-            $scentName = mb_strtolower($scent->scent_name, 'UTF-8');
-            if (strpos($question, $scentName) !== false) {
-                $scentList[] = "**{$scent->name}** ({$scent->brand}) - Mùi {$scent->scent_name}. /products/{$scent->id}";
-            }
+{
+    // Bảng ánh xạ tiếng Việt → DB
+    $translation = [
+        'hoa cỏ' => 'Floral',
+        'gỗ' => 'Woody',
+        'trái cây' => 'Citrus',
+        'hương phương đông' => 'Oriental',
+        'biển' => 'Aquatic',
+        'Fougere' => 'Fougere'
+    ];
+
+    $questionLower = mb_strtolower(trim($question), 'UTF-8');
+
+    // Tìm mùi phù hợp
+    $matchedScents = [];
+    foreach ($translation as $vi => $en) {
+        if (strpos($questionLower, mb_strtolower($vi, 'UTF-8')) !== false) {
+            $matchedScents[] = $en;
         }
-        
-        if (!empty($scentList)) {
-            return "Các sản phẩm có mùi hương bạn tìm:\n" . implode("\n", array_slice($scentList, 0, 5));
-        }
-        
-        return "Shop có nhiều loại mùi hương đa dạng như: hoa cỏ, gỗ, hương trái cây, hương biển... Bạn thích mùi hương nào? Tôi có thể gợi ý sản phẩm phù hợp!";
     }
+
+    try {
+        if (!empty($matchedScents)) {
+            $products = DB::table('variants_scents')
+                ->join('product_variants', 'variants_scents.id', '=', 'product_variants.scent_id')
+                ->join('products', 'product_variants.product_id', '=', 'products.id')
+                ->whereIn(DB::raw('LOWER(TRIM(variants_scents.name))'), array_map('strtolower', $matchedScents))
+                ->select('products.id', 'products.slug', 'products.name', 'products.price')
+                ->distinct()
+                ->limit(5)
+                ->get();
+
+            if ($products->isNotEmpty()) {
+                $lines = [];
+                foreach ($products as $product) {
+                    $lines[] = "• **{$product->name}** – " 
+                             . ($product->price ? number_format($product->price) . "đ" : "Liên hệ") 
+                             . "\n\"/products/" . ($product->slug ?? $product->id) . "\"";
+                }
+                return "Các sản phẩm có mùi hương bạn tìm:\n\n" . implode("\n", $lines);
+            }
+
+            return "Hiện chưa có sản phẩm nào có mùi hương bạn tìm. Bạn có thể thử các mùi khác!";
+        }
+
+        // Nếu không match, lấy tất cả mùi hương trong DB
+        $allScents = DB::table('variants_scents')->pluck('name')->toArray();
+        $allScentsText = implode(', ', $allScents);
+
+        return "Shop có nhiều loại mùi hương đa dạng như: {$allScentsText}. Bạn thích mùi hương nào? Tôi có thể gợi ý sản phẩm phù hợp!";
+    } catch (\Exception $e) {
+        return "Hệ thống đang bận, bạn vui lòng thử lại sau nhé!";
+    }
+}
+
     
     /**
      * Xử lý câu hỏi về thương hiệu
@@ -646,4 +678,3 @@ if (
         return $responses[array_rand($responses)];
     }
 }
-

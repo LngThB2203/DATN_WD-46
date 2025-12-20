@@ -12,7 +12,6 @@
     <link href="{{ asset('assets/client/vendor/drift-zoom/drift-basic.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/client/css/main.css') }}" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
 </head>
 <body class="index-page">
     @include('client.partials.header')

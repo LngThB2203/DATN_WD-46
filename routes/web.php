@@ -152,7 +152,6 @@ Route::get('/return-policy', fn() => view('client.return-policy'))->name('return
 // Route::get('/search', fn() => view('client.search-results'))->name('search.results');
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
-
 // Chat AI
 Route::get('/chat/messages', [ChatbotController::class, 'fetchMessages']);
 Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);

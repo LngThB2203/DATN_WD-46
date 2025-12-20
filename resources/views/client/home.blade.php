@@ -17,21 +17,22 @@
                 <div class="col-lg-6">
                     @if(isset($heroBanners) && $heroBanners->count() > 0)
                     @if($heroBanners->count() == 1)
-                    @foreach($products as $product)
-                        <a href="{{ route('product.show', $product->slug) }}" target="_blank" class="d-block">
-                            <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" class="img-fluid rounded" alt="Hero Banner">
+                    @php $product = $products->first(); @endphp
+                    @if($product)
+                        <a href="{{ route('product.show', $product->slug) }}">
+                            <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" 
+                                class="d-block w-100 rounded" 
+                                alt="Hero Banner">
                         </a>
-                        @endforeach
-                    @else
-                        <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+                    @endif
+                        @else
+                            <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
                             <div class="carousel-inner">
                                 @foreach($heroBanners as $key => $banner)
                                     <div class="carousel-item @if($key == 0) active @endif">
-                                        @foreach($products as $product)
-                                        <a href="{{  route('product.show', $product->slug)}}" target="_blank" class="d-block">
-                                            <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
-                                        </a>
-                                        @endforeach
+                                            <a href="{{ isset($products) && $products->count() > 0 ? route('product.show', $products->first()->slug) : '#' }}">
+                                                <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
+                                            </a>
                                     </div>
                                 @endforeach
                             </div>
@@ -53,6 +54,7 @@
     </div>
 </section>
 
+    <!-- Featured Products -->
 <section class="py-5 border-top">
     <div class="container-fluid container-xl">
         <h3 class="fw-semibold mb-4">Sản phẩm nổi bật</h3>
@@ -223,13 +225,13 @@ document.addEventListener('DOMContentLoaded', function(){
 @endsection
 <style>
       #heroCarousel .carousel-item {
-    height: 400px; /* chiều cao cố định cho carousel */
+    height: 400px; 
     overflow: hidden;
 }
 
 #heroCarousel .carousel-item img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* ảnh sẽ tự dãn và cắt để lấp đầy khung */
+    object-fit: cover;
 }
 </style>

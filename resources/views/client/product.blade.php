@@ -8,11 +8,11 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
                 @if($product->category)
-                    <li class="breadcrumb-item">
-                        <a href="{{ route('category.show', $product->category->slug ?? $product->category->id) }}">
-                            {{ $product->category->category_name }}
-                        </a>
-                    </li>
+                <li class="breadcrumb-item">
+                    <a href="{{ route('category.show', $product->category->slug ?? $product->category->id) }}">
+                        {{ $product->category->category_name }}
+                    </a>
+                </li>
                 @endif
                 <li class="breadcrumb-item active" aria-current="page">{{ $product->name ?? 'Sản phẩm' }}</li>
             </ol>
@@ -27,38 +27,35 @@
             <!-- ẢNH SẢN PHẨM -->
             <div class="col-lg-6">
                 @php
-                    $primary = $galleries->where('is_primary', true)->first() ?? $galleries->first();
+                $primary = $galleries->where('is_primary', true)->first() ?? $galleries->first();
                 @endphp
 
                 @if($primary)
-                    <a href="{{ asset('storage/' . $primary->image_path) }}" class="glightbox" data-gallery="product">
-                        <img id="mainImage" src="{{ asset('storage/' . $primary->image_path) }}"
-                             class="img-fluid rounded w-100"
-                             alt="{{ $primary->alt_text ?? $product->name }}">
-                    </a>
+                <a href="{{ asset('storage/' . $primary->image_path) }}" class="glightbox" data-gallery="product">
+                    <img id="mainImage" src="{{ asset('storage/' . $primary->image_path) }}"
+                        class="img-fluid rounded w-100" alt="{{ $primary->alt_text ?? $product->name }}">
+                </a>
                 @elseif($product->image)
-                    <a href="{{ asset('storage/' . $product->image) }}" class="glightbox" data-gallery="product">
-                        <img id="mainImage" src="{{ asset('storage/' . $product->image) }}" class="img-fluid rounded w-100"
-                             alt="{{ $product->name }}">
-                    </a>
+                <a href="{{ asset('storage/' . $product->image) }}" class="glightbox" data-gallery="product">
+                    <img id="mainImage" src="{{ asset('storage/' . $product->image) }}" class="img-fluid rounded w-100"
+                        alt="{{ $product->name }}">
+                </a>
                 @else
-                    <img id="mainImage" src="{{ asset('assets/client/img/product/product-1.webp') }}"
-                         class="img-fluid rounded w-100" alt="{{ $product->name }}">
+                <img id="mainImage" src="{{ asset('assets/client/img/product/product-1.webp') }}"
+                    class="img-fluid rounded w-100" alt="{{ $product->name }}">
                 @endif
 
                 @if($galleries->count())
-                    <div class="d-flex gap-2 mt-3 flex-wrap">
-                        @foreach($galleries as $item)
-                            <a href="{{ asset('storage/' . $item->image_path) }}" class="glightbox"
-                               data-gallery="product"
-                               data-large="{{ asset('storage/' . $item->image_path) }}">
-                                <img src="{{ asset('storage/' . $item->image_path) }}"
-                                     alt="{{ $item->alt_text ?? $product->name }}"
-                                     class="rounded border"
-                                     style="width: 84px; height: 84px; object-fit: cover;">
-                            </a>
-                        @endforeach
-                    </div>
+                <div class="d-flex gap-2 mt-3 flex-wrap">
+                    @foreach($galleries as $item)
+                    <a href="{{ asset('storage/' . $item->image_path) }}" class="glightbox" data-gallery="product"
+                        data-large="{{ asset('storage/' . $item->image_path) }}">
+                        <img src="{{ asset('storage/' . $item->image_path) }}"
+                            alt="{{ $item->alt_text ?? $product->name }}" class="rounded border"
+                            style="width: 84px; height: 84px; object-fit: cover;">
+                    </a>
+                    @endforeach
+                </div>
                 @endif
             </div>
 
@@ -83,33 +80,57 @@
 
                 <!-- CHỌN BIẾN THỂ -->
                 @if($product->variants->count() > 0)
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold mb-2">Chọn biến thể:</label>
-                        <div id="variantOptions" class="d-flex flex-wrap gap-2">
-                            @foreach($product->variants as $variant)
-                                @php
-                                    $variantLabelParts = [];
-                                    if ($variant->size) { $variantLabelParts[] = 'Kích thước: ' . $variant->size->size_name; }
-                                    if ($variant->scent) { $variantLabelParts[] = 'Mùi: ' . $variant->scent->scent_name; }
-                                    if ($variant->concentration) { $variantLabelParts[] = 'Nồng độ: ' . $variant->concentration->concentration_name; }
-                                    $variantLabel = implode(' | ', $variantLabelParts);
-                                    $variantPrice = $variant->price ?? ($product->price + ($variant->price_adjustment ?? 0));
-                                @endphp
-                                <button type="button"
-                                        class="btn btn-outline-secondary btn-sm variant-option"
-                                        data-id="{{ $variant->id }}"
-                                        data-stock="{{ $variant->stock }}"
-                                        data-price="{{ $variantPrice }}"
-                                        data-size="{{ $variant->size->size_name ?? '' }}"
-                                        data-scent="{{ $variant->scent->scent_name ?? '' }}"
-                                        data-concentration="{{ $variant->concentration->concentration_name ?? '' }}">
-                                    {{ $variantLabel ?: ('Biến thể #' . $variant->id) }}
-                                </button>
+                <div class="mb-4">
+
+                    {{-- SIZE --}}
+                    @if($sizes->count())
+                    <div class="mb-3">
+                        <label class="fw-semibold mb-2 d-block">Kích thước</label>
+                        <div class="d-flex flex-wrap gap-2 variant-group" data-type="size">
+                            @foreach($sizes as $size)
+                            <button type="button" class="btn btn-outline-secondary btn-sm variant-option"
+                                data-value="{{ $size }}">
+                                {{ $size }}
+                            </button>
                             @endforeach
                         </div>
-                        <div id="variantInfo" class="mt-2 small text-muted"></div>
                     </div>
+                    @endif
+
+                    {{-- SCENT --}}
+                    @if($scents->count())
+                    <div class="mb-3">
+                        <label class="fw-semibold mb-2 d-block">Mùi hương</label>
+                        <div class="d-flex flex-wrap gap-2 variant-group" data-type="scent">
+                            @foreach($scents as $scent)
+                            <button type="button" class="btn btn-outline-secondary btn-sm variant-option"
+                                data-value="{{ $scent }}">
+                                {{ $scent }}
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- CONCENTRATION --}}
+                    @if($concentrations->count())
+                    <div class="mb-3">
+                        <label class="fw-semibold mb-2 d-block">Nồng độ</label>
+                        <div class="d-flex flex-wrap gap-2 variant-group" data-type="concentration">
+                            @foreach($concentrations as $c)
+                            <button type="button" class="btn btn-outline-secondary btn-sm variant-option"
+                                data-value="{{ $c }}">
+                                {{ $c }}
+                            </button>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    <div id="variantInfo" class="small text-muted"></div>
+                </div>
                 @endif
+
 
                 <div class="d-flex align-items-center gap-2">
                     <!-- FORM THÊM GIỎ HÀNG -->
@@ -121,7 +142,8 @@
                         <div class="d-flex align-items-center gap-3 mb-3">
                             <div class="input-group" style="width: 140px;">
                                 <button class="btn btn-outline-secondary quantity-decrease" type="button">-</button>
-                                <input type="number" name="quantity" id="productQuantity" value="1" min="1" class="form-control text-center">
+                                <input type="number" name="quantity" id="productQuantity" value="1" min="1"
+                                    class="form-control text-center">
                                 <button class="btn btn-outline-secondary quantity-increase" type="button">+</button>
                             </div>
                             <div class="text-muted small" id="availableStockInfo">
@@ -129,22 +151,22 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $totalStock <= 0 ? 'disabled' : '' }}>
+                        <button type="submit" class="btn btn-primary" id="addToCartBtn" {{ $totalStock <=0 ? 'disabled'
+                            : '' }}>
                             <i class="bi bi-cart-plus"></i> {{ $totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
                         </button>
                     </form>
 
                     @auth
-                        <form action="{{ route('wishlist.toggle', $product) }}" method="POST" class="mb-0">
-                            @csrf
-                            <button type="submit" class="btn {{ $isFavorite ? 'btn-danger' : 'btn-outline-danger' }}">
-                                <i class="bi {{ $isFavorite ? 'bi-heart-fill' : 'bi-heart' }}"></i>
-                                {{ $isFavorite ? 'Bỏ yêu thích' : 'Yêu thích' }}
-                            </button>
-                        </form>
+                    <form action="{{ route('wishlist.toggle', $product) }}" method="POST" class="mb-0">
+                        @csrf
+                        <button type="submit" class="btn {{ $isFavorite ? 'btn-danger' : 'btn-outline-danger' }}">
+                            <i class="bi {{ $isFavorite ? 'bi-heart-fill' : 'bi-heart' }}"></i>
+                            {{ $isFavorite ? 'Bỏ yêu thích' : 'Yêu thích' }}
+                        </button>
+                    </form>
                     @endauth
                 </div>
-
             </div>
         </div>
 
@@ -152,6 +174,7 @@
             <h4 class="mb-3">Mô tả chi tiết</h4>
             <p>{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
         </div>
+
         <div class="mt-5">
             <h4 class="mb-3">Đánh giá</h4>
             <div class="mb-3">
@@ -160,87 +183,92 @@
                 <span class="text-muted">({{ $product->reviews_count }} lượt)</span>
             </div>
             @if(isset($reviews) && $reviews->count())
-                <div id="reviews-list" class="list-group mb-3">
-                    @include('client.partials.reviews', ['reviews' => $reviews])
-                </div>
-                <div class="d-grid mb-4">
-                    @php
-                        $perPage = request('per_page', 5);
-                        $nextPage = $reviews->currentPage() + 1;
-                        $hasMore = $reviews->hasMorePages();
-                    @endphp
-                    <button
-                        id="load-more-reviews"
-                        class="btn btn-outline-secondary"
-                        data-next-url="{{ $hasMore ? route('product.reviews.index', $product->slug) . '?page=' . $nextPage . '&per_page=' . $perPage : '' }}"
-                        @if(!$hasMore) style="display:none" @endif
-                    >Xem thêm</button>
-                </div>
+            <div id="reviews-list" class="list-group mb-3">
+                @include('client.partials.reviews', ['reviews' => $reviews])
+            </div>
+            <div class="d-grid mb-4">
+                @php
+                $perPage = request('per_page', 5);
+                $nextPage = $reviews->currentPage() + 1;
+                $hasMore = $reviews->hasMorePages();
+                @endphp
+                <button id="load-more-reviews" class="btn btn-outline-secondary"
+                    data-next-url="{{ $hasMore ? route('product.reviews.index', $product->slug) . '?page=' . $nextPage . '&per_page=' . $perPage : '' }}"
+                    @if(!$hasMore) style="display:none" @endif>Xem thêm</button>
+            </div>
             @else
-                <p class="text-muted">Chưa có đánh giá.</p>
+            <p class="text-muted">Chưa có đánh giá.</p>
             @endif
 
             @auth
-                <form action="{{ route('product.review.store', $product->slug ?? $product->id) }}" method="POST" class="border p-3 rounded">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="rating" class="form-label">Chấm điểm (1-5)</label>
-                        <select id="rating" name="rating" class="form-select" required>
-                            <option value="">Chọn</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="comment" class="form-label">Nhận xét</label>
-                        <textarea id="comment" name="comment" class="form-control" rows="3" placeholder="Viết nhận xét (tuỳ chọn)"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
-                </form>
+            <form action="{{ route('product.review.store', $product->slug ?? $product->id) }}" method="POST"
+                class="border p-3 rounded">
+                @csrf
+                <div class="mb-3">
+                    <label for="rating" class="form-label">Chấm điểm (1-5)</label>
+                    <select id="rating" name="rating" class="form-select" required>
+                        <option value="">Chọn</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="comment" class="form-label">Nhận xét</label>
+                    <textarea id="comment" name="comment" class="form-control" rows="3"
+                        placeholder="Viết nhận xét (tuỳ chọn)"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+            </form>
             @else
-                <p class="mt-3">Vui lòng <a href="{{ route('login') }}">đăng nhập</a> để đánh giá.</p>
+            <p class="mt-3">Vui lòng <a href="{{ route('login') }}">đăng nhập</a> để đánh giá.</p>
             @endauth
         </div>
 
         @if(isset($relatedProducts) && $relatedProducts->count())
-            <div class="mt-5">
-                <h4 class="mb-3">Sản phẩm tương tự</h4>
-                <div class="row g-3">
-                    @foreach($relatedProducts as $item)
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <a href="{{ route('product.show', $item->slug ?? $item->id) }}" class="text-decoration-none">
-                                <div class="card h-100">
-                                    @php
-                                        $img = $item->primaryImage()
-                                            ? asset('storage/'.$item->primaryImage()->image_path)
-                                            : ($item->image
-                                                ? asset('storage/'.$item->image)
-                                                : asset('assets/client/img/product/product-1.webp'));
-                                    @endphp
-                                    <img src="{{ $img }}" class="card-img-top" alt="{{ $item->name }}">
-                                    <div class="card-body">
-                                        <div class="fw-semibold text-dark">{{ $item->name }}</div>
-                                        <div class="small text-primary">{{ $item->formatted_sale_price ?? $item->formatted_price }}</div>
-                                    </div>
-                                </div>
-                            </a>
+        <div class="mt-5">
+            <h4 class="mb-3">Sản phẩm tương tự</h4>
+            <div class="row g-3">
+                @foreach($relatedProducts as $item)
+                <div class="col-6 col-md-4 col-lg-3">
+                    <a href="{{ route('product.show', $item->slug ?? $item->id) }}" class="text-decoration-none">
+                        <div class="card h-100">
+                            @php
+                            $img = $item->primaryImage()
+                            ? asset('storage/'.$item->primaryImage()->image_path)
+                            : ($item->image
+                            ? asset('storage/'.$item->image)
+                            : asset('assets/client/img/product/product-1.webp'));
+                            @endphp
+                            <img src="{{ $img }}" class="card-img-top" alt="{{ $item->name }}">
+                            <div class="card-body">
+                                <div class="fw-semibold text-dark">{{ $item->name }}</div>
+                                <div class="small text-primary">{{ $item->formatted_sale_price ?? $item->formatted_price
+                                    }}</div>
+                            </div>
                         </div>
-                    @endforeach
+                    </a>
                 </div>
+                @endforeach
             </div>
+        </div>
         @endif
     </div>
 </section>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const defaultTotalStock = @json($totalStock);
-    const defaultAvailableText = @json($totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng');
+document.addEventListener('DOMContentLoaded', function () {
 
-    const variantButtons = document.querySelectorAll('.variant-option');
+    const variantMatrix = @json($variantMatrix);
+    const defaultTotalStock = @json($totalStock);
+    const defaultAvailableText = @json(
+        $totalStock > 0
+            ? 'Có sẵn: {{ $totalStock }} sản phẩm'
+            : 'Không còn hàng'
+    );
+
     const selectedVariantId = document.getElementById('selectedVariantId');
     const variantInfo = document.getElementById('variantInfo');
     const productPriceSpan = document.querySelector('.product-price');
@@ -248,150 +276,95 @@ document.addEventListener('DOMContentLoaded', function() {
     const quantityInput = document.getElementById('productQuantity');
     const availableStockInfo = document.getElementById('availableStockInfo');
 
-    let activeVariantButton = null;
+    const selected = {
+        size: null,
+        scent: null,
+        concentration: null
+    };
 
-    if (variantButtons && variantButtons.length > 0) {
-        variantButtons.forEach(function(button) {
-            button.addEventListener('click', function() {
-                // Nếu click lại nút đang active thì bỏ chọn
-                if (activeVariantButton === this) {
-                    this.classList.remove('btn-primary', 'text-white');
-                    this.classList.add('btn-outline-secondary');
-                    activeVariantButton = null;
+    function resetUI() {
+        if (selectedVariantId) selectedVariantId.value = '';
+        if (variantInfo) variantInfo.textContent = '';
+        if (productPriceSpan) {
+            productPriceSpan.textContent =
+                '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
+        }
+        if (addToCartBtn) addToCartBtn.disabled = defaultTotalStock <= 0;
+        if (quantityInput) quantityInput.removeAttribute('max');
+        if (availableStockInfo) availableStockInfo.textContent = defaultAvailableText;
+    }
 
-                    selectedVariantId.value = '';
-                    if (variantInfo) {
-                        variantInfo.textContent = '';
-                    }
-                    if (productPriceSpan) {
-                        productPriceSpan.textContent = '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
-                    }
-                    if (addToCartBtn) {
-                        addToCartBtn.disabled = defaultTotalStock <= 0;
-                    }
-                    if (quantityInput) {
-                        quantityInput.removeAttribute('max');
-                    }
-                    if (availableStockInfo) {
-                        availableStockInfo.textContent = defaultAvailableText;
-                    }
+    function findMatchedVariant() {
+        return variantMatrix.find(v =>
+            (!selected.size || v.size === selected.size) &&
+            (!selected.scent || v.scent === selected.scent) &&
+            (!selected.concentration || v.concentration === selected.concentration)
+        );
+    }
+
+    document.querySelectorAll('.variant-group').forEach(group => {
+        const type = group.dataset.type;
+
+        group.querySelectorAll('.variant-option').forEach(btn => {
+            btn.addEventListener('click', function () {
+                // clear active trong group
+                group.querySelectorAll('.variant-option').forEach(b => {
+                    b.classList.remove('btn-primary', 'text-white');
+                    b.classList.add('btn-outline-secondary');
+                });
+
+                // set active
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-primary', 'text-white');
+
+                selected[type] = this.dataset.value;
+
+                const variant = findMatchedVariant();
+
+                if (!variant) {
+                    resetUI();
                     return;
                 }
 
-                // Bỏ trạng thái active cũ
-                if (activeVariantButton) {
-                    activeVariantButton.classList.remove('btn-primary', 'text-white');
-                    activeVariantButton.classList.add('btn-outline-secondary');
-                }
+                // apply variant
+                if (selectedVariantId) selectedVariantId.value = variant.id;
 
-                // Đánh dấu nút hiện tại là active
-                this.classList.remove('btn-outline-secondary');
-                this.classList.add('btn-primary', 'text-white');
-                activeVariantButton = this;
-
-                // Lấy thông tin biến thể
-                const variantId = this.dataset.id;
-                const stock = this.dataset.stock;
-                const price = this.dataset.price;
-                const size = this.dataset.size;
-                const scent = this.dataset.scent;
-                const concentration = this.dataset.concentration;
-
-                // Gán vào input hidden
-                if (selectedVariantId) {
-                    selectedVariantId.value = variantId;
-                }
-
-                // Hiển thị thông tin biến thể
                 if (variantInfo) {
-                    let infoText = '';
-                    if (size) infoText += 'Kích thước: ' + size + ' | ';
-                    if (scent) infoText += 'Mùi: ' + scent + ' | ';
-                    if (concentration) infoText += 'Nồng độ: ' + concentration + ' | ';
-                    infoText += 'Tồn kho: ' + stock;
-                    variantInfo.textContent = infoText;
+                    let info = [];
+                    if (variant.size) info.push('Kích thước: ' + variant.size);
+                    if (variant.scent) info.push('Mùi: ' + variant.scent);
+                    if (variant.concentration) info.push('Nồng độ: ' + variant.concentration);
+                    info.push('Tồn kho: ' + variant.stock);
+                    variantInfo.textContent = info.join(' | ');
                 }
 
-                // Cập nhật giá
-                if (productPriceSpan && price) {
-                    productPriceSpan.textContent = new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
+                if (productPriceSpan) {
+                    productPriceSpan.textContent =
+                        new Intl.NumberFormat('vi-VN').format(variant.price) + ' VNĐ';
                 }
 
-                // Cập nhật nút thêm giỏ hàng
                 if (addToCartBtn) {
-                    addToCartBtn.disabled = parseInt(stock) <= 0;
+                    addToCartBtn.disabled = variant.stock <= 0;
                 }
 
-                // Cập nhật max số lượng
                 if (quantityInput) {
-                    quantityInput.setAttribute('max', stock);
+                    quantityInput.setAttribute('max', variant.stock);
+                    if (parseInt(quantityInput.value) > variant.stock) {
+                        quantityInput.value = variant.stock;
+                    }
                 }
+
                 if (availableStockInfo) {
-                    availableStockInfo.textContent = 'Có sẵn: ' + stock + ' sản phẩm';
+                    availableStockInfo.textContent =
+                        variant.stock > 0
+                            ? 'Có sẵn: ' + variant.stock + ' sản phẩm'
+                            : 'Không còn hàng';
                 }
             });
         });
-    }
+    });
 
-    var loadMoreBtn = document.getElementById('load-more-reviews');
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', function () {
-            var nextUrl = loadMoreBtn.getAttribute('data-next-url');
-            if (!nextUrl) {
-                loadMoreBtn.style.display = 'none';
-                return;
-            }
-            loadMoreBtn.disabled = true;
-            loadMoreBtn.textContent = 'Đang tải...';
-            fetch(nextUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (data && data.html) {
-                        var container = document.getElementById('reviews-list');
-                        var temp = document.createElement('div');
-                        temp.innerHTML = data.html;
-                        var items = temp.children;
-                        while (items.length) {
-                            container.appendChild(items[0]);
-                        }
-                    }
-                    if (data && data.next_page_url) {
-                        loadMoreBtn.setAttribute('data-next-url', data.next_page_url);
-                        loadMoreBtn.disabled = false;
-                        loadMoreBtn.textContent = 'Xem thêm';
-                    } else {
-                        loadMoreBtn.style.display = 'none';
-                    }
-                })
-                .catch(function () {
-                    loadMoreBtn.disabled = false;
-                    loadMoreBtn.textContent = 'Xem thêm';
-                });
-        });
-    }
-
-    // Quantity controls
-    const decreaseBtn = document.querySelector('.quantity-decrease');
-    const increaseBtn = document.querySelector('.quantity-increase');
-
-    if (decreaseBtn) {
-        decreaseBtn.addEventListener('click', function() {
-            const currentValue = parseInt(quantityInput.value);
-            if (currentValue > 1) {
-                quantityInput.value = currentValue - 1;
-            }
-        });
-    }
-
-    if (increaseBtn) {
-        increaseBtn.addEventListener('click', function() {
-            const currentValue = parseInt(quantityInput.value);
-            const max = parseInt(quantityInput.getAttribute('max')) || 100;
-            if (currentValue < max) {
-                quantityInput.value = currentValue + 1;
-            }
-        });
-    }
 });
 </script>
+
 @endsection
