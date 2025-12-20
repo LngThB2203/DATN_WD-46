@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
@@ -50,20 +49,13 @@ class ProductDetailController extends Controller
 
         $galleries = $product->galleries;
 
-        /*
-        |--------------------------------------------------------------------------
-        | FIX PHẦN BIẾN THỂ (CHỈ SỬA ĐOẠN NÀY)
-        |--------------------------------------------------------------------------
-        */
-
         $variantMatrix = $product->variants->map(function ($v) use ($product) {
             return [
                 'id'            => $v->id,
                 'size'          => $v->size?->name,
                 'scent'         => $v->scent?->name,
                 'concentration' => $v->concentration?->name,
-                'price'         => $v->price
-                    ?? ($product->price + ($v->price_adjustment ?? 0)),
+                'price'         => $v->price ?? ($product->price + ($v->price_adjustment ?? 0)),
                 'stock'         => (int) $v->stock,
                 'image'         => $v->image
                     ? asset('storage/' . $v->image)
@@ -88,12 +80,6 @@ class ProductDetailController extends Controller
             ->filter()
             ->unique()
             ->values();
-
-        /*
-        |--------------------------------------------------------------------------
-        | END FIX BIẾN THỂ
-        |--------------------------------------------------------------------------
-        */
 
         // Wishlist
         $isFavorite = false;

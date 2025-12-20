@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Warehouse;
+use App\Models\User;
+use App\Models\WarehouseProduct;
 use Illuminate\Http\Request;
 
 class WarehouseController extends Controller
@@ -17,7 +20,7 @@ class WarehouseController extends Controller
     // Form thêm kho
     public function create()
     {
-        $managers = \App\Models\User::all();
+        $managers = User::all();
         return view('admin.inventories.add', compact('managers'));
     }
 
@@ -31,24 +34,22 @@ class WarehouseController extends Controller
             'phone'          => 'nullable|string|max:20',
         ]);
 
-        Warehouse::create([
-            'warehouse_name' => $request->warehouse_name,
-            'address'        => $request->address,
-            'manager_id'     => $request->manager_id,
-            'phone'          => $request->phone,
-        ]);
+        Warehouse::create($request->only([
+            'warehouse_name',
+            'address',
+            'manager_id',
+            'phone'
+        ]));
 
-        return redirect()->route('inventories.warehouse')
+        return redirect()
+            ->route('inventories.warehouse')
             ->with('success', 'Thêm kho thành công!');
     }
 
-    // Sửa thông tin kho
-// Sửa thông tin kho
+    // Form sửa kho
     public function edit(Warehouse $warehouse)
     {
-
-        $managers = \App\Models\User::all();
-
+        $managers = User::all();
         return view('admin.inventories.edit', compact('warehouse', 'managers'));
     }
 
@@ -62,26 +63,36 @@ class WarehouseController extends Controller
             'phone'          => 'nullable|string|max:20',
         ]);
 
-        $warehouse->update([
-            'warehouse_name' => $request->warehouse_name,
-            'address'        => $request->address,
-            'manager_id'     => $request->manager_id,
-            'phone'          => $request->phone,
-        ]);
+        $warehouse->update($request->only([
+            'warehouse_name',
+            'address',
+            'manager_id',
+            'phone'
+        ]));
 
-        return redirect()->route('inventories.warehouse')->with('success', 'Cập nhật kho thành công!');
+        return redirect()
+            ->route('inventories.warehouse')
+            ->with('success', 'Cập nhật kho thành công!');
     }
 
     // Xóa kho
     public function destroy(Warehouse $warehouse)
     {
-        // Kiểm tra xem kho có sản phẩm không
-        if ($warehouse->products()->count() > 0) {
-            return redirect()->route('inventories.warehouse')
-                ->with('error', 'Không thể xóa kho vì vẫn còn sản phẩm trong kho này!');
+        // Kiểm tra tồn kho thực tế
+        if (
+            WarehouseProduct::where('warehouse_id', $warehouse->id)
+                ->where('quantity', '>', 0)
+                ->exists()
+        ) {
+            return redirect()
+                ->route('inventories.warehouse')
+                ->with('error', 'Không thể xóa kho vì vẫn còn tồn kho!');
         }
 
         $warehouse->delete();
-        return redirect()->route('inventories.warehouse')->with('success', 'Xóa kho thành công!');
+
+        return redirect()
+            ->route('inventories.warehouse')
+            ->with('success', 'Xóa kho thành công!');
     }
 }

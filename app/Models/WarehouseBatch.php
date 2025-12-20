@@ -4,17 +4,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class WarehouseProduct extends Model
+class WarehouseBatch extends Model
 {
     use HasFactory;
 
-    protected $table = 'warehouse_products';
+    protected $table = 'warehouse_batches';
 
     protected $fillable = [
         'warehouse_id',
         'product_id',
         'variant_id',
+        'batch_code',
+        'expired_at',
+        'import_price',
         'quantity',
+    ];
+
+    protected $dates = [
+        'expired_at',
     ];
 
     public function warehouse()
@@ -30,12 +37,5 @@ class WarehouseProduct extends Model
     public function variant()
     {
         return $this->belongsTo(ProductVariant::class, 'variant_id');
-    }
-
-    public function batches()
-    {
-        return $this->hasMany(WarehouseBatch::class, 'product_id', 'product_id')
-            ->whereColumn('warehouse_batches.variant_id', 'warehouse_products.variant_id')
-            ->whereColumn('warehouse_batches.warehouse_id', 'warehouse_products.warehouse_id');
     }
 }
