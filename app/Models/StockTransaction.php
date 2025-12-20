@@ -12,10 +12,13 @@ class StockTransaction extends Model
         'warehouse_id',
         'product_id',
         'variant_id',
+        'batch_code',
         'type',
         'quantity',
-        'note',
-        'user_id',
+        'before_quantity',
+        'after_quantity',
+        'reference_type',
+        'reference_id',
     ];
 
     public function warehouse()

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
@@ -22,7 +21,7 @@ class ProductDetailController extends Controller
             'warehouseProducts',
         ])->where('slug', $slug)->firstOrFail();
 
-        // Ưu tiên tính tồn kho theo biến thể, nếu không có thì fallback về tồn kho theo product_id
+        // Ưu tiên tính tồn kho theo biến thể
         $variantStock = $product->variants->sum(function ($variant) {
             return (int) $variant->stock;
         });
@@ -35,7 +34,11 @@ class ProductDetailController extends Controller
 
         // Reviews
         $perPage = (int) request('per_page', 5);
-        $reviews = $product->reviews()->with('user')->where('status', 1)->latest()->paginate($perPage);
+        $reviews = $product->reviews()
+            ->with('user')
+            ->where('status', 1)
+            ->latest()
+            ->paginate($perPage);
 
         // Related
         $relatedProducts = Product::with('galleries')
@@ -46,25 +49,39 @@ class ProductDetailController extends Controller
 
         $galleries = $product->galleries;
 
-        // Lấy dữ liệu biến thể
         $variantMatrix = $product->variants->map(function ($v) use ($product) {
             return [
                 'id'            => $v->id,
-                'size'          => $v->size->size_name ?? null,
-                'scent'         => $v->scent->scent_name ?? null,
-                'concentration' => $v->concentration->concentration_name ?? null,
+                'size'          => $v->size?->name,
+                'scent'         => $v->scent?->name,
+                'concentration' => $v->concentration?->name,
                 'price'         => $v->price ?? ($product->price + ($v->price_adjustment ?? 0)),
-                'stock'         => $v->stock,
-                'image'         => $v->image ? asset('storage/' . $v->image) : null,
+                'stock'         => (int) $v->stock,
+                'image'         => $v->image
+                    ? asset('storage/' . $v->image)
+                    : null,
             ];
-        });
+        })->values();
 
-        // Lấy unique nhóm biến thể
-        $sizes          = $product->variants->pluck('size.size_name')->unique()->filter();
-        $scents         = $product->variants->pluck('scent.scent_name')->unique()->filter();
-        $concentrations = $product->variants->pluck('concentration.concentration_name')->unique()->filter();
+        $sizes = $product->variants
+            ->pluck('size.name')
+            ->filter()
+            ->unique()
+            ->values();
 
-        // Wishlist state
+        $scents = $product->variants
+            ->pluck('scent.name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $concentrations = $product->variants
+            ->pluck('concentration.name')
+            ->filter()
+            ->unique()
+            ->values();
+
+        // Wishlist
         $isFavorite = false;
         if (auth()->check()) {
             $isFavorite = Wishlist::where('user_id', auth()->id())

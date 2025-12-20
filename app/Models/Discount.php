@@ -17,6 +17,7 @@ class Discount extends Model
         'usage_limit',
         'used_count',
         'active',
+        'type',
     ];
 
     protected $casts = [
@@ -38,14 +39,15 @@ class Discount extends Model
             return false;
         }
 
-        $now = Carbon::now();
+        // So sánh theo ngày thay vì ngày + giờ để mã có hiệu lực trọn ngày
+        $today = Carbon::today();
 
-        // Check date range
-        if ($this->start_date && $now->lt($this->start_date)) {
+        // Check date range (start_date <= today <= expiry_date)
+        if ($this->start_date && $today->lt($this->start_date)) {
             return false;
         }
 
-        if ($this->expiry_date && $now->gt($this->expiry_date)) {
+        if ($this->expiry_date && $today->gt($this->expiry_date)) {
             return false;
         }
 
@@ -108,18 +110,26 @@ class Discount extends Model
         return $query->where('active', true);
     }
 
+    public function userVouchers()
+    {
+        return $this->hasMany(UserVoucher::class);
+    }
+
     /**
      * Scope for valid discounts (not expired, within usage limit)
      */
     public function scopeValid($query)
     {
-        $now = Carbon::now();
+        $today = Carbon::today();
+
         return $query->where('active', true)
-            ->where(function($q) use ($now) {
-                $q->whereNull('start_date')->orWhere('start_date', '<=', $now);
+            ->where(function($q) use ($today) {
+                $q->whereNull('start_date')
+                  ->orWhere('start_date', '<=', $today);
             })
-            ->where(function($q) use ($now) {
-                $q->whereNull('expiry_date')->orWhere('expiry_date', '>=', $now);
+            ->where(function($q) use ($today) {
+                $q->whereNull('expiry_date')
+                  ->orWhere('expiry_date', '>=', $today);
             })
             ->where(function($q) {
                 $q->whereNull('usage_limit')

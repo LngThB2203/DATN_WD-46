@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Discount;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class DiscountController extends Controller
 {
@@ -66,6 +67,10 @@ class DiscountController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('ADMIN_DISCOUNT_STORE_HIT', [
+            'payload' => $request->all(),
+        ]);
+
         $request->validate([
             'code'            => 'required|string|max:100|unique:discounts,code',
             'discount_type'   => 'required|in:percent,fixed',
@@ -74,7 +79,6 @@ class DiscountController extends Controller
             'start_date'      => 'nullable|date',
             'expiry_date'     => 'nullable|date|after_or_equal:start_date',
             'usage_limit'     => 'nullable|integer|min:1',
-            'active'          => 'boolean',
         ], [
             'code.required'              => 'Vui lòng nhập mã giảm giá',
             'code.unique'                => 'Mã giảm giá đã tồn tại',
@@ -84,7 +88,7 @@ class DiscountController extends Controller
         ]);
 
         try {
-            Discount::create([
+            $discount = Discount::create([
                 'code'            => strtoupper($request->code),
                 'discount_type'   => $request->discount_type,
                 'discount_value'  => $request->discount_value,
@@ -96,8 +100,17 @@ class DiscountController extends Controller
                 'active'          => $request->has('active'),
             ]);
 
+            Log::info('ADMIN_DISCOUNT_STORE_SUCCESS', [
+                'discount_id' => $discount->id,
+                'code'        => $discount->code,
+            ]);
+
             return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được tạo thành công!');
         } catch (\Exception $e) {
+            Log::error('ADMIN_DISCOUNT_STORE_ERROR', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage())->withInput();
         }
     }
@@ -131,7 +144,6 @@ class DiscountController extends Controller
             'start_date'      => 'nullable|date',
             'expiry_date'     => 'nullable|date|after_or_equal:start_date',
             'usage_limit'     => 'nullable|integer|min:1',
-            'active'          => 'boolean',
         ], [
             'code.required'              => 'Vui lòng nhập mã giảm giá',
             'code.unique'                => 'Mã giảm giá đã tồn tại',
