@@ -38,12 +38,10 @@ class ChatbotController extends Controller
     $userId = Auth::id();
     $guestToken = $request->cookie('chat_token');
     
-    // Nếu chưa đăng nhập và chưa có guest token, tạo mới
     if (!$userId && !$guestToken) {
         $guestToken = 'guest_' . Str::random(32);
     }
 
-    // 1. Lưu tin nhắn người dùng vào DB
     $userMsg = ChatMessage::create([
         'user_id' => $userId,
         'guest_token' => $userId ? null : $guestToken,
@@ -51,11 +49,9 @@ class ChatbotController extends Controller
         'message' => $request->message,
     ]);
 
-    // 2. Chuẩn bị Dữ liệu sản phẩm & System Instruction
     $productsData = DB::table('products')
     ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
     ->join('variants_scents', 'product_variants.scent_id', '=', 'variants_scents.id')
-    // Loại bỏ products.brand nếu nó gây lỗi, hoặc đổi thành tên cột đúng trong DB của bạn
     ->select('products.id', 'products.name', 'products.price', 'variants_scents.name as scent_name')
     ->distinct()
     ->limit(5) 
@@ -70,7 +66,6 @@ class ChatbotController extends Controller
     $systemInstruction .= "Dữ liệu sản phẩm shop đang có:\n" . $productsData . "\n\n";
     $systemInstruction .= "Yêu cầu: Nếu nhắc đến sản phẩm, BẮT BUỘC phải ghi link dạng /products/[id].";
 
-    // 3. Lấy lịch sử chat (Để AI hiểu ngữ cảnh cuộc hội thoại)
     $history = ChatMessage::where(function ($q) use ($userId, $guestToken) {
             if ($userId) $q->where('user_id', $userId);
             else $q->where('guest_token', $guestToken);
@@ -80,7 +75,6 @@ class ChatbotController extends Controller
         ->get()
         ->reverse();
 
-    // 4. Chuẩn bị contents cho API
     $contents = [];
     
     if ($history->isEmpty()) {
@@ -90,7 +84,6 @@ class ChatbotController extends Controller
         ];
     }
     
-    // Thêm lịch sử chat trước đó (nếu có)
     foreach ($history as $msg) {
         $contents[] = [
             "role" => $msg->sender === 'user' ? "user" : "model",
@@ -98,21 +91,21 @@ class ChatbotController extends Controller
         ];
     }
     
-    // Thêm message hiện tại của user
     $contents[] = [
         "role" => "user",
         "parts" => [["text" => $request->message]]
     ];
 
-    // 4. Gọi API Gemini
     $aiReplyText = "Hệ thống đang bận, vui lòng thử lại sau!";
     
-    $apiKey = env('GOOGLE_GEMINI_API_KEY'); 
+    $apiKey = config('services.gemini.api_key');
+    $defaultModel = config('services.gemini.default_model', 'gemini-2.0-flash-exp');
+    $defaultApiVersion = config('services.gemini.default_api_version', 'v1beta');
     
     $modelsToTry = [
-        env('GEMINI_MODEL', 'gemini-2.0-flash-exp'), // Model từ env hoặc mặc định
-        'gemini-2.0-flash-exp', // Model mới nhất (từ log thấy đã từng hoạt động)
-        'gemini-2.0-flash', // Model từ log cũ
+        env('GEMINI_MODEL', 'gemini-2.0-flash-exp'), 
+        'gemini-2.0-flash-exp', 
+        'gemini-2.0-flash',
         'gemini-1.5-pro-latest',
         'gemini-1.5-flash-latest',
         'gemini-1.5-pro',
@@ -120,14 +113,12 @@ class ChatbotController extends Controller
         'gemini-pro',
     ];
     
-    // Thử cả v1 và v1beta
     $apiVersionsToTry = [
         env('GEMINI_API_VERSION', 'v1beta'),
         'v1beta',
         'v1',
     ];
     
-    // Request payload chuẩn bị sẵn
     $requestPayload = [
         "contents" => $contents,
         "generationConfig" => [
@@ -147,7 +138,6 @@ class ChatbotController extends Controller
         $triedApiVersion = null;
         $foundWorkingConfig = false;
         
-        // Thử từng API version và model cho đến khi tìm được config hoạt động
         foreach ($apiVersionsToTry as $apiVersion) {
             if ($foundWorkingConfig) break;
             
@@ -168,24 +158,22 @@ class ChatbotController extends Controller
                         ->withHeaders(['Content-Type' => 'application/json'])
                         ->post($apiUrl, $requestPayload);
                     
-                    // Nếu thành công (status 200), dừng lại
                     if ($response->successful()) {
                         $foundWorkingConfig = true;
                         Log::info("Gemini API: Found working configuration", [
                             'model' => $modelName,
                             'api_version' => $apiVersion
                         ]);
-                        break 2; // Break cả 2 loops
+                        break 2;
                     }
                     
-                    // Nếu lỗi 404 (model không tìm thấy), thử model/version tiếp theo
                     if ($response->status() === 404) {
                         $lastError = "Model {$modelName} not found in {$apiVersion}";
                         Log::warning("Gemini API: Model not found, trying next", [
                             'model' => $modelName,
                             'api_version' => $apiVersion
                         ]);
-                        continue; // Thử model tiếp theo
+                        continue;
                     }
                     
                     if ($response->status() === 429) {
@@ -208,7 +196,7 @@ class ChatbotController extends Controller
                         'api_version' => $apiVersion,
                         'error' => $e->getMessage()
                     ]);
-                    continue; // Thử model tiếp theo
+                    continue; 
                 }
             }
         }
@@ -240,37 +228,33 @@ class ChatbotController extends Controller
                 $useFallback = true;
             }
             
-            if ($useFallback) {
-                Log::info("Using rule-based fallback for question", ['question' => $request->message]);
-                $fallbackService = new ChatbotFallbackService();
-                $fallbackResponse = $fallbackService->processQuestion($request->message);
-                
-                if (!$response || !$response->successful()) {
-                    $statusCode = $response ? $response->status() : 0;
-                    $errorBody = $response ? $response->json() : null;
-                    $errorMessage = isset($errorBody['error']['message']) ? $errorBody['error']['message'] : ($lastError ?? "HTTP {$statusCode}: Unknown Error");
-                    
-                    Log::warning("Gemini API Error - Using fallback", [
-                        'status' => $statusCode,
-                        'error' => $errorMessage,
-                        'last_tried_model' => $triedModel,
-                        'last_tried_api_version' => $triedApiVersion,
-                    ]);
-                    
-                    // Với lỗi 429, thêm thông báo nhưng vẫn dùng fallback
-                    if ($statusCode === 429) {
-                        $aiReplyText = $fallbackResponse ;
-                    } else {
-                        // Với các lỗi khác, chỉ dùng fallback
-                        $aiReplyText = $fallbackResponse;
-                    }
-                } else {
-                    // Response rỗng từ AI thành công
-                    $aiReplyText = $fallbackResponse;
-                }
-            }
+            $useFallback = false;
+
+        if (!$response || !$response->successful()) {
+            $useFallback = true;
+            $statusCode = $response ? $response->status() : 0;
+            $errorBody = $response ? $response->json() : null;
+            $lastError = $errorBody['error']['message'] ?? ($lastError ?? "HTTP {$statusCode}: Unknown Error");
+
+            Log::warning("Gemini API Error - Using fallback", [
+                'status' => $statusCode,
+                'error' => $lastError,
+                'last_tried_model' => $triedModel,
+                'last_tried_api_version' => $triedApiVersion,
+            ]);
+        }
+
+        if (!$useFallback && (empty($aiReplyText) || mb_strlen(trim($aiReplyText), 'UTF-8') < 3)) {
+            $useFallback = true;
+            Log::warning("Gemini API returned empty/invalid response, using fallback");
+        }
+
+        if ($useFallback) {
+            $fallbackService = new ChatbotFallbackService();
+            $aiReplyText = $fallbackService->processQuestion($request->message);
+        }
+
             
-            // Nếu vẫn không có response (trường hợp hiếm), dùng fallback một lần nữa
             if (empty($aiReplyText) || mb_strlen(trim($aiReplyText), 'UTF-8') < 3) {
                 $fallbackService = new ChatbotFallbackService();
                 $aiReplyText = $fallbackService->processQuestion($request->message);
@@ -283,7 +267,6 @@ class ChatbotController extends Controller
         }
     }
 
-    // 5. Lưu tin nhắn Bot vào DB
     $botMsg = ChatMessage::create([
         'user_id' => $userId,
         'guest_token' => $userId ? null : $guestToken,
@@ -291,11 +274,10 @@ class ChatbotController extends Controller
         'message' => $aiReplyText,
     ]);
 
-    // 6. Nếu có guest token mới, trả về cookie trong response
     $response = response()->json(['user' => $userMsg, 'bot' => $botMsg]);
     
     if (!$userId && $guestToken && !$request->cookie('chat_token')) {
-        $response->cookie('chat_token', $guestToken, 60 * 24 * 180); // 180 ngày
+        $response->cookie('chat_token', $guestToken, 60 * 24 * 180); 
     }
     
     return $response;

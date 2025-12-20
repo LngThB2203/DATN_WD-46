@@ -13,10 +13,35 @@ class ChatbotFallbackService
     {
         $question = mb_strtolower(trim($question), 'UTF-8');
         
-        // 1. Chào hỏi
-        if ($this->isGreeting($question)) {
-            return "Xin chào! Tôi là trợ lý ảo của shop 46 Perfume. Tôi có thể giúp bạn tìm hiểu về các sản phẩm nước hoa, mùi hương, giá cả và đưa ra gợi ý phù hợp. Bạn cần tư vấn gì ạ?";
-        }
+        // 1. Hỏi về thương hiệu (XỬ LÝ TRIỆT ĐỂ)
+if ($this->isBrandQuestion($question)) {
+    $response = $this->handleBrandQuestion($question);
+
+    if ($response !== null) {
+        return $response;
+    }
+
+    // fallback RIÊNG cho thương hiệu
+    $brands = DB::table('products')
+    ->select('brand')
+    ->whereNotNull('brand')
+    ->distinct()
+    ->pluck('brand')
+    ->toArray();
+
+if (empty($brands)) {
+    return "Hiện tại shop chưa có dữ liệu thương hiệu.";
+}
+
+// Lấy tối đa 6 brand cho gọn
+$sampleBrands = array_slice($brands, 0, 6);
+
+return "Hiện tại shop chưa có thương hiệu này? Bạn muốn tìm sản phẩm của thương hiệu nào? Ví dụ: "
+     . implode(', ', $sampleBrands) . "…";
+
+}
+
+        
         
         // 2. Hỏi về ngân sách/giá (kiểm tra trước để bắt được "sản phẩm giá X")
         if ($this->isBudgetQuestion($question) || $this->isPriceQuestion($question)) {
@@ -37,10 +62,6 @@ class ChatbotFallbackService
             return $this->handleScentQuestion($question);
         }
         
-        // 4. Hỏi về thương hiệu
-        if ($this->isBrandQuestion($question)) {
-            return $this->handleBrandQuestion($question);
-        }
         
         // 5. Hỏi về sản phẩm theo giới tính
         if ($this->isGenderQuestion($question)) {
@@ -57,6 +78,10 @@ class ChatbotFallbackService
         if (!empty($productResults)) {
             return $productResults;
         }
+        // Chào hỏi
+        if ($this->isGreeting($question)) {
+            return "Xin chào! Tôi là trợ lý ảo của shop 46 Perfume. Tôi có thể giúp bạn tìm hiểu về các sản phẩm nước hoa, mùi hương, giá cả và đưa ra gợi ý phù hợp. Bạn cần tư vấn gì ạ?";
+        }
         
         // 9. Câu trả lời mặc định
         return $this->getDefaultResponse();
@@ -66,15 +91,14 @@ class ChatbotFallbackService
      * Kiểm tra có phải câu chào hỏi không
      */
     private function isGreeting(string $question): bool
-    {
-        $greetings = ['xin chào', 'chào', 'hello', 'hi', 'chào bạn', 'hey'];
-        foreach ($greetings as $greeting) {
-            if (strpos($question, $greeting) !== false) {
-                return true;
-            }
-        }
-        return false;
-    }
+{
+    return preg_match(
+        '/^(hi|hello|xin chào|chào|chào bạn|hey)$/u',
+        trim($question)
+    ) === 1;
+}
+
+
     
     /**
      * Kiểm tra có phải câu hỏi về giá không
@@ -151,7 +175,7 @@ class ChatbotFallbackService
      */
     private function isBudgetQuestion(string $question): bool
     {
-        $keywords = ['dưới', 'khoảng', 'tầm', 'dưới', 'trên', 'triệu', 'nghìn', 'k'];
+        $keywords = ['dưới','nhỏ hơn','thấp hơn','lớn hơn','hơn','cao hơn' ,'khoảng', 'tầm', 'trên', 'triệu', 'nghìn', 'k'];
         $hasNumber = preg_match('/\d+/', $question);
         foreach ($keywords as $keyword) {
             if (strpos($question, $keyword) !== false && $hasNumber) {
@@ -166,44 +190,151 @@ class ChatbotFallbackService
      */
     private function handlePriceQuestion(string $question): string
     {
-        // Tìm số giá trong câu hỏi - nhiều pattern khác nhau
-        $targetPrice = null;
-        
-        // Pattern 1: Số có dấu chấm/phẩy (100.000, 1.000.000)
-        if (preg_match('/(\d{1,3}(?:[.,]\d{3})+)/', $question, $matches)) {
-            $targetPrice = (int)str_replace(['.', ','], '', $matches[1]);
+    if (preg_match(
+    '/(\d+)\s*tr\s*(?:đến|tới|\s-\s)\s*(\d+)\s*tr\s*(\d+)?/iu',
+    $question,
+    $m
+)) {
+    $min = ((int)$m[1]) * 1_000_000;
+
+    $max = ((int)$m[2]) * 1_000_000;
+    if (!empty($m[3])) {
+        $max += ((int)$m[3]) * 100_000;
+    }
+
+    $products = DB::table('products')
+        ->select('id', 'name', 'slug', 'brand', 'price')
+        ->whereBetween('price', [$min, $max])
+        ->orderBy('price')
+        ->limit(5)
+        ->get();
+
+    if ($products->isEmpty()) {
+        return "Không tìm thấy sản phẩm trong khoảng **"
+            . number_format($min) . "đ – "
+            . number_format($max) . "đ**.";
+    }
+
+    $lines = [];
+    foreach ($products as $p) {
+        $lines[] = "**{$p->name}** ({$p->brand}) – "
+            . number_format($p->price) . "đ  
+            /products/{$p->slug}";
+    }
+
+    return "Các sản phẩm trong khoảng **"
+        . number_format($min) . "đ – "
+        . number_format($max) . "đ**:\n\n"
+        . implode("\n", $lines);
+}
+
+if (
+    preg_match('/(\d+)\s*tr\s*(\d+)/iu', $question, $m)
+    && !preg_match('/(đến|tới|\s-\s)/iu', $question)
+) {
+    $price = ((int)$m[1] * 1_000_000) + ((int)$m[2] * 100_000);
+
+    $products = DB::table('products')
+        ->select('id', 'name', 'slug', 'brand', 'price')
+        ->whereBetween('price', [$price - 200_000, $price + 200_000])
+        ->orderByRaw('ABS(price - ?)', [$price])
+        ->limit(5)
+        ->get();
+
+    if ($products->isNotEmpty()) {
+        $lines = [];
+        foreach ($products as $p) {
+            $lines[] = "**{$p->name}** ({$p->brand}) – "
+                . number_format($p->price) . "đ  
+                /products/{$p->slug}";
         }
-        // Pattern 2: Số thuần (100000, 50000) - ít nhất 4 chữ số
-        elseif (preg_match('/(\d{4,})/', $question, $matches)) {
-            $targetPrice = (int)$matches[1];
-        }
-        // Pattern 3: Số + đơn vị (100 nghìn, 1 triệu, 100k)
-        elseif (preg_match('/(\d+)\s*(nghìn|k|triệu|đ)/i', $question, $matches)) {
-            $price = (int)$matches[1];
-            $unit = mb_strtolower(trim($matches[2]), 'UTF-8');
-            if (strpos($unit, 'triệu') !== false) {
-                $targetPrice = $price * 1000000;
-            } elseif (strpos($unit, 'nghìn') !== false || $unit === 'k') {
-                $targetPrice = $price * 1000;
-            } else {
-                $targetPrice = $price;
-            }
-        }
-        // Pattern 4: Số nhỏ hơn 1000 (có thể là nghìn)
-        elseif (preg_match('/(\d{1,3})(?:\s|$)/', $question, $matches)) {
-            $price = (int)$matches[1];
-            // Nếu có từ "nghìn" hoặc "k" gần đó, nhân 1000
-            if (preg_match('/\d+\s*(nghìn|k)/i', $question)) {
-                $targetPrice = $price * 1000;
-            }
-        }
+
+        return "Các sản phẩm **khoảng "
+            . number_format($price) . "đ**:\n\n"
+            . implode("\n", $lines);
+    }
+}
+
+
+$targetPrice = null;
+
+if (preg_match('/(\d{1,3}(?:[.,]\d{3})+)/', $question, $m)) {
+    $targetPrice = (int) str_replace(['.', ','], '', $m[1]);
+}
+elseif (preg_match('/\b(\d{6,})\b/', $question, $m)) {
+    $targetPrice = (int) $m[1];
+}
+elseif (preg_match('/(\d+(?:[.,]\d+)?)\s*(triệu|tr|nghìn|k)/iu', $question, $m)) {
+    $targetPrice = $this->normalizePrice($m[1], $m[2]);
+}
+
+//  GIÁ SO SÁNH: dưới / thấp hơn / nhỏ hơn =====
+if (
+    preg_match('/(dưới|thấp hơn|nhỏ hơn|<)\s*(\d+(?:[.,]\d+)?)\s*(triệu|tr|nghìn|k)?/iu', $question, $m)
+) {
+    $max = $this->normalizePrice($m[2], $m[3] ?? null);
+
+    $products = DB::table('products')
+        ->select('id', 'name', 'slug', 'brand', 'price')
+        ->where('price', '<=', $max)
+        ->orderBy('price', 'desc')
+        ->limit(5)
+        ->get();
+
+    if ($products->isEmpty()) {
+        return "Không tìm thấy sản phẩm **dưới "
+            . number_format($max) . "đ**.";
+    }
+
+    $lines = [];
+    foreach ($products as $p) {
+        $lines[] = "**{$p->name}** ({$p->brand}) – "
+            . number_format($p->price) . "đ  
+         /products/{$p->slug}";
+    }
+
+    return "Các sản phẩm **dưới "
+        . number_format($max) . "đ**:\n\n"
+        . implode("\n", $lines);
+}
+
+// GIÁ SO SÁNH: trên / cao hơn / lớn hơn =====
+if (
+    preg_match('/(trên|cao hơn|hơn|lớn hơn|>)\s*(\d+(?:[.,]\d+)?)\s*(triệu|tr|nghìn|k)?/iu', $question, $m)
+) {
+    $min = $this->normalizePrice($m[2], $m[3] ?? null);
+
+    $products = DB::table('products')
+        ->select('id', 'name','slug', 'brand', 'price')
+        ->where('price', '>=', $min)
+        ->orderBy('price')
+        ->limit(5)
+        ->get();
+
+    if ($products->isEmpty()) {
+        return "Không tìm thấy sản phẩm **trên "
+            . number_format($min) . "đ**.";
+    }
+
+    $lines = [];
+    foreach ($products as $p) {
+        $lines[] = "**{$p->name}** ({$p->brand}) – "
+            . number_format($p->price) . "đ  
+            /products/{$p->slug}";
+    }
+
+    return "Các sản phẩm **trên "
+        . number_format($min) . "đ**:\n\n"
+        . implode("\n", $lines);
+}
+
+
         
         // Nếu có giá cụ thể, tìm sản phẩm gần giá đó
         if ($targetPrice !== null) {
-            // Tìm sản phẩm có giá bằng hoặc gần giá mục tiêu (sai số ±10%)
             $tolerance = $targetPrice * 0.1;
             $products = DB::table('products')
-                ->select('id', 'name', 'price', 'brand')
+                ->select('id', 'name','slug', 'price', 'brand')
                 ->whereBetween('price', [$targetPrice - $tolerance, $targetPrice + $tolerance])
                 ->orderByRaw('ABS(price - ?)', [$targetPrice])
                 ->limit(5)
@@ -212,7 +343,7 @@ class ChatbotFallbackService
             if ($products->isNotEmpty()) {
                 $productList = [];
                 foreach ($products as $product) {
-                    $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. /products/{$product->id}";
+                    $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. \"/products/" . ($product->slug ?? $product->id);
                 }
                 return "Các sản phẩm **khoảng " . number_format($targetPrice) . "đ**:\n" . implode("\n", $productList);
             } else {
@@ -230,7 +361,7 @@ class ChatbotFallbackService
         
         // Tìm tên sản phẩm trong câu hỏi (nếu có)
         $products = DB::table('products')
-            ->select('id', 'name', 'price', 'brand')
+            ->select('id', 'name','slug', 'price', 'brand')
             ->limit(20)
             ->get();
         
@@ -238,7 +369,7 @@ class ChatbotFallbackService
             $productName = mb_strtolower($product->name, 'UTF-8');
             $brandName = mb_strtolower($product->brand, 'UTF-8');
             if (strpos($question, $productName) !== false || strpos($question, $brandName) !== false) {
-                return "Sản phẩm **{$product->name}** ({$product->brand}) có giá: " . number_format($product->price) . "đ. /products/{$product->id}";
+                return "Sản phẩm **{$product->name}** ({$product->brand}) có giá: " . number_format($product->price) . "đ. \"/products/" . ($product->slug ?? $product->id);
             }
         }
         
@@ -249,6 +380,22 @@ class ChatbotFallbackService
         
         return "Shop 46 Perfume có các sản phẩm với giá từ " . number_format($minPrice) . "đ đến " . number_format($maxPrice) . "đ (giá trung bình: " . number_format((int)$avgPrice) . "đ).\n\nBạn muốn tìm sản phẩm giá bao nhiêu? Ví dụ: 'sản phẩm giá 100000' hoặc 'dưới 1 triệu'";
     }
+    private function normalizePrice($number, $unit = null): int
+{
+    $number = (float) str_replace(',', '.', $number);
+    $unit = mb_strtolower($unit ?? '', 'UTF-8');
+
+    if (str_contains($unit, 'tr') || str_contains($unit, 'triệu')) {
+        return (int) ($number * 1_000_000);
+    }
+
+    if (str_contains($unit, 'k') || str_contains($unit, 'nghìn')) {
+        return (int) ($number * 1_000);
+    }
+
+    return (int) $number;
+}
+
     
     /**
      * Xử lý câu hỏi về mùi hương
@@ -281,77 +428,95 @@ class ChatbotFallbackService
     /**
      * Xử lý câu hỏi về thương hiệu
      */
-    private function handleBrandQuestion(string $question): string
-    {
-        $brands = DB::table('products')
-            ->select('brand')
-            ->distinct()
-            ->limit(10)
-            ->get()
-            ->pluck('brand')
-            ->toArray();
-        
-        foreach ($brands as $brand) {
-            $brandLower = mb_strtolower($brand, 'UTF-8');
-            if (strpos($question, $brandLower) !== false) {
-                $products = DB::table('products')
-                    ->where('brand', $brand)
-                    ->select('id', 'name', 'price')
-                    ->limit(5)
-                    ->get();
-                
-                $productList = [];
-                foreach ($products as $product) {
-                    $productList[] = "**{$product->name}** - " . number_format($product->price) . "đ. /products/{$product->id}";
-                }
-                
-                return "Shop có các sản phẩm của thương hiệu **{$brand}**:\n" . implode("\n", $productList);
+    private function handleBrandQuestion(string $question): ?string
+{
+    $question = mb_strtolower($question, 'UTF-8');
+
+    $brands = DB::table('products')
+        ->select('brand')
+        ->distinct()
+        ->get()
+        ->pluck('brand')
+        ->filter()
+        ->toArray();
+
+    foreach ($brands as $brand) {
+        $brandLower = mb_strtolower($brand, 'UTF-8');
+
+        if (str_contains($question, $brandLower)) {
+
+            $products = DB::table('products')
+                ->where('brand', $brand)
+                ->select('id', 'name','slug', 'price')
+                ->limit(5)
+                ->get();
+
+            if ($products->isEmpty()) {
+                return "Shop hiện chưa có sản phẩm thuộc thương hiệu **{$brand}**.";
             }
+
+            $lines = [];
+            foreach ($products as $product) {
+                $lines[] = "• **{$product->name}** – " 
+                         . number_format($product->price) . "đ  
+\"/products/" . ($product->slug ?? $product->id);
+            }
+
+            return "Shop có các sản phẩm của thương hiệu **{$brand}**:\n\n"
+                 . implode("\n", $lines);
         }
-        
-        return "Shop có nhiều thương hiệu nước hoa nổi tiếng. Bạn quan tâm đến thương hiệu nào? Tôi có thể giới thiệu các sản phẩm phù hợp!";
     }
+
+    return null;
+}
     
     /**
      * Xử lý câu hỏi về giới tính
      */
     private function handleGenderQuestion(string $question): string
-    {
-        $isMale = strpos($question, 'nam') !== false || strpos($question, 'male') !== false || strpos($question, 'đàn ông') !== false;
-        $isFemale = strpos($question, 'nữ') !== false || strpos($question, 'female') !== false || strpos($question, 'phụ nữ') !== false;
-        
-        if ($isMale) {
-            $products = DB::table('products')
-                ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
-                ->where('product_variants.gender', 'Nam')
-                ->select('products.id', 'products.name', 'products.brand', 'products.price')
-                ->distinct()
-                ->limit(5)
-                ->get();
-        } elseif ($isFemale) {
-            $products = DB::table('products')
-                ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
-                ->where('product_variants.gender', 'Nữ')
-                ->select('products.id', 'products.name', 'products.brand', 'products.price')
-                ->distinct()
-                ->limit(5)
-                ->get();
-        } else {
-            return "Bạn đang tìm nước hoa cho nam hay nữ? Tôi có thể gợi ý sản phẩm phù hợp!";
-        }
-        
-        if ($products->isEmpty()) {
-            return "Hiện tại shop chưa có sản phẩm phù hợp. Vui lòng thử lại sau!";
-        }
-        
-        $gender = $isMale ? 'Nam' : 'Nữ';
-        $productList = [];
-        foreach ($products as $product) {
-            $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. /products/{$product->id}";
-        }
-        
-        return "Các sản phẩm nước hoa dành cho **{$gender}**:\n" . implode("\n", $productList);
+{
+    $isMale = stripos($question, 'nam') !== false || stripos($question, 'male') !== false;
+    $isFemale = stripos($question, 'nữ') !== false || stripos($question, 'female') !== false;
+
+    if (!$isMale && !$isFemale) {
+        return "Bạn đang tìm nước hoa cho Nam hay Nữ? Tôi có thể gợi ý sản phẩm phù hợp!";
     }
+
+    $genderValue = $isMale ? 'male' : 'female';
+    $genderLabel = $isMale ? 'Nam' : 'Nữ';
+
+    $products = DB::table('product_variants')
+        ->join('products', 'product_variants.product_id', '=', 'products.id')
+        ->where('product_variants.gender', $genderValue)
+        ->select(
+            'products.id',
+            'products.name',
+            'products.slug',
+            DB::raw('(products.price + product_variants.price_adjustment) AS final_price')
+        )
+        ->groupBy('products.id', 'products.name', 'products.slug', 'final_price')
+        ->orderBy('final_price', 'asc') 
+        ->limit(5)
+        ->get();
+
+    if ($products->isEmpty()) {
+        return "Hiện tại shop chưa có sản phẩm nước hoa dành cho **{$genderLabel}**.";
+    }
+
+    $responseLines = ["Các sản phẩm nước hoa dành cho **{$genderLabel}**:"];
+
+    foreach ($products as $product) {
+        $responseLines[] = sprintf(
+            "• **%s** – %sđ.\n👉 Xem sản phẩm ↗ /products/%s",
+            $product->name,
+            number_format($product->final_price),
+            $product->slug ?? $product->id
+        );
+    }
+
+    return implode("\n", $responseLines);
+}
+
     
     /**
      * Xử lý câu hỏi về sản phẩm bán chạy
@@ -361,7 +526,7 @@ class ChatbotFallbackService
         // Lấy sản phẩm có nhiều đơn hàng nhất hoặc có review tốt
         $products = DB::table('products')
             ->leftJoin('order_details', 'products.id', '=', 'order_details.product_id')
-            ->select('products.id', 'products.name', 'products.brand', 'products.price', DB::raw('COUNT(order_details.id) as order_count'))
+            ->select('products.id', 'products.name','products.slug', 'products.brand', 'products.price', DB::raw('COUNT(order_details.id) as order_count'))
             ->groupBy('products.id', 'products.name', 'products.brand', 'products.price')
             ->orderBy('order_count', 'desc')
             ->limit(5)
@@ -369,14 +534,14 @@ class ChatbotFallbackService
         
         if ($products->isEmpty()) {
             $products = DB::table('products')
-                ->select('id', 'name', 'brand', 'price')
+                ->select('id', 'name', 'slug', 'brand', 'price')
                 ->limit(5)
                 ->get();
         }
         
         $productList = [];
         foreach ($products as $product) {
-            $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. /products/{$product->id}";
+            $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. \"/products/" . ($product->slug ?? $product->id);
         }
         
         return "Các sản phẩm **bán chạy** tại shop:\n" . implode("\n", $productList);
@@ -408,7 +573,7 @@ class ChatbotFallbackService
             }
             
             $products = DB::table('products')
-                ->select('id', 'name', 'brand', 'price')
+                ->select('id', 'name', 'slug', 'brand', 'price')
                 ->where('price', '<=', $budget)
                 ->orderBy('price', 'desc')
                 ->limit(5)
@@ -420,7 +585,7 @@ class ChatbotFallbackService
             
             $productList = [];
             foreach ($products as $product) {
-                $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. /products/{$product->id}";
+                $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. \"/products/" . ($product->slug ?? $product->id);
             }
             
             return "Các sản phẩm **dưới " . number_format($budget) . "đ**:\n" . implode("\n", $productList);
@@ -445,7 +610,7 @@ class ChatbotFallbackService
         }
         
         $products = DB::table('products')
-            ->select('id', 'name', 'brand', 'price')
+            ->select('id', 'name', 'slug', 'brand', 'price')
             ->where(function($query) use ($keywords) {
                 foreach ($keywords as $keyword) {
                     $query->orWhere('name', 'LIKE', "%{$keyword}%")
@@ -461,7 +626,7 @@ class ChatbotFallbackService
         
         $productList = [];
         foreach ($products as $product) {
-            $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. /products/{$product->id}";
+            $productList[] = "**{$product->name}** ({$product->brand}) - " . number_format($product->price) . "đ. \"/products/" . ($product->slug ?? $product->id);
         }
         
         return "Tìm thấy các sản phẩm phù hợp:\n" . implode("\n", $productList);

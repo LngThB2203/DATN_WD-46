@@ -9,15 +9,7 @@
 
         <div id="chat-messages"></div>
 
-        <div id="chat-suggestions">
-            <button class="suggest-btn">Nam bán chạy ✨</button>
-            <button class="suggest-btn">Nữ quyến rũ</button>
-            <button class="suggest-btn">Đi làm văn phòng</button>
-            <button class="suggest-btn">Tiệc sang trọng</button>
-            <button class="suggest-btn">Dưới 1 triệu</button>
-            <button class="suggest-btn">Lưu hương lâu</button>
-            <button class="suggest-btn">Quà tặng sinh nhật 🎁</button>
-        </div>
+        
 
         <div id="chat-input">
             <input type="text" id="message-input" placeholder="Hỏi về mùi hương..." autocomplete="off">
@@ -156,27 +148,22 @@ function appendOne(m) {
     let message = m.message;
 
     if (m.sender === 'bot') {
-    // 1. Tạo một URL mẫu từ Laravel Blade (dùng một giá trị giả định như 'ID_HERE')
-    const baseUrl = "{{ route('product.show', $product->slug) }}";
+        const linkRegex = /\/products\/([a-z0-9\-]+)/gi;
 
-    const linkRegex = /([^\n]*?)\/products\/(\d+)/g;
-    
-    message = message.replace(linkRegex, function(match, before, productId) {
-        const cleanBefore = before.replace(/\.?\s*Xem tại:\s*/i, '').trim();
-        const linkText = cleanBefore ? cleanBefore + ' ' : '';
-        
-        
-        const finalUrl = baseUrl.replace(':slug', productId);
+        message = message.replace(linkRegex, function (match, productId) {
+    return `<br>👉 <a href="/product/${productId}" class="chat-link" target="_blank">Xem sản phẩm ↗</a>`;
+});
 
-        return `${linkText}<a href="${finalUrl}" class="chat-link" target="_blank">Xem sản phẩm ↗</a>`;
-    });
-    
-    message = message.replace(/\n/g, '<br>');
-}
+        message = message.replace(/\n/g, '<br>');
+    }
 
-    $("#chat-messages").append($('<div class="' + cls + '"></div>').html(message));
+    $("#chat-messages").append(
+        $('<div class="' + cls + '"></div>').html(message)
+    );
+
     scrollBottom();
 }
+
 
 function scrollBottom() {
     const container = $("#chat-messages");
