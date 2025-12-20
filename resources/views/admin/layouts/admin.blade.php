@@ -21,7 +21,7 @@
 
     <!-- Theme Config js (Require in all Page) -->
     <script src="{{ asset('assets/admin/js/config.js')}}"></script>
-
+    @stack('styles')
 
 </head>
 
