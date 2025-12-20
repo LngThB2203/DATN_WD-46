@@ -91,32 +91,29 @@
             </li>
 
             <!-- Khách hàng -->
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link menu-arrow" href="#sidebarCustomer" data-bs-toggle="collapse" role="button"
                    aria-expanded="false" aria-controls="sidebarCustomer">
                     <span class="nav-icon">
-                        <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+                        <iconify-icon icon="solar:clipboard-list-bold-duotone"></iconify-icon>
                     </span>
-                    <span class="nav-text"> Khách hàng </span>
+                    <span class="nav-text"> Khách Hàng </span>
                 </a>
                 <div class="collapse" id="sidebarCustomer">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.customers.list') }}">Danh sách khách hàng</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.customers.create') }}">Thêm khách hàng</a>
+                            <a class="sub-nav-link" href="{{ route('admin.customers.list') }}"> Danh sách khách hàng</a>
                         </li>
                     </ul>
                 </div>
-            </li> --}}
+            </li>
 
             <!-- Newsletter -->
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="#sidebarNewsletter" data-bs-toggle="collapse"
                    role="button" aria-expanded="false" aria-controls="sidebarNewsletter">
                     <span class="nav-icon">
-                        <iconify-icon icon="solar:envelope-bold-duotone" style="color:black;"></iconify-icon>
+                        <iconify-icon icon="solar:clipboard-list-bold-duotone"></iconify-icon>
                     </span>
                     <span class="nav-text"> Bản tin </span>
                 </a>
