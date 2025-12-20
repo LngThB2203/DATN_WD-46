@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload</title>
+</head>
+<body>
+    <h1>Test Upload Form</h1>
+    <form action="/admin/products/add" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+        
+        <div>
+            <label>Product Name:</label>
+            <input type="text" name="name" value="Test Product" required>
+        </div>
+        
+        <div>
+            <label>Price:</label>
+            <input type="number" name="price" value="100000" required>
+        </div>
+        
+        <div>
+            <label>Category:</label>
+            <select name="category_id">
+                <option value="1">Fashion</option>
+            </select>
+        </div>
+        
+        <div>
+            <label>Images:</label>
+            <input type="file" name="images[]" multiple accept="image/*">
+        </div>
+        
+        <div>
+            <label>Status:</label>
+            <input type="checkbox" name="status" checked>
+        </div>
+        
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
