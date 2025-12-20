@@ -6,11 +6,13 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\InventoryExportController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\WarehouseBatchController;
 use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
@@ -19,7 +21,6 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
 use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Client\ProductDetailController;
 use App\Http\Controllers\Client\ProductListingController;
@@ -246,7 +247,6 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     // Inventories
     Route::prefix('inventories')->name('inventories.')->group(function () {
 
-        // Warehouse
         Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
         Route::get('/warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.add');
         Route::post('/warehouse/store', [WarehouseController::class, 'store'])->name('warehouse.store');
@@ -254,22 +254,40 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
         Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
 
-        // Stock
-        Route::get('/received-orders', [WarehouseProductController::class, 'index'])->name('received-orders');
-        Route::put('/received-orders/{id}', [WarehouseProductController::class, 'updateQuantity'])->name('updateQuantity');
-        Route::get('/get-variants/{product}', [WarehouseProductController::class, 'getVariants'])->name('getVariants');
+        Route::get(
+            '/received-orders',
+            [WarehouseProductController::class, 'index']
+        )->name('received-orders');
+
         Route::get(
             '/stock/{product}/{variant?}',
             [WarehouseProductController::class, 'show']
         )->name('stock.show');
 
-        // Import
-        Route::get('/import', [WarehouseProductController::class, 'createImport'])->name('import.create');
-        Route::post('/import', [WarehouseProductController::class, 'import'])->name('import.store');
+        Route::get(
+            '/get-variants/{product}',
+            [WarehouseProductController::class, 'getVariants']
+        )->name('getVariants');
 
-        // Export
-        Route::get('/export', [WarehouseProductController::class, 'createExport'])->name('export.create');
-        Route::post('/export', [WarehouseProductController::class, 'export'])->name('export.store');
+        Route::get(
+            '/import',
+            [WarehouseBatchController::class, 'createImport']
+        )->name('import.create');
+
+        Route::post(
+            '/import',
+            [WarehouseBatchController::class, 'storeImport']
+        )->name('import.store');
+
+        Route::get(
+            '/export',
+            [WarehouseBatchController::class, 'createExport']
+        )->name('export.create');
+
+        Route::post(
+            '/export',
+            [WarehouseBatchController::class, 'storeExport']
+        )->name('export.store');
 
         Route::get(
             '/stock-transactions',
@@ -292,16 +310,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     });
 
     Route::prefix('orders')->name('admin.orders.')->group(function () {
-    Route::get('/list', [OrderController::class, 'index'])->name('list');
-    Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
+        Route::get('/list', [OrderController::class, 'index'])->name('list');
+        Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
 
-    Route::put('/update-status/{id}', [OrderController::class, 'updateStatus'])
-        ->name('update-status');
+        Route::put('/update-status/{id}', [OrderController::class, 'updateStatus'])
+            ->name('update-status');
 
-    Route::put('/update-warehouse/{id}', [OrderController::class, 'updateWarehouse'])
-        ->name('update-warehouse');
-});
-
+        Route::put('/update-warehouse/{id}', [OrderController::class, 'updateWarehouse'])
+            ->name('update-warehouse');
+    });
 
     Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
         Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');
