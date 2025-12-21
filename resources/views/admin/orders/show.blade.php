@@ -7,6 +7,25 @@
     <div class="container-xxl">
         <h3 class="mb-4">Chi tiết đơn hàng #{{ $order->id }}</h3>
 
+        {{-- Thông báo --}}
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <ul class="mb-0">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         {{-- Thông tin khách hàng --}}
         <div class="card mb-4">
             <div class="card-header">Thông tin khách hàng</div>
@@ -170,34 +189,90 @@
         </div>
 
         {{-- Trạng thái --}}
-        @if ($order->warehouse_id)
-            @php
-                $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
-                $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
-            @endphp
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Trạng thái đơn hàng</span>
-                    <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ route('admin.orders.update-status', $order->id) }}">
-                        @csrf
-                        @method('PUT')
-                        <select name="order_status" class="form-select mb-2" required>
-                            @foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label)
-                                @if (\App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key))
-                                    <option value="{{ $key }}" {{ $order->order_status == $key ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
-                        <button class="btn btn-success">Cập nhật trạng thái</button>
-                    </form>
-                </div>
+        @php
+            $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+            $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
+            // Các trạng thái yêu cầu phải có warehouse
+            $statusesRequiringWarehouse = [\App\Helpers\OrderStatusHelper::PREPARING, \App\Helpers\OrderStatusHelper::AWAITING_PICKUP, \App\Helpers\OrderStatusHelper::DELIVERED, \App\Helpers\OrderStatusHelper::COMPLETED];
+        @endphp
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Trạng thái đơn hàng</span>
+                <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
             </div>
-        @endif
+            <div class="card-body">
+                @if (!$order->warehouse_id)
+                    <div class="alert alert-warning mb-3">
+                        <small><i class="bi bi-exclamation-triangle"></i> Vui lòng chọn kho xuất hàng trước khi cập nhật trạng thái sang "Đang chuẩn bị hàng" hoặc các trạng thái tiếp theo.</small>
+                    </div>
+                @endif
+                @php
+                    $availableStatuses = [];
+                    $currentStatusMapped = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
+                    foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label) {
+                        if (\App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key)) {
+                            $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
+                            $isDisabled = $requiresWarehouse && !$order->warehouse_id;
+                            if (!$isDisabled) {
+                                $availableStatuses[] = $key;
+                            }
+                        }
+                    }
+                @endphp
+                <form method="POST" action="{{ route('admin.orders.update-status', $order->id) }}" id="updateStatusForm">
+                    @csrf
+                    @method('PUT')
+                    <select name="order_status" class="form-select mb-2" required id="statusSelect">
+                        @foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label)
+                            @if (\App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key))
+                                @php
+                                    $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
+                                    $isDisabled = $requiresWarehouse && !$order->warehouse_id;
+                                    $isCurrent = ($order->order_status == $key || $currentStatusMapped == $key);
+                                @endphp
+                                <option value="{{ $key }}" 
+                                    {{ $isCurrent ? 'selected' : '' }}
+                                    {{ $isDisabled ? 'disabled' : '' }}>
+                                    {{ $label }}
+                                    @if($isDisabled) (Cần chọn kho) @endif
+                                </option>
+                            @endif
+                        @endforeach
+                    </select>
+                    @if (empty($availableStatuses))
+                        <div class="alert alert-warning mb-2">
+                            <small>Vui lòng chọn kho để có thể cập nhật trạng thái.</small>
+                        </div>
+                        <button type="button" class="btn btn-success" disabled>Cập nhật trạng thái</button>
+                    @else
+                        <button type="submit" class="btn btn-success">Cập nhật trạng thái</button>
+                    @endif
+                </form>
+                <script>
+                    document.getElementById('statusSelect')?.addEventListener('change', function() {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption.disabled) {
+                            // Nếu chọn option disabled, reset về giá trị hiện tại
+                            const currentValue = '{{ $order->order_status }}';
+                            this.value = currentValue;
+                            alert('Vui lòng chọn kho trước khi chuyển sang trạng thái này!');
+                            return false;
+                        }
+                    });
+                    
+                    document.getElementById('updateStatusForm')?.addEventListener('submit', function(e) {
+                        const select = document.getElementById('statusSelect');
+                        const selectedOption = select.options[select.selectedIndex];
+                        if (selectedOption.disabled) {
+                            e.preventDefault();
+                            alert('Vui lòng chọn kho trước khi chuyển sang trạng thái này!');
+                            return false;
+                        }
+                        return true;
+                    });
+                </script>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
