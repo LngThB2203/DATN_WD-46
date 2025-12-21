@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\InventoryExportController;
 use App\Http\Controllers\Client\ProductListingController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\Admin\WarehouseBatchController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
