@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
+use App\Models\Discount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -44,7 +45,8 @@ class VNPayController extends Controller
                 ->with('error', 'Phiên thanh toán đã hết hạn');
         }
 
-        DB::transaction(function () use ($pending, $request) {
+        $lastOrderId = null;
+        DB::transaction(function () use ($pending, $request, &$lastOrderId) {
             $order = Order::create([
                 'user_id'               => $pending['user_id'],
                 'order_status'          => 'pending',
@@ -52,6 +54,7 @@ class VNPayController extends Controller
                 'subtotal'              => $pending['cart']['subtotal'],
                 'shipping_cost'         => $pending['cart']['shipping_fee'],
                 'discount_total'        => $pending['cart']['discount_total'],
+                'discount_id'           => $pending['cart']['discount_id'] ?? null,
                 'grand_total'           => $pending['cart']['grand_total'],
                 'customer_name'         => $pending['customer']['customer_name'],
                 'customer_email'        => $pending['customer']['customer_email'],
@@ -59,6 +62,13 @@ class VNPayController extends Controller
                 'shipping_address_line' => $pending['customer']['shipping_address_line'],
                 'customer_note'         => $pending['customer']['customer_note'] ?? null,
             ]);
+
+            // tăng số lượt dùng mã (nếu có)
+            if ($order->discount_id) {
+                Discount::where('id', $order->discount_id)->increment('used_count');
+            }
+
+            $lastOrderId = $order->id;
 
             foreach ($pending['cart']['items'] as $item) {
                 if (!in_array($item['cart_item_id'], $pending['selectedItems'])) continue;
@@ -82,6 +92,8 @@ class VNPayController extends Controller
                 'paid_at'          => now(),
             ]);
 
+
+
             // Xóa sản phẩm đã thanh toán khỏi giỏ
             $cartId = session('cart_id');
             if ($cartId) {
@@ -95,7 +107,8 @@ class VNPayController extends Controller
 
         session()->forget('pending_order');
 
-        return redirect()->route('orders.index')
-            ->with('success', 'Thanh toán thành công');
+        return redirect()->route('order.confirmation')
+            ->with('success', 'Thanh toán thành công')
+            ->with('last_order_id', $lastOrderId);
     }
 }

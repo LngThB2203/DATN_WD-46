@@ -27,7 +27,7 @@
                             Thanh toán khi nhận hàng (COD)
                         @endif
                     </li>
-                    <li><strong>Trạng thái:</strong> {{ ucfirst($order->order_status) }}</li>
+                    <li><strong>Trạng thái:</strong> {{ \App\Helpers\OrderStatusHelper::getStatusName($order->order_status) }}</li>
                 </ul>
 
                 <h3 style="margin-top: 24px;">Chi tiết sản phẩm</h3>

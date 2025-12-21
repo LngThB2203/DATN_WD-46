@@ -73,7 +73,6 @@ class OrderController extends Controller
             'details.variant.concentration',
             'warehouse',
         ])->findOrFail($id);
-
         if (! $order->warehouse_id) {
             $this->autoAssignWarehouse($order);
             $order->refresh();
@@ -146,8 +145,7 @@ class OrderController extends Controller
             // Cập nhật trạng thái
             $order->update([
                 'order_status' => $newStatus,
-            ]);
-            
+            ]);            
             DB::commit();
             return back()->with('success', 'Cập nhật trạng thái thành công');
         } catch (\Exception $e) {

@@ -132,7 +132,7 @@
                     <div class="card-header fw-semibold">Tóm tắt đơn hàng</div>
                     <div class="card-body" id="cartSummary"
                          data-shipping-fee="{{ (int)($cart['shipping_fee'] ?? 30000) }}"
-                         data-discount-total="{{ (int)($cart['discount_total'] ?? 0) }}">
+                         data-discount-total="{{ request()->routeIs('checkout.*') ? (int)($cart['discount_total'] ?? 0) : 0 }}">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Tạm tính</span>
                             <span id="selectedSubtotal">{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }} VNĐ</span>
@@ -141,7 +141,7 @@
                             <span>Phí vận chuyển</span>
                             <span id="selectedShipping">{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }} VNĐ</span>
                         </div>
-                        @if(($cart['discount_total'] ?? 0) > 0)
+                        @if(request()->routeIs('checkout.*') && (($cart['discount_total'] ?? 0) > 0))
                             <div class="d-flex justify-content-between mb-2 text-success">
                                 <span>Giảm giá</span>
                                 <span>-{{ number_format($cart['discount_total'] ?? 0, 0, ',', '.') }} VNĐ</span>

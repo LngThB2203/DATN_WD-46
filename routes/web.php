@@ -144,6 +144,7 @@ Route::post('/vouchers/save', [DiscountController::class, 'saveForUser'])
 // Discount API
 Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');
 Route::post('/api/apply-discount', [DiscountController::class, 'apply'])->name('api.apply-discount');
+Route::post('/api/remove-discount', [DiscountController::class, 'remove'])->name('api.remove-discount');
 
 // Static Pages
 Route::get('/about', fn() => view('client.about'))->name('about');
@@ -151,7 +152,7 @@ Route::get('/faq', fn() => view('client.faq'))->name('faq.index');
 Route::get('/privacy', fn() => view('client.privacy'))->name('privacy.index');
 Route::get('/tos', fn() => view('client.tos'))->name('tos.index');
 Route::get('/login-register', fn() => view('client.login-register'))->name('auth.index');
-Route::get('/order-confirmation', fn() => view('client.order-confirmation'))->name('order.confirmation');
+Route::get('/order-confirmation', [\App\Http\Controllers\CheckoutController::class, 'confirmation'])->name('order.confirmation');
 Route::get('/payment-methods', fn() => view('client.payment-methods'))->name('payment.methods');
 Route::get('/return-policy', fn() => view('client.return-policy'))->name('return.policy');
 // Route::get('/search', fn() => view('client.search-results'))->name('search.results');

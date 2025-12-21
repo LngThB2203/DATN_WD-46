@@ -79,7 +79,10 @@ class CheckoutController extends Controller
 
             $request->session()->put('pending_order', [
                 'customer'      => $validated,
-                'cart'          => $cart,
+                'cart'          => array_merge($cart, [
+                    'discount_id' => $request->session()->get('cart.discount_id'),
+                    'discount_code' => $request->session()->get('cart.code'),
+                ]),
                 'user_id'       => optional($request->user())->id,
                 'selectedItems' => $selectedItems,
                 'vnp_txn_ref'   => $vnpTxnRef,
@@ -89,7 +92,8 @@ class CheckoutController extends Controller
         }
 
         // ===== COD =====
-        DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
+        $lastOrderId = null;
+        DB::transaction(function () use ($validated, $cart, $request, $selectedItems, &$lastOrderId) {
 
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
@@ -98,6 +102,7 @@ class CheckoutController extends Controller
                 'subtotal'              => $cart['subtotal'],
                 'shipping_cost'         => $cart['shipping_fee'],
                 'discount_total'        => $cart['discount_total'],
+                'discount_id'           => $request->session()->get('cart.discount_id') ?? null,
                 'grand_total'           => $cart['grand_total'],
                 'customer_name'         => $validated['customer_name'],
                 'customer_email'        => $validated['customer_email'],
@@ -105,6 +110,13 @@ class CheckoutController extends Controller
                 'shipping_address_line' => $validated['shipping_address_line'],
                 'customer_note'         => $validated['customer_note'] ?? null,
             ]);
+
+            // tăng số lượt dùng mã (nếu có)
+            if ($order->discount_id) {
+                Discount::where('id', $order->discount_id)->increment('used_count');
+            }
+
+            $lastOrderId = $order->id;
 
             foreach ($cart['items'] as $item) {
                 if (!in_array($item['cart_item_id'], $selectedItems)) continue;
@@ -130,8 +142,9 @@ class CheckoutController extends Controller
             $this->removePaidItemsFromCart($request, $selectedItems);
         });
 
-        return redirect()->route('orders.index')
-            ->with('success', 'Đặt hàng thành công');
+        return redirect()->route('order.confirmation')
+            ->with('success', 'Đặt hàng thành công')
+            ->with('last_order_id', $lastOrderId);
     }
 
     private function redirectToVNPay(array $cart, Request $request, string $txnRef)
@@ -190,6 +203,17 @@ class CheckoutController extends Controller
             'discount_total' => $sessionCart['discount_total'],
             'grand_total' => max($subtotal + $sessionCart['shipping_fee'] - $sessionCart['discount_total'], 0),
         ];
+    }
+
+    public function confirmation(Request $request)
+    {
+        $orderId = session('last_order_id') ?? $request->session()->get('last_order_id');
+        $order = null;
+        if ($orderId) {
+            $order = Order::with('details')->find($orderId);
+        }
+
+        return view('client.order-confirmation', compact('order'));
     }
 
     private function removePaidItemsFromCart(Request $request, array $paidItemIds): void
