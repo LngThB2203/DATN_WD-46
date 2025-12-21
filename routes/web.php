@@ -1,7 +1,26 @@
 <?php
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
+<<<<<<< Updated upstream
 use App\Http\Controllers\Admin\BrandController;
+=======
+use App\Http\Controllers\Client\VNPayController;
+use App\Http\Controllers\Admin\StatisticController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Client\WishlistController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Client\ProductDetailController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\Admin\InventoryExportController;
+use App\Http\Controllers\Client\ProductListingController;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\WarehouseBatchController;
+use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Client\OrderController as ClientOrderController;
+>>>>>>> Stashed changes
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\InventoryExportController;

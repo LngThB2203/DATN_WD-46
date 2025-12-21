@@ -86,7 +86,7 @@
                         <p><strong>Họ tên:</strong> {{ $order->customer_name }}</p>
                         @if($order->customer_email)<p><strong>Email:</strong> {{ $order->customer_email }}</p>@endif
                         <p><strong>Điện thoại:</strong> {{ $order->customer_phone }}</p>
-                        <p><strong>Địa chỉ:</strong> {{ $order->shipping_address }}</p>
+                        <p><strong>Địa chỉ:</strong> {{ $order->shipping_address_line }}</p>
                         @if($order->customer_note)<p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>@endif
 
                         {{-- Nút hủy đơn --}}

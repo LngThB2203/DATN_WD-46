@@ -1,137 +1,101 @@
 <?php
+
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class VNPayController extends Controller
 {
     public function vnpayReturn(Request $request)
     {
-        $vnp_HashSecret = config('vnpay.vnp_HashSecret');
-        $inputData      = $request->all();
+        $secret = config('vnpay.vnp_HashSecret');
+        $data   = $request->all();
 
-        $vnp_SecureHash = $inputData['vnp_SecureHash'] ?? null;
-        unset($inputData['vnp_SecureHash']);
-        unset($inputData['vnp_SecureHashType']);
-
-        ksort($inputData);
-        $hashData = '';
-        foreach ($inputData as $key => $value) {
-            if ($hashData !== '') {
-                $hashData .= '&';
-            }
-
-            $hashData .= $key . '=' . $value;
-        }
-
-        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
-
-        if ($secureHash !== $vnp_SecureHash) {
-            Log::warning('VNPay return: invalid signature', ['data' => $inputData]);
-            return redirect()->route('orders.index')->with('error', 'Sai chữ ký — giao dịch không hợp lệ!');
-        }
-
-        $txnRef        = $request->get('vnp_TxnRef');
-        $responseCode  = $request->get('vnp_ResponseCode');
-        $transactionNo = $request->get('vnp_TransactionNo');
-        $amount        = $request->get('vnp_Amount');
-
-        DB::beginTransaction();
-        try {
-            $order = Order::find($txnRef);
-            if (! $order) {
-                DB::rollBack();
-                return redirect()->route('orders.index')->with('error', 'Đơn hàng không tìm thấy.');
-            }
-
-            // kiểm tra số tiền
-            $expected = intval(round($order->grand_total * 100));
-            if ((int) $amount !== $expected) {
-                Log::error('VNPay return: amount mismatch', ['order' => $order->id, 'expected' => $expected, 'got' => $amount]);
-                DB::rollBack();
-                return redirect()->route('orders.index')->with('error', 'Số tiền không khớp.');
-            }
-
-            if ($responseCode === '00') {
-                Payment::where('order_id', $order->id)->update([
-                    'status'           => 'paid',
-                    'transaction_code' => $transactionNo,
-                    'paid_at'          => now(),
-                ]);
-                $order->update(['order_status' => 'paid']);
-                DB::commit();
-                return redirect()->route('orders.index')->with('success', 'Thanh toán thành công!');
-            } else {
-                DB::rollBack();
-                return redirect()->route('orders.index')->with('error', 'Thanh toán thất bại hoặc bị hủy!');
-            }
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('VNPay return exception: ' . $e->getMessage());
-            return redirect()->route('orders.index')->with('error', 'Lỗi xử lý sau thanh toán.');
-        }
-    }
-
-    public function vnpayIpn(Request $request)
-    {
-        $vnp_HashSecret = config('vnpay.vnp_HashSecret');
-        $data           = $request->all();
-
-        $vnp_SecureHash = $data['vnp_SecureHash'] ?? null;
-        unset($data['vnp_SecureHash']);
-        unset($data['vnp_SecureHashType']);
-
+        $secureHash = $data['vnp_SecureHash'] ?? null;
+        unset($data['vnp_SecureHash'], $data['vnp_SecureHashType']);
         ksort($data);
+
         $hashData = '';
         foreach ($data as $k => $v) {
-            if ($hashData !== '') {
-                $hashData .= '&';
+            if ($hashData !== '') $hashData .= '&';
+            $hashData .= urlencode($k) . '=' . urlencode($v);
+        }
+
+        // Kiểm tra chữ ký
+        if (hash_hmac('sha512', $hashData, $secret) !== $secureHash) {
+            return redirect()->route('checkout.index')
+                ->with('error', 'Sai chữ ký VNPay');
+        }
+
+        // Kiểm tra thanh toán thành công
+        if ($request->vnp_ResponseCode !== '00') {
+            return redirect()->route('checkout.index')
+                ->with('error', 'Thanh toán không thành công');
+        }
+
+        $pending = session('pending_order');
+        if (!$pending) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Phiên thanh toán đã hết hạn');
+        }
+
+        DB::transaction(function () use ($pending, $request) {
+            $order = Order::create([
+                'user_id'               => $pending['user_id'],
+                'order_status'          => 'pending',
+                'payment_method'        => 'online',
+                'subtotal'              => $pending['cart']['subtotal'],
+                'shipping_cost'         => $pending['cart']['shipping_fee'],
+                'discount_total'        => $pending['cart']['discount_total'],
+                'grand_total'           => $pending['cart']['grand_total'],
+                'customer_name'         => $pending['customer']['customer_name'],
+                'customer_email'        => $pending['customer']['customer_email'],
+                'customer_phone'        => $pending['customer']['customer_phone'],
+                'shipping_address_line' => $pending['customer']['shipping_address_line'],
+                'customer_note'         => $pending['customer']['customer_note'] ?? null,
+            ]);
+
+            foreach ($pending['cart']['items'] as $item) {
+                if (!in_array($item['cart_item_id'], $pending['selectedItems'])) continue;
+
+                OrderDetail::create([
+                    'order_id'   => $order->id,
+                    'product_id' => $item['product_id'],
+                    'variant_id' => $item['variant_id'],
+                    'quantity'   => $item['quantity'],
+                    'price'      => $item['price'],
+                    'subtotal'   => $item['subtotal'],
+                ]);
             }
 
-            $hashData .= $k . '=' . $v;
-        }
-
-        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
-
-        if ($secureHash !== $vnp_SecureHash) {
-            Log::warning('VNPay IPN invalid signature', $data);
-            return response('Invalid signature', 400);
-        }
-
-        $txnRef        = $data['vnp_TxnRef'] ?? null;
-        $responseCode  = $data['vnp_ResponseCode'] ?? null;
-        $transactionNo = $data['vnp_TransactionNo'] ?? null;
-        $amount        = $data['vnp_Amount'] ?? null;
-
-        $order = Order::find($txnRef);
-        if (! $order) {
-            Log::error('VNPay IPN order not found', ['txnRef' => $txnRef]);
-            return response('Order not found', 404);
-        }
-
-        $expected = intval(round($order->grand_total * 100));
-        if ((int) $amount !== $expected) {
-            Log::error('VNPay IPN amount mismatch', ['order' => $order->id, 'expected' => $expected, 'amount' => $amount]);
-            return response('Amount mismatch', 400);
-        }
-
-        if ($responseCode === '00') {
-            Payment::where('order_id', $order->id)->update([
+            Payment::create([
+                'order_id'         => $order->id,
+                'payment_method'   => 'online',
+                'transaction_code' => $request->vnp_TransactionNo,
+                'amount'           => $order->grand_total,
                 'status'           => 'paid',
-                'transaction_code' => $transactionNo,
                 'paid_at'          => now(),
             ]);
-            $order->update(['order_status' => 'paid']);
-            Log::info('VNPay IPN processed', ['order_id' => $order->id]);
-            return response('OK', 200);
-        }
 
-        Log::info('VNPay IPN not success', ['order_id' => $order->id, 'response' => $responseCode]);
-        return response('Not success', 200);
+            // Xóa sản phẩm đã thanh toán khỏi giỏ
+            $cartId = session('cart_id');
+            if ($cartId) {
+                $cart = \App\Models\Cart::find($cartId);
+                if ($cart) {
+                    $cart->items()->whereIn('id', $pending['selectedItems'])->delete();
+                }
+            }
+            session()->forget('cart');
+        });
+
+        session()->forget('pending_order');
+
+        return redirect()->route('orders.index')
+            ->with('success', 'Thanh toán thành công');
     }
 }
