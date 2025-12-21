@@ -115,4 +115,5 @@ class Product extends Model
     {
         return $this->belongsTo(Brand::class);
     }
+    protected $dates = ['deleted_at'];
 }

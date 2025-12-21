@@ -12,12 +12,47 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductVariantController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $variants = ProductVariant::with(['product', 'size', 'scent', 'concentration'])
-            ->orderBy('product_id', 'desc')->paginate(15);
+        $query = ProductVariant::with(['product', 'size', 'scent', 'concentration']);
 
-        return view('admin.variants.index', compact('variants'));
+        // Tìm kiếm theo SKU hoặc tên sản phẩm
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('sku', 'like', "%{$search}%")
+                ->orWhereHas('product', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+        }
+
+        // Lọc theo size
+        if ($request->filled('size_id')) {
+            $query->where('size_id', $request->size_id);
+        }
+
+        // Lọc theo scent
+        if ($request->filled('scent_id')) {
+            $query->where('scent_id', $request->scent_id);
+        }
+
+        // Lọc theo concentration
+        if ($request->filled('concentration_id')) {
+            $query->where('concentration_id', $request->concentration_id);
+        }
+
+        // Lọc theo gender
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
+
+        $variants = $query->orderBy('product_id', 'desc')->paginate(15)->withQueryString();
+
+        return view('admin.variants.index', [
+            'variants'       => $variants,
+            'sizes'          => VariantSize::all(),
+            'scents'         => VariantScent::all(),
+            'concentrations' => VariantConcentration::all(),
+        ]);
     }
 
     public function create()

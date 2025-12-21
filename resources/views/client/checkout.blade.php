@@ -229,11 +229,9 @@
                                     @endif
                                 @endauth
 
-                                @if(!empty($cart['discount_code']))
-                                    <div class="mt-1 small text-success">
-                                        Đang áp dụng mã: <strong>{{ $cart['discount_code'] }}</strong>
-                                    </div>
-                                @endif
+                                <div id="appliedDiscountInfo" class="mt-1 small text-success" style="{{ empty($cart['discount_code']) ? 'display:none;' : '' }}">
+                                    Đang áp dụng mã: <strong id="appliedDiscountCode">{{ $cart['discount_code'] ?? '' }}</strong>
+                                </div>
 
                                 <div class="mt-1 small">
                                     <a href="{{ route('client.vouchers.index') }}" class="text-decoration-underline">Xem kho voucher</a>
@@ -243,24 +241,24 @@
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Tạm tính</span>
-                                <span>{{ number_format($cart['subtotal'] ?? 0) }} đ</span>
+                                <span id="cartSubtotal">{{ number_format($cart['subtotal'] ?? 0) }} đ</span>
                             </div>
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Giảm giá</span>
-                                <span>- {{ number_format($cart['discount_total'] ?? 0) }} đ</span>
+                                <span id="cartDiscount">- {{ number_format($cart['discount_total'] ?? 0) }} đ</span>
                             </div>
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Phí vận chuyển</span>
-                                <span>{{ number_format($cart['shipping_fee'] ?? 0) }} đ</span>
+                                <span id="cartShipping">{{ number_format($cart['shipping_fee'] ?? 0) }} đ</span>
                             </div>
 
                             <hr>
 
                             <div class="d-flex justify-content-between fw-semibold mb-3">
                                 <span>Tổng cộng</span>
-                                <span>{{ number_format($cart['grand_total'] ?? 0) }} đ</span>
+                                <span id="cartGrandTotal">{{ number_format($cart['grand_total'] ?? 0) }} đ</span>
                             </div>
 
                             <button class="btn btn-primary w-100" type="button" onclick="confirmOrder('{{ $item['name'] }}','{{ number_format($item['price']) }} đ', this)">
@@ -302,6 +300,13 @@
     const messageEl = document.getElementById('discountMessage');
     const savedSelect = document.getElementById('savedVoucherSelect');
 
+    const subtotalEl = document.getElementById('cartSubtotal');
+    const discountEl = document.getElementById('cartDiscount');
+    const shippingEl = document.getElementById('cartShipping');
+    const grandTotalEl = document.getElementById('cartGrandTotal');
+    const appliedInfoEl = document.getElementById('appliedDiscountInfo');
+    const appliedCodeEl = document.getElementById('appliedDiscountCode');
+
     if (savedSelect && codeInput) {
         savedSelect.addEventListener('change', function () {
             const code = this.value;
@@ -340,10 +345,59 @@
                     if (ok && data.success) {
                         messageEl.textContent = data.message || 'Áp dụng mã giảm giá thành công!';
                         messageEl.className = 'mt-2 small text-success';
-                        window.location.reload();
+
+                        const cart = data.cart || {};
+                        const formatNumber = (value) => {
+                            const num = Number(value) || 0;
+                            return num.toLocaleString('vi-VN');
+                        };
+
+                        if (subtotalEl && typeof cart.subtotal !== 'undefined') {
+                            subtotalEl.textContent = formatNumber(cart.subtotal) + ' đ';
+                        }
+                        if (discountEl && typeof cart.discount_total !== 'undefined') {
+                            discountEl.textContent = '- ' + formatNumber(cart.discount_total) + ' đ';
+                        }
+                        if (shippingEl && typeof cart.shipping_fee !== 'undefined') {
+                            shippingEl.textContent = formatNumber(cart.shipping_fee) + ' đ';
+                        }
+                        if (grandTotalEl && typeof cart.grand_total !== 'undefined') {
+                            grandTotalEl.textContent = formatNumber(cart.grand_total) + ' đ';
+                        }
+
+                        if (appliedInfoEl && appliedCodeEl && cart.discount_code) {
+                            appliedInfoEl.style.display = '';
+                            appliedCodeEl.textContent = cart.discount_code;
+                        }
                     } else {
-                        messageEl.textContent = data.message || 'Mã giảm giá không hợp lệ.';
+                        messageEl.textContent = (data && data.message) || 'Mã giảm giá không hợp lệ.';
                         messageEl.className = 'mt-2 small text-danger';
+
+                        const cart = (data && data.cart) || null;
+                        if (cart) {
+                            const formatNumber = (value) => {
+                                const num = Number(value) || 0;
+                                return num.toLocaleString('vi-VN');
+                            };
+
+                            if (subtotalEl && typeof cart.subtotal !== 'undefined') {
+                                subtotalEl.textContent = formatNumber(cart.subtotal) + ' đ';
+                            }
+                            if (discountEl && typeof cart.discount_total !== 'undefined') {
+                                discountEl.textContent = '- ' + formatNumber(cart.discount_total) + ' đ';
+                            }
+                            if (shippingEl && typeof cart.shipping_fee !== 'undefined') {
+                                shippingEl.textContent = formatNumber(cart.shipping_fee) + ' đ';
+                            }
+                            if (grandTotalEl && typeof cart.grand_total !== 'undefined') {
+                                grandTotalEl.textContent = formatNumber(cart.grand_total) + ' đ';
+                            }
+
+                            if (appliedInfoEl && appliedCodeEl) {
+                                appliedInfoEl.style.display = 'none';
+                                appliedCodeEl.textContent = '';
+                            }
+                        }
                     }
                 })
                 .catch(() => {

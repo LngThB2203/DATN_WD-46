@@ -28,61 +28,72 @@
                 <table class="table align-middle table-hover table-centered mb-0">
                     <thead class="bg-light-subtle">
                         <tr>
-                            <th>ID</th>
                             <th>Tên khách hàng</th>
                             <th>Email</th>
-                            <th>Số điện thoại</th>
-                            <th>Giới tính</th>
+                            <th>Quyền</th>
                             <th>Cấp độ</th>
                             <th>Trạng thái</th>
-                            <th>Ngày tạo</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($customers as $cus)
-                            <tr>
-                                <td>{{ $cus->id }}</td>
-                                <td>{{ $cus->name }}</td>
-                                <td>{{ $cus->email }}</td>
-                                <td>{{ $cus->phone ?? '—' }}</td>
-                                <td>{{ $cus->gender ?? '—' }}</td>
-                                <td>
-                                    <span class="badge
-                                        @if($cus->membership_level == 'Gold') bg-warning
-                                        @elseif($cus->membership_level == 'Platinum') bg-info
-                                        @else bg-secondary
-                                        @endif">
-                                        {{ $cus->membership_level }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge {{ $cus->status ? 'bg-success' : 'bg-secondary' }}">
-                                        {{ $cus->status ? 'Hoạt động' : 'Ngừng hoạt động' }}
-                                    </span>
-                                </td>
-                                <td>{{ $cus->created_at->format('d/m/Y') }}</td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ route('admin.customers.edit', $cus->id) }}" class="btn btn-sm btn-soft-primary">
-                                            <i class="bi bi-pencil">Sửa</i>
-                                        </a>
-                                        <form action="{{ route('admin.customers.destroy', $cus->id) }}" method="POST" onsubmit="return confirm('Xóa khách hàng này?')">
+                       @foreach($customers as $customer)
+<tr>
+    <td>{{ $customer->user->name }}</td>
+    <td>{{ $customer->user->email }}</td>
+    <td>{{ $customer->user->role }}</td>
+    <td>{{ $customer->membership_level }}</td>
+    <td>
+        @if($customer->user->status == 1)
+            <span class="badge bg-success">Hoạt động</span>
+        @else
+            <span class="badge bg-danger">Bị khóa</span>
+        @endif
+    </td>
+    <td>
+    <form action="{{ route('admin.customers.toggleUser', $customer->id) }}"
+          method="POST"
+          style="display:inline-block">
+        @csrf
+        @method('PATCH')
 
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-soft-danger">
-                                                <i class="bi bi-trash">Xóa</i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center text-muted">Không có khách hàng nào.</td>
-                            </tr>
-                        @endforelse
+        @if($customer->user->status == 1)
+            <button class="btn btn-sm btn-danger"
+                    onclick="return confirm('Khóa tài khoản này?')">
+                Khóa
+            </button>
+        @else
+            <button class="btn btn-sm btn-success"
+                    onclick="return confirm('Mở tài khoản này?')">
+                Mở
+            </button>
+        @endif
+    </form>
+
+    {{-- SỬA --}}
+    <a href="{{ route('admin.customers.edit', $customer->id) }}"
+       class="btn btn-sm btn-warning">
+        Sửa
+    </a>
+
+    {{-- XÓA --}}
+    <form action="{{ route('admin.customers.destroy', $customer->id) }}"
+          method="POST"
+          style="display:inline-block">
+        @csrf
+        @method('DELETE')
+        <button class="btn btn-sm btn-danger"
+                onclick="return confirm('Xóa khách hàng?')">
+            Xóa
+        </button>
+    </form>
+</td>
+
+        </form>
+    </td>
+</tr>
+@endforeach
+
                     </tbody>
                 </table>
             </div>

@@ -21,7 +21,8 @@ class CheckoutController extends Controller
                 : (array) $request->input('selected_items', [])
         ));
 
-        $cart = $this->prepareCart($request, $selectedItems);
+        // Khi mở trang checkout từ giỏ hàng, reset lại discount cũ (nếu có)
+        $cart = $this->prepareCart($request, $selectedItems, true);
 
         if (empty($cart['items'])) {
             return redirect()->route('cart.index')
@@ -43,8 +44,22 @@ class CheckoutController extends Controller
         $myVouchers = collect();
         if ($request->user()) {
             $voucherIds = $request->user()->userVouchers()->pluck('discount_id');
+
             if ($voucherIds->isNotEmpty()) {
-                $myVouchers = Discount::valid()->whereIn('id', $voucherIds)->get();
+                $usedDiscountIds = Order::where('user_id', $request->user()->id)
+                    ->whereNotNull('discount_id')
+                    ->where(function ($q) {
+                        $q->whereNull('order_status')
+                          ->orWhere('order_status', '!=', 'cancelled');
+                    })
+                    ->pluck('discount_id');
+
+                $myVouchers = Discount::valid()
+                    ->whereIn('id', $voucherIds)
+                    ->when($usedDiscountIds->isNotEmpty(), function ($q) use ($usedDiscountIds) {
+                        $q->whereNotIn('id', $usedDiscountIds);
+                    })
+                    ->get();
             }
         }
 
@@ -113,6 +128,7 @@ class CheckoutController extends Controller
 
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
+                'discount_id'           => $cart['discount_id'] ?? null,
                 'order_status'          => 'pending',
                 'payment_method'        => 'cod',
                 'subtotal'              => $cart['subtotal'],
@@ -145,6 +161,11 @@ class CheckoutController extends Controller
                 'amount'         => $order->grand_total,
                 'status'         => 'pending',
             ]);
+
+            // Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
+            if ($order->discount_id) {
+                $order->discount?->incrementUsage();
+            }
 
             // Xóa sản phẩm đã thanh toán trong giỏ
             $this->removePaidItemsFromCart($request, $selectedItems);
@@ -189,9 +210,21 @@ class CheckoutController extends Controller
         return redirect()->away($vnp_Url . '?' . $hashData . '&vnp_SecureHash=' . $secureHash);
     }
 
-    private function prepareCart(Request $request, array $selectedItems = []): array
+    private function prepareCart(Request $request, array $selectedItems = [], bool $resetDiscount = false): array
     {
-        $sessionCart = $request->session()->get('cart', ['items' => [], 'shipping_fee' => 30000, 'discount_total' => 0]);
+        $sessionCart = $request->session()->get('cart', [
+            'items'          => [],
+            'shipping_fee'   => 30000,
+            'discount_total' => 0,
+        ]);
+
+        // Chỉ reset discount khi được yêu cầu (mở checkout lần đầu từ giỏ),
+        // không reset trong bước submit đơn hàng để giữ nguyên giảm giá đã áp dụng.
+        if ($resetDiscount && !empty($selectedItems)) {
+            $sessionCart['discount_id']    = null;
+            $sessionCart['discount_total'] = 0;
+            $sessionCart['discount_code']  = null;
+        }
 
         $items = collect($sessionCart['items'])->filter(
             fn($i) => empty($selectedItems) || in_array($i['cart_item_id'], $selectedItems)
@@ -204,11 +237,12 @@ class CheckoutController extends Controller
         $subtotal = $items->sum('subtotal');
 
         return [
-            'items' => $items->values()->all(),
-            'subtotal' => $subtotal,
-            'shipping_fee' => $sessionCart['shipping_fee'],
+            'items'          => $items->values()->all(),
+            'subtotal'       => $subtotal,
+            'shipping_fee'   => $sessionCart['shipping_fee'],
             'discount_total' => $sessionCart['discount_total'],
-            'grand_total' => max($subtotal + $sessionCart['shipping_fee'] - $sessionCart['discount_total'], 0),
+            'grand_total'    => max($subtotal + $sessionCart['shipping_fee'] - $sessionCart['discount_total'], 0),
+            'discount_id'    => $sessionCart['discount_id'] ?? null,
         ];
     }
 
@@ -220,7 +254,15 @@ class CheckoutController extends Controller
             ->values()
             ->all();
 
-        $request->session()->put('cart', array_merge($sessionCart, ['items' => $remainingItems]));
+        // Sau khi thanh toán xong, xóa thông tin giảm giá khỏi giỏ
+        $clearedCart = array_merge($sessionCart, [
+            'items'          => $remainingItems,
+            'discount_id'    => null,
+            'discount_total' => 0,
+            'discount_code'  => null,
+        ]);
+
+        $request->session()->put('cart', $clearedCart);
 
         $cart = Cart::find($request->session()->get('cart_id'));
         if ($cart) {
