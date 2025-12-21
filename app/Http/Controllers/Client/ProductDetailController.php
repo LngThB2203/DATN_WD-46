@@ -52,9 +52,9 @@ class ProductDetailController extends Controller
         $variantMatrix = $product->variants->map(function ($v) use ($product) {
             return [
                 'id'            => $v->id,
-                'size'          => $v->size?->name,
-                'scent'         => $v->scent?->name,
-                'concentration' => $v->concentration?->name,
+                'size'          => $v->size?->size_name,
+                'scent'         => $v->scent?->scent_name,
+                'concentration' => $v->concentration?->concentration_name,
                 'price'         => $v->price ?? ($product->price + ($v->price_adjustment ?? 0)),
                 'stock'         => (int) $v->stock,
                 'image'         => $v->image
@@ -64,19 +64,19 @@ class ProductDetailController extends Controller
         })->values();
 
         $sizes = $product->variants
-            ->pluck('size.name')
+            ->pluck('size.size_name')
             ->filter()
             ->unique()
             ->values();
 
         $scents = $product->variants
-            ->pluck('scent.name')
+            ->pluck('scent.scent_name')
             ->filter()
             ->unique()
             ->values();
 
         $concentrations = $product->variants
-            ->pluck('concentration.name')
+            ->pluck('concentration.concentration_name')
             ->filter()
             ->unique()
             ->values();

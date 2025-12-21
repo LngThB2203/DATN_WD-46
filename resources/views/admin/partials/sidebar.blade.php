@@ -186,7 +186,7 @@
                             <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Tồn kho</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('inventories.stock-transactions.index') }}">Lịch sử nhập/xuất</a>
+                            <a class="sub-nav-link" href="{{ route('inventories.transactions') }}">Lịch sử nhập/xuất</a>
                         </li>
                     </ul>
                 </div>
