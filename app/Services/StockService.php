@@ -161,6 +161,20 @@ class StockService
             ->orderBy('id')
             ->get();
 
+        // Nếu không có batch nào nhưng có tồn kho, tạo batch mặc định
+        if ($batches->isEmpty() && $currentStock > 0) {
+            $defaultBatch = WarehouseBatch::lockForUpdate()->create([
+                'warehouse_id' => $warehouseId,
+                'product_id'   => $productId,
+                'variant_id'   => $variantId,
+                'batch_code'   => 'DEFAULT-' . date('YmdHis'),
+                'expired_at'   => null,
+                'import_price' => 0,
+                'quantity'     => $currentStock,
+            ]);
+            $batches = collect([$defaultBatch]);
+        }
+
         $need = $quantity;
 
         foreach ($batches as $batch) {

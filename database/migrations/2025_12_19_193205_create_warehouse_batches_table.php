@@ -13,13 +13,13 @@ return new class extends Migration
 
             $table->unsignedBigInteger('warehouse_id');
             $table->unsignedBigInteger('product_id');
-            $table->unsignedBigInteger('variant_id');
+            $table->unsignedBigInteger('variant_id')->nullable();
 
             $table->string('batch_code', 100)->index();
             $table->date('expired_at')->nullable();
 
-            $table->decimal('import_price', 12, 2);
-            $table->integer('quantity');
+            $table->decimal('import_price', 12, 2)->default(0);
+            $table->integer('quantity')->default(0);
 
             $table->timestamps();
 
@@ -34,7 +34,10 @@ return new class extends Migration
 
             $table->foreign('variant_id')
                 ->references('id')->on('product_variants')
-                ->cascadeOnDelete();
+                ->nullOnDelete();
+            
+            // Indexes for better query performance
+            $table->index(['warehouse_id', 'product_id', 'variant_id']);
         });
     }
 
