@@ -1,25 +1,25 @@
 <?php
+
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
-use App\Models\WarehouseProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
 {
     public function index(Request $request)
     {
-        $selectedItems = $request->input('selected_items', []);
-        if (is_string($selectedItems)) {
-            $selectedItems = explode(',', $selectedItems);
-        }
-        $selectedItems = array_filter(array_map('intval', (array) $selectedItems));
+        $selectedItems = array_filter(array_map('intval',
+            is_string($request->input('selected_items'))
+                ? explode(',', $request->input('selected_items'))
+                : (array) $request->input('selected_items', [])
+        ));
 
         $cart = $this->prepareCart($request, $selectedItems);
 
@@ -28,30 +28,25 @@ class CheckoutController extends Controller
                 ->with('error', 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
         }
 
+        $pending = $request->session()->get('pending_order', []);
+
         $defaultCustomer = [
-            'name'    => optional($request->user())->name,
-            'email'   => optional($request->user())->email,
-            'phone'   => optional($request->user())->phone ?? null,
-            'address' => optional($request->user())->address ?? null,
+            'customer_name'         => $pending['customer']['customer_name'] ?? optional($request->user())->name,
+            'customer_email'        => $pending['customer']['customer_email'] ?? optional($request->user())->email,
+            'customer_phone'        => $pending['customer']['customer_phone'] ?? optional($request->user())->phone,
+            'shipping_address_line' => $pending['customer']['shipping_address_line'] ?? optional($request->user())->address,
+            'customer_note'         => $pending['customer']['customer_note'] ?? null,
         ];
 
         $myVouchers = collect();
         if ($request->user()) {
             $voucherIds = $request->user()->userVouchers()->pluck('discount_id');
             if ($voucherIds->isNotEmpty()) {
-                $myVouchers = Discount::valid()
-                    ->whereIn('id', $voucherIds)
-                    ->orderByDesc('created_at')
-                    ->get();
+                $myVouchers = Discount::valid()->whereIn('id', $voucherIds)->get();
             }
         }
 
-        return view('client.checkout', [
-            'cart'            => $cart,
-            'defaultCustomer' => $defaultCustomer,
-            'selectedItems'   => $selectedItems,
-            'myVouchers'      => $myVouchers,
-        ]);
+        return view('client.checkout', compact('cart', 'selectedItems', 'defaultCustomer', 'myVouchers'));
     }
 
     public function store(Request $request)
@@ -62,239 +57,154 @@ class CheckoutController extends Controller
             'customer_phone'        => 'required|string|max:20',
             'shipping_address_line' => 'required|string|max:255',
             'customer_note'         => 'nullable|string|max:1000',
-            'payment_method'        => 'required|string|in:cod,bank_transfer,online',
+            'payment_method'        => 'required|in:cod,online',
         ]);
 
-        $selectedItems = $request->input('selected_items', []);
-        if (is_string($selectedItems)) {
-            $selectedItems = explode(',', $selectedItems);
-        }
-        $selectedItems = array_filter(array_map('intval', (array) $selectedItems));
+        $selectedItems = array_filter(array_map('intval',
+            is_string($request->input('selected_items'))
+                ? explode(',', $request->input('selected_items'))
+                : (array) $request->input('selected_items', [])
+        ));
 
         $cart = $this->prepareCart($request, $selectedItems);
 
         if (empty($cart['items'])) {
-            return back()->withInput()->withErrors(['cart' => 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.']);
+            return back()->withErrors(['cart' => 'Giỏ hàng trống']);
         }
 
-        DB::beginTransaction();
-        try {
-            $fullAddress = $validated['shipping_address_line'];
-            $discountId  = $request->session()->get('cart.discount_id');
+        // ===== ONLINE =====
+        if ($validated['payment_method'] === 'online') {
 
-            // Tạo đơn hàng
+            $vnpTxnRef = uniqid('vnp_');
+
+            $request->session()->put('pending_order', [
+                'customer'      => $validated,
+                'cart'          => $cart,
+                'user_id'       => optional($request->user())->id,
+                'selectedItems' => $selectedItems,
+                'vnp_txn_ref'   => $vnpTxnRef,
+            ]);
+
+            return $this->redirectToVNPay($cart, $request, $vnpTxnRef);
+        }
+
+        // ===== COD =====
+        DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
+
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
-                'discount_id'           => $discountId,
                 'order_status'          => 'pending',
-                'total_price'           => $cart['subtotal'],
-                'shipping_address'      => $fullAddress,
+                'payment_method'        => 'cod',
+                'subtotal'              => $cart['subtotal'],
                 'shipping_cost'         => $cart['shipping_fee'],
+                'discount_total'        => $cart['discount_total'],
+                'grand_total'           => $cart['grand_total'],
                 'customer_name'         => $validated['customer_name'],
-                'customer_email'        => $validated['customer_email'] ?? null,
+                'customer_email'        => $validated['customer_email'],
                 'customer_phone'        => $validated['customer_phone'],
                 'shipping_address_line' => $validated['shipping_address_line'],
                 'customer_note'         => $validated['customer_note'] ?? null,
-                'subtotal'              => $cart['subtotal'],
-                'discount_total'        => $cart['discount_total'],
-                'grand_total'           => $cart['grand_total'],
-                'payment_method'        => $validated['payment_method'],
             ]);
 
-            // Tạo order details và trừ tồn kho
-            $orderDetails = [];
             foreach ($cart['items'] as $item) {
-                $productId = $item['product_id'];
-                $variantId = $item['variant_id'] ?? null;
-                $quantity = $item['quantity'];
+                if (!in_array($item['cart_item_id'], $selectedItems)) continue;
 
-                $orderDetails[] = [
+                OrderDetail::create([
                     'order_id'   => $order->id,
-                    'product_id' => $productId,
-                    'variant_id' => $variantId,
-                    'quantity'   => $quantity,
+                    'product_id' => $item['product_id'],
+                    'variant_id' => $item['variant_id'],
+                    'quantity'   => $item['quantity'],
                     'price'      => $item['price'],
                     'subtotal'   => $item['subtotal'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-
-                // Trừ tồn kho từ các kho
-                $stockQuery = WarehouseProduct::where('product_id', $productId)
-                    ->where('quantity', '>', 0)
-                    ->orderBy('quantity', 'desc');
-                
-                if ($variantId) {
-                    $stockQuery->where('variant_id', $variantId);
-                } else {
-                    $stockQuery->whereNull('variant_id');
-                }
-                
-                $warehouseProducts = $stockQuery->get();
-                $remainingQuantity = $quantity;
-
-                foreach ($warehouseProducts as $wp) {
-                    if ($remainingQuantity <= 0) {
-                        break;
-                    }
-
-                    $deductAmount = min($remainingQuantity, $wp->quantity);
-                    $wp->quantity -= $deductAmount;
-                    $wp->save();
-                    $remainingQuantity -= $deductAmount;
-                }
-
-                if ($remainingQuantity > 0) {
-                    throw new \Exception("Không đủ tồn kho cho sản phẩm ID: {$productId}");
-                }
-            }
-            if (! empty($orderDetails)) {
-                OrderDetail::insert($orderDetails);
-            }
-
-            // Tạo payment
-            Payment::create([
-                'order_id'         => $order->id,
-                'payment_method'   => $validated['payment_method'],
-                'transaction_code' => null,
-                'amount'           => $cart['grand_total'],
-                'status'           => 'pending',
-                'paid_at'          => null,
-            ]);
-
-            // Discount
-            if ($discountId && $discount = Discount::find($discountId)) {
-                $discount->incrementUsage();
-            }
-
-            DB::commit();
-
-            // Xóa các item đã thanh toán khỏi cart
-            $this->removePaidItemsFromCart($request, $selectedItems);
-
-            // ---------- VNPay ----------
-            if ($validated['payment_method'] === 'online') {
-                // dùng config() thay vì env()
-                $vnp_TmnCode    = config('vnpay.vnp_TmnCode');
-                $vnp_HashSecret = config('vnpay.vnp_HashSecret');
-                $vnp_Url        = config('vnpay.vnp_Url');
-                $vnp_ReturnUrl  = config('vnpay.vnp_ReturnUrl');
-                $vnp_IpnUrl     = config('vnpay.vnp_IpnUrl');
-
-                $vnp_TxnRef    = (string) $order->id; // giữ order id để dễ xử lý return/ipn
-                $vnp_OrderInfo = "Thanh toan don hang {$order->id}";
-                $vnp_OrderType = "billpayment";
-                // ép kiểu integer (bắt buộc)
-                $vnp_Amount     = intval(round($order->grand_total * 100));
-                $vnp_Locale     = "vn";
-                $vnp_IpAddr     = $request->ip();
-                $vnp_CreateDate = date('YmdHis');
-
-                $inputData = [
-                    "vnp_Version"    => "2.1.0",
-                    "vnp_TmnCode"    => $vnp_TmnCode,
-                    "vnp_Amount"     => $vnp_Amount,
-                    "vnp_Command"    => "pay",
-                    "vnp_CreateDate" => $vnp_CreateDate,
-                    "vnp_CurrCode"   => "VND",
-                    "vnp_IpAddr"     => $vnp_IpAddr,
-                    "vnp_Locale"     => $vnp_Locale,
-                    "vnp_OrderInfo"  => $vnp_OrderInfo,
-                    "vnp_OrderType"  => $vnp_OrderType,
-                    "vnp_ReturnUrl"  => $vnp_ReturnUrl,
-                    "vnp_TxnRef"     => $vnp_TxnRef,
-                ];
-
-                ksort($inputData);
-
-                $query       = [];
-                $hashDataArr = [];
-
-                foreach ($inputData as $key => $value) {
-                    $query[]       = urlencode($key) . "=" . urlencode($value);
-                    $hashDataArr[] = urlencode($key) . "=" . urlencode($value);
-                }
-
-                $queryString = implode("&", $query);
-                $hashData    = implode("&", $hashDataArr);
-
-                $vnpSecureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
-
-                $requestUrl = $vnp_Url . "?" . $queryString . "&vnp_SecureHash=" . $vnpSecureHash;
-
-                // Log để debug nếu redirect không chạy
-                Log::info('VNPay redirect url: ' . $requestUrl, [
-                    'order_id' => $order->id,
-                    'amount'   => $vnp_Amount,
                 ]);
-
-                return redirect()->away($requestUrl);
             }
-            // ---------- end VNPay ----------
 
-            return redirect()->route('orders.index')
-                ->with('success', "Đơn hàng #{$order->id} đã được ghi nhận.");
-
-        } catch (\Throwable $exception) {
-            DB::rollBack();
-            Log::error('Checkout error: ' . $exception->getMessage(), [
-                'trace'   => $exception->getTraceAsString(),
-                'request' => $request->all(),
+            Payment::create([
+                'order_id'       => $order->id,
+                'payment_method' => 'cod',
+                'amount'         => $order->grand_total,
+                'status'         => 'pending',
             ]);
-            return back()->withInput()->with('error', 'Có lỗi xảy ra khi lưu đơn hàng. Vui lòng thử lại.');
+
+            // Xóa sản phẩm đã thanh toán trong giỏ
+            $this->removePaidItemsFromCart($request, $selectedItems);
+        });
+
+        return redirect()->route('orders.index')
+            ->with('success', 'Đặt hàng thành công');
+    }
+
+    private function redirectToVNPay(array $cart, Request $request, string $txnRef)
+    {
+        $vnp_TmnCode    = config('vnpay.vnp_TmnCode');
+        $vnp_HashSecret = config('vnpay.vnp_HashSecret');
+        $vnp_Url        = config('vnpay.vnp_Url');
+        $vnp_ReturnUrl  = config('vnpay.vnp_ReturnUrl');
+
+        $inputData = [
+            "vnp_Version"    => "2.1.0",
+            "vnp_TmnCode"    => $vnp_TmnCode,
+            "vnp_Amount"     => intval(round($cart['grand_total'] * 100)),
+            "vnp_Command"    => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode"   => "VND",
+            "vnp_IpAddr"     => $request->ip(),
+            "vnp_Locale"     => "vn",
+            "vnp_OrderInfo"  => "Thanh toan don hang",
+            "vnp_OrderType"  => "billpayment",
+            "vnp_ReturnUrl"  => $vnp_ReturnUrl,
+            "vnp_TxnRef"     => $txnRef,
+        ];
+
+        ksort($inputData);
+
+        $query = [];
+        foreach ($inputData as $k => $v) {
+            $query[] = urlencode($k) . '=' . urlencode($v);
         }
+
+        $hashData = implode('&', $query);
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        return redirect()->away($vnp_Url . '?' . $hashData . '&vnp_SecureHash=' . $secureHash);
     }
 
     private function prepareCart(Request $request, array $selectedItems = []): array
     {
         $sessionCart = $request->session()->get('cart', ['items' => [], 'shipping_fee' => 30000, 'discount_total' => 0]);
-        $items       = collect($sessionCart['items'] ?? []);
 
-        if (! empty($selectedItems)) {
-            $items = $items->filter(fn($i) => in_array($i['cart_item_id'], $selectedItems, true));
-        }
-
-        $items = $items->map(function ($i) {
-            $i['quantity'] = max(1, (int) ($i['quantity'] ?? 1));
-            $i['price']    = (float) ($i['price'] ?? 0);
+        $items = collect($sessionCart['items'])->filter(
+            fn($i) => empty($selectedItems) || in_array($i['cart_item_id'], $selectedItems)
+        )->map(function ($i) {
+            $i['quantity'] = max(1, (int)$i['quantity']);
             $i['subtotal'] = $i['quantity'] * $i['price'];
             return $i;
         });
 
-        $subtotal      = $items->sum('subtotal');
-        $shippingFee   = (float) ($sessionCart['shipping_fee'] ?? 0);
-        $discountTotal = (float) ($sessionCart['discount_total'] ?? 0);
-        $grandTotal    = max(($subtotal + $shippingFee) - $discountTotal, 0);
+        $subtotal = $items->sum('subtotal');
 
         return [
-            'items'          => $items->all(),
-            'subtotal'       => $subtotal,
-            'shipping_fee'   => $shippingFee,
-            'discount_total' => $discountTotal,
-            'grand_total'    => $grandTotal,
-            'discount_code'  => $sessionCart['code'] ?? null,
+            'items' => $items->values()->all(),
+            'subtotal' => $subtotal,
+            'shipping_fee' => $sessionCart['shipping_fee'],
+            'discount_total' => $sessionCart['discount_total'],
+            'grand_total' => max($subtotal + $sessionCart['shipping_fee'] - $sessionCart['discount_total'], 0),
         ];
     }
 
     private function removePaidItemsFromCart(Request $request, array $paidItemIds): void
     {
         $sessionCart = $request->session()->get('cart', ['items' => []]);
-
-        $sessionCart['items'] = collect($sessionCart['items'])
-            ->reject(fn($i) => in_array($i['cart_item_id'], $paidItemIds, true))
+        $remainingItems = collect($sessionCart['items'])
+            ->reject(fn($i) => in_array($i['cart_item_id'], $paidItemIds))
             ->values()
             ->all();
 
-        $subtotal = collect($sessionCart['items'])
-            ->sum(fn($i) => $i['quantity'] * $i['price']);
+        $request->session()->put('cart', array_merge($sessionCart, ['items' => $remainingItems]));
 
-        $sessionCart['subtotal']    = $subtotal;
-        $sessionCart['grand_total'] = max(($subtotal + ($sessionCart['shipping_fee'] ?? 0)) - ($sessionCart['discount_total'] ?? 0), 0);
-
-        $request->session()->put('cart', $sessionCart);
-
-        if ($request->user()) {
-            CartItem::whereIn('id', $paidItemIds)->delete();
+        $cart = Cart::find($request->session()->get('cart_id'));
+        if ($cart) {
+            $cart->items()->whereIn('id', $paidItemIds)->delete();
         }
     }
 }

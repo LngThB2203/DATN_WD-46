@@ -123,7 +123,7 @@
                 <div class="collapse" id="sidebarNewsletter">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.newsletters.list') }}">Danh sách email</a>
+                            <a class="sub-nav-link" href="{{ route('post.index') }}">Danh sách tin</a>
                         </li>
                     </ul>
                 </div>
@@ -188,9 +188,9 @@
                         <li class="sub-nav-item">
                             <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Tồn kho</a>
                         </li>
-                        {{-- <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('inventories.transactions') }}">Transactions</a>
-                        </li> --}}
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('inventories.stock-transactions.index') }}">Lịch sử nhập/xuất</a>
+                        </li>
                     </ul>
                 </div>
             </li>
@@ -244,7 +244,7 @@
                 </a>
             </li>
 
-            <!-- Cài đặt -->
+            {{-- <!-- Cài đặt -->
             <li class="nav-item">
                 <a class="nav-link" href="settings.html">
                     <span class="nav-icon">
@@ -331,7 +331,7 @@
                     </span>
                     <span class="nav-text"> Việc cần làm </span>
                 </a>
-            </li>
+            </li> --}}
 
         </ul>
     </div>

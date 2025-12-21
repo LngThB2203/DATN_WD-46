@@ -51,7 +51,7 @@
                         <div class="col-12">
                             <label class="form-label">Họ tên <span class="text-danger">*</span></label>
                             <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror"
-                                value="{{ old('customer_name', $defaultCustomer['name'] ?? '') }}" required>
+                                value="{{ old('customer_name', $defaultCustomer['customer_name'] ?? '') }}" required>
                             @error('customer_name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -59,7 +59,7 @@
                         <div class="col-12">
                             <label class="form-label">Email <span class="text-danger">*</span></label>
                             <input type="email" name="customer_email" class="form-control @error('customer_email') is-invalid @enderror"
-                                value="{{ old('customer_email', $defaultCustomer['email'] ?? '') }}" required>
+                                value="{{ old('customer_email', $defaultCustomer['customer_email'] ?? '') }}" required>
                             @error('customer_email')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -67,7 +67,7 @@
                         <div class="col-12">
                             <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
                             <input type="text" name="customer_phone" class="form-control @error('customer_phone') is-invalid @enderror"
-                                value="{{ old('customer_phone', $defaultCustomer['phone'] ?? '') }}"
+                                value="{{ old('customer_phone', $defaultCustomer['customer_phone'] ?? '') }}"
                                 placeholder="Nhập số điện thoại" required>
                             @error('customer_phone')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -76,7 +76,7 @@
                         <div class="col-12">
                             <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
                             <textarea name="shipping_address_line" class="form-control @error('shipping_address_line') is-invalid @enderror"
-                                rows="3" placeholder="Nhập địa chỉ giao hàng" required>{{ old('shipping_address_line', $defaultCustomer['address'] ?? '') }}</textarea>
+                                rows="3" placeholder="Nhập địa chỉ giao hàng" required>{{ old('shipping_address_line', $defaultCustomer['shipping_address_line'] ?? '') }}</textarea>
                             @error('shipping_address_line')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -117,15 +117,6 @@
                                        {{ old('payment_method', 'cod') === 'cod' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="payment_cod">
                                     Thanh toán khi nhận hàng (COD)
-                                </label>
-                            </div>
-
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="payment_method"
-                                       id="payment_bank" value="bank_transfer"
-                                       {{ old('payment_method') === 'bank_transfer' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="payment_bank">
-                                    Chuyển khoản ngân hàng
                                 </label>
                             </div>
 
@@ -256,7 +247,9 @@
                                 <span>{{ number_format($cart['grand_total'] ?? 0) }} đ</span>
                             </div>
 
-                            <button class="btn btn-primary w-100" type="submit">Đặt hàng</button>
+                            <button class="btn btn-primary w-100" type="button" onclick="confirmOrder('{{ $item['name'] }}','{{ number_format($item['price']) }} đ', this)">
+                                Đặt hàng
+                            </button>
 
                         </div>
                     </div>
@@ -270,6 +263,7 @@
 
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 (function () {
     const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
@@ -346,6 +340,37 @@
         });
     }
 })();
+
+function confirmOrder(name, price, btn) {
+    let timerInterval;
+    let countdown = 5;
+
+    Swal.fire({
+        title: 'Xác nhận đơn hàng',
+        html: `Bạn chắc chắn muốn đặt sản phẩm này?<br>Tên: <b>${name}</b><br>Giá: <b>${price}</b>`,
+        icon: 'question',
+        showCancelButton: true, 
+        confirmButtonText: `OK (${countdown})`,
+        cancelButtonText: 'Hủy',
+        didOpen: () => {
+            const confirmBtn = Swal.getConfirmButton();
+            confirmBtn.disabled = true; 
+            timerInterval = setInterval(() => {
+                countdown--;
+                confirmBtn.innerText = `OK (${countdown})`;
+                if(countdown <= 0){
+                    clearInterval(timerInterval);
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerText = 'OK';
+                }
+            }, 1000);
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            btn.closest('form').submit();
+        }
+    });
+}
 
 </script>
 @endsection
