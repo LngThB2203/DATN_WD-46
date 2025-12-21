@@ -12,15 +12,17 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('warehouse_id')->default(1);
             $table->unsignedBigInteger('product_id');
-            $table->unsignedBigInteger('variant_id');
-            $table->string('batch_code', 100);
-            $table->enum('type', ['import', 'sale', 'cancel', 'adjust', 'export'])->change();
+            $table->unsignedBigInteger('variant_id')->nullable();
+            $table->string('batch_code', 100)->nullable();
+            $table->enum('type', ['import', 'sale', 'cancel', 'adjust', 'export']);
             $table->integer('quantity');
-            $table->integer('before_quantity');
-            $table->integer('after_quantity');
+            $table->integer('before_quantity')->default(0);
+            $table->integer('after_quantity')->default(0);
             $table->string('reference_type')->nullable();
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->timestamps();
+            
+            $table->index(['reference_type', 'reference_id']);
         });
     }
 

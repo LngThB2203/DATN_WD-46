@@ -112,15 +112,22 @@
                         @if($order->customer_note)<p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>@endif
 
                         {{-- Nút hủy đơn --}}
-                        @if(in_array($order->order_status,['pending','processing']))
-                        <form method="POST" action="{{ route('orders.cancel', $order->id) }}">
+                        @php
+                            $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
+                            $canCancel = in_array($mappedStatus, [
+                                \App\Helpers\OrderStatusHelper::PENDING, 
+                                \App\Helpers\OrderStatusHelper::PREPARING
+                            ]);
+                        @endphp
+                        @if($canCancel)
+                        <form method="POST" action="{{ route('orders.cancel', $order->id) }}" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');">
                             @csrf @method('PUT')
                             <button type="submit" class="btn btn-danger mt-3 w-100">Hủy đơn hàng</button>
                         </form>
                         @endif
 
                         {{-- Nút xác nhận đã nhận hàng --}}
-                        @if($order->order_status === 'delivered')
+                        @if($mappedStatus === \App\Helpers\OrderStatusHelper::DELIVERED)
                         <form method="POST" action="{{ route('orders.confirm-received', $order->id) }}">
                             @csrf
                             @method('PUT')

@@ -34,9 +34,7 @@
         </div>
     </form>
 
-    @if(session('success'))
-        <div class="alert alert-success mt-2">{{ session('success') }}</div>
-    @endif
+
 
     @error('email')
         <div class="alert alert-danger mt-2">{{ $message }}</div>

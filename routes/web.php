@@ -97,18 +97,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
-Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
+// CART
+Route::middleware('auth')->group(function () {
 
-Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
-Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
-Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
-Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
-Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
-Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
+    // CART
+    Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+    Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
+    Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+    Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 
-// Checkout
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    // CHECKOUT
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
 Route::get('/payment/vnpay', [VNPayController::class, 'createPayment'])->name('vnpay.create');      // redirect user tới VNPay
 Route::get('/payment/vnpay/return', [VNPayController::class, 'vnpayReturn'])->name('vnpay.return'); // user quay lại
@@ -159,7 +161,7 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 // ========================
 // ADMIN ROUTES
 // ========================
-Route::prefix('admin')->middleware('auth')->group(function () {
+Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', fn() => redirect()->route('admin.statistics.index'))->name('admin.dashboard');
 
     // Statistics
@@ -329,6 +331,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/update/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('update');
         Route::delete('/delete/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('destroy');
         Route::get('/export', [App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('export');
+        Route::patch('/toggle-user/{customer}',[App\Http\Controllers\Admin\CustomerController::class, 'toggleUser']
+)->name('toggleUser');
+
     });
 
     // Sellers

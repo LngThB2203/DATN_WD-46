@@ -33,11 +33,7 @@
                     <p><strong>Địa chỉ:</strong> {{ Auth::user()->address ?? 'Chưa có' }}</p>
                 </div>
             </div>
-            <div class="border p-3 rounded mb-4">
-                <h5><i class="bi bi-diagram-3"></i> CHƯƠNG TRÌNH THÀNH VIÊN</h5>
-                <hr>
-                <p>Hạng thành viên của bạn là: <strong>BRONZE</strong></p>
-            </div>
+
             {{-- Sản phẩm yêu thích --}}
             <div class="border p-3 rounded">
                 <div class="d-flex justify-content-between align-items-center mb-3">
