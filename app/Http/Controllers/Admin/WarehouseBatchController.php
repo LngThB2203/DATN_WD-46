@@ -1,12 +1,11 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\WarehouseLockHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Warehouse;
 use App\Services\StockService;
-use App\Helpers\WarehouseLockHelper;
 use Illuminate\Http\Request;
 
 class WarehouseBatchController extends Controller
@@ -24,7 +23,7 @@ class WarehouseBatchController extends Controller
     public function storeImport(Request $request, StockService $stockService)
     {
         $request->validate([
-            'warehouse_id' => 'required|exists:warehouses,id',
+            'warehouse_id' => 'required|exists:warehouse,id',
             'product_id'   => 'required|exists:products,id',
             'variant_id'   => 'nullable|exists:product_variants,id',
             'batch_code'   => 'required|string|max:100',
