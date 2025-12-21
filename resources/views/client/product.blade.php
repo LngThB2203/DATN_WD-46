@@ -30,18 +30,25 @@
                 $primary = $galleries->where('is_primary', true)->first() ?? $galleries->first();
                 @endphp
 
-                @if($primary)
-                <a href="{{ asset('storage/' . $primary->image_path) }}" class="glightbox" data-gallery="product">
-                    <img id="mainImage" src="{{ asset('storage/' . $primary->image_path) }}"
-                        class="img-fluid rounded w-100" alt="{{ $primary->alt_text ?? $product->name }}">
-                </a>
-                @elseif($product->image)
-                <a href="{{ asset('storage/' . $product->image) }}" class="glightbox" data-gallery="product">
-                    <img id="mainImage" src="{{ asset('storage/' . $product->image) }}" class="img-fluid rounded w-100"
-                        alt="{{ $product->name }}">
+                @php
+                    $defaultImageUrl = $primary 
+                        ? asset('storage/' . $primary->image_path) 
+                        : ($product->image 
+                            ? asset('storage/' . $product->image) 
+                            : asset('assets/client/img/product/product-1.webp'));
+                    $defaultImageHref = $primary 
+                        ? asset('storage/' . $primary->image_path) 
+                        : ($product->image 
+                            ? asset('storage/' . $product->image) 
+                            : null);
+                @endphp
+                @if($defaultImageHref)
+                <a id="mainImageLink" href="{{ $defaultImageHref }}" class="glightbox" data-gallery="product">
+                    <img id="mainImage" src="{{ $defaultImageUrl }}"
+                        class="img-fluid rounded w-100" alt="{{ $primary->alt_text ?? $product->name ?? 'Sản phẩm' }}">
                 </a>
                 @else
-                <img id="mainImage" src="{{ asset('assets/client/img/product/product-1.webp') }}"
+                <img id="mainImage" src="{{ $defaultImageUrl }}"
                     class="img-fluid rounded w-100" alt="{{ $product->name }}">
                 @endif
 
@@ -235,6 +242,19 @@
     </div>
 </section>
 
+@php
+    $jsDefaultImageUrl = $primary 
+        ? asset('storage/' . $primary->image_path) 
+        : ($product->image 
+            ? asset('storage/' . $product->image) 
+            : asset('assets/client/img/product/product-1.webp'));
+    $jsDefaultImageHref = $primary 
+        ? asset('storage/' . $primary->image_path) 
+        : ($product->image 
+            ? asset('storage/' . $product->image) 
+            : null);
+@endphp
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -242,9 +262,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const defaultTotalStock = @json($totalStock);
     const defaultAvailableText = @json(
         $totalStock > 0
-            ? 'Có sẵn: {{ $totalStock }} sản phẩm'
+            ? 'Có sẵn: ' . $totalStock . ' sản phẩm'
             : 'Không còn hàng'
     );
+    const defaultImageUrl = @json($jsDefaultImageUrl);
+    const defaultImageHref = @json($jsDefaultImageHref);
 
     const selectedVariantId = document.getElementById('selectedVariantId');
     const variantInfo = document.getElementById('variantInfo');
@@ -252,12 +274,34 @@ document.addEventListener('DOMContentLoaded', function () {
     const addToCartBtn = document.getElementById('addToCartBtn');
     const quantityInput = document.getElementById('productQuantity');
     const availableStockInfo = document.getElementById('availableStockInfo');
+    const mainImage = document.getElementById('mainImage');
+    const mainImageLink = document.getElementById('mainImageLink');
 
     const selected = {
         size: null,
         scent: null,
         concentration: null
     };
+
+    function updateMainImage(imageUrl) {
+        if (!mainImage) return;
+        
+        if (imageUrl) {
+            mainImage.src = imageUrl;
+            mainImage.alt = mainImage.alt || '{{ $product->name }}';
+            
+            // Update lightbox link if exists
+            if (mainImageLink) {
+                mainImageLink.href = imageUrl;
+            }
+        } else {
+            // Reset to default image
+            mainImage.src = defaultImageUrl;
+            if (mainImageLink && defaultImageHref) {
+                mainImageLink.href = defaultImageHref;
+            }
+        }
+    }
 
     function resetUI() {
         if (selectedVariantId) selectedVariantId.value = '';
@@ -269,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (addToCartBtn) addToCartBtn.disabled = defaultTotalStock <= 0;
         if (quantityInput) quantityInput.removeAttribute('max');
         if (availableStockInfo) availableStockInfo.textContent = defaultAvailableText;
+        updateMainImage(null); // Reset to default image
     }
 
     function findMatchedVariant() {
@@ -318,6 +363,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (productPriceSpan) {
                     productPriceSpan.textContent =
                         new Intl.NumberFormat('vi-VN').format(variant.price) + ' VNĐ';
+                }
+
+                // Update main image with variant image
+                if (variant.image) {
+                    updateMainImage(variant.image);
+                } else {
+                    updateMainImage(null); // Reset to default if variant has no image
                 }
 
                 if (addToCartBtn) {
