@@ -113,13 +113,28 @@ $(document).ready(function() {
             data: { message: msg },
             success: function(res) {
                 $(`#${loaderId}`).remove();
-                if (res.bot) appendOne(res.bot);
+                if (res && res.bot) {
+                    appendOne(res.bot);
+                } else {
+                    appendOne({ sender: 'bot', message: 'Không nhận được phản hồi từ hệ thống. Vui lòng thử lại!' });
+                }
             },
-            error: function() {
+            error: function(xhr, status, error) {
                 $(`#${loaderId}`).remove();
-                appendOne({ sender: 'bot', message: 'Hệ thống đang bận, bạn vui lòng thử lại sau nhé!' });
+                console.error('Chat error:', { xhr: xhr, status: status, error: error });
+                let errorMsg = 'Hệ thống đang bận, bạn vui lòng thử lại sau nhé!';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.status === 0) {
+                    errorMsg = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng!';
+                } else if (xhr.status === 500) {
+                    errorMsg = 'Lỗi server. Vui lòng thử lại sau!';
+                }
+                appendOne({ sender: 'bot', message: errorMsg });
             },
-            complete: function() { $("#send-btn").prop('disabled', false); }
+            complete: function() { 
+                $("#send-btn").prop('disabled', false); 
+            }
         });
     });
 
