@@ -91,12 +91,39 @@ class ProductVariantController extends Controller
 
     public function destroy(ProductVariant $variant)
     {
+        // Soft delete
+        $variant->delete();
+
+        return redirect()->route('variants.index')->with('success', 'Biến thể đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $variant = ProductVariant::withTrashed()->findOrFail($id);
+
         if ($variant->image && Storage::disk('public')->exists($variant->image)) {
             Storage::disk('public')->delete($variant->image);
         }
 
-        $variant->delete();
+        $variant->forceDelete();
 
-        return redirect()->route('variants.index')->with('success', 'Đã xóa biến thể!');
+        return redirect()->route('variants.trashed')->with('success', 'Biến thể đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $variant = ProductVariant::withTrashed()->findOrFail($id);
+        $variant->restore();
+
+        return redirect()->route('variants.trashed')->with('success', 'Biến thể đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = ProductVariant::onlyTrashed()->with(['product', 'size', 'scent', 'concentration']);
+
+        $variants = $query->orderBy('deleted_at', 'desc')->paginate(15);
+
+        return view('admin.variants.trashed', compact('variants'));
     }
 }

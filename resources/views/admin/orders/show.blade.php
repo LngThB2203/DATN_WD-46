@@ -28,12 +28,28 @@
 
         {{-- Thông tin khách hàng --}}
         <div class="card mb-4">
-            <div class="card-header">Thông tin khách hàng</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Thông tin khách hàng</span>
+                @if($isPaid)
+                    <span class="badge bg-success">Đã thanh toán</span>
+                @endif
+            </div>
             <div class="card-body">
                 <p><strong>Tên:</strong> {{ $order->user->name ?? $order->customer_name }}</p>
                 <p><strong>Email:</strong> {{ $order->user->email ?? $order->customer_email }}</p>
                 <p><strong>SĐT:</strong> {{ $order->customer_phone }}</p>
-                <p><strong>Địa chỉ:</strong> {{ $order->shipping_address }}</p>
+                <p><strong>Địa chỉ:</strong> {{ $order->shipping_address_line ?? $order->shipping_address }}</p>
+                @if($order->shipping_province || $order->shipping_district || $order->shipping_ward)
+                    <p><strong>Địa chỉ đầy đủ:</strong> 
+                        {{ $order->shipping_address_line }},
+                        {{ $order->shipping_ward }},
+                        {{ $order->shipping_district }},
+                        {{ $order->shipping_province }}
+                    </p>
+                @endif
+                @if($order->customer_note)
+                    <p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>
+                @endif
             </div>
         </div>
 
@@ -62,6 +78,7 @@
                             $imageUrl = $primaryImage
                             ? asset('storage/' . $primaryImage->image_path)
                             : asset('assets/client/img/product/product-1.webp');
+                            $isDeleted = $product && $product->trashed();
                             @endphp
                             <tr>
                                 <td>
@@ -69,14 +86,40 @@
                                         style="width:60px;height:60px;object-fit:cover"
                                         onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}'">
                                 </td>
-                                <td>{{ $product->name ?? 'N/A' }}</td>
+                                <td>
+                                    @if($product)
+                                        {{ $product->name }}
+                                        @if($isDeleted)
+                                            <span class="badge bg-warning text-dark ms-1">Đã xóa</span>
+                                        @endif
+                                    @else
+                                        <span class="text-muted">Sản phẩm đã bị xóa</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($item->variant)
-                                    Size: {{ $item->variant->size->size_name ?? '' }}<br>
-                                    Hương: {{ $item->variant->scent->scent_name ?? '' }}<br>
-                                    Nồng độ: {{ $item->variant->concentration->concentration_name ?? '' }}
+                                        <div class="small">
+                                            @if($item->variant->size)
+                                                <div><strong>Kích thước:</strong> {{ $item->variant->size->size_name ?? $item->variant->size->name ?? 'N/A' }}</div>
+                                            @endif
+                                            @if($item->variant->scent)
+                                                <div><strong>Hương:</strong> {{ $item->variant->scent->scent_name ?? $item->variant->scent->name ?? 'N/A' }}</div>
+                                            @endif
+                                            @if($item->variant->concentration)
+                                                <div><strong>Nồng độ:</strong> {{ $item->variant->concentration->concentration_name ?? $item->variant->concentration->name ?? 'N/A' }}</div>
+                                            @endif
+                                            @if($item->variant->gender)
+                                                <div><strong>Giới tính:</strong> 
+                                                    @if($item->variant->gender === 'male') Nam
+                                                    @elseif($item->variant->gender === 'female') Nữ
+                                                    @elseif($item->variant->gender === 'unisex') Unisex
+                                                    @else {{ $item->variant->gender }}
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        </div>
                                     @else
-                                    —
+                                        <span class="text-muted">—</span>
                                     @endif
                                 </td>
                                 <td>{{ number_format($item->price, 0, ',', '.') }} đ</td>

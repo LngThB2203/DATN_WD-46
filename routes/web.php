@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\Admin\PostController;
@@ -122,6 +123,7 @@ Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('v
 // Orders (Client)
 Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
 Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
+Route::put('/orders/{id}/update-shipping', [ClientOrderController::class, 'updateShipping'])->name('orders.update-shipping');
 Route::put('/orders/{id}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
 Route::put('/orders/{id}/confirm-received', [ClientOrderController::class, 'confirmReceived'])->middleware('auth')->name('orders.confirm-received');
 Route::middleware('auth')->group(function () {
@@ -183,20 +185,28 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/export/pdf', [StatisticController::class, 'exportPdf'])->name('export-pdf');
     });
 
+    // Trash (Thùng rác)
+    Route::prefix('trash')->name('admin.trash.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\TrashController::class, 'index'])->name('index');
+    });
+
     // Products
     Route::prefix('products')->group(function () {
-        Route::get('/list', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/list', [AdminProductController::class, 'index'])->name('products.index');
         Route::get('/grid', fn() => view('admin.products.grid'))->name('products.grid');
-        Route::get('/add', [ProductController::class, 'create'])->name('products.create');
-        Route::post('/add', [ProductController::class, 'store'])->name('products.store');
-        Route::get('/{product}', [ProductController::class, 'show'])->name('products.show');
-        Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
-        Route::put('/{product}', [ProductController::class, 'update'])->name('products.update');
-        Route::delete('/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-        Route::delete('/gallery/{gallery}', [ProductController::class, 'deleteImage'])->name('products.delete-image');
-        Route::post('/gallery/{gallery}/set-primary', [ProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
-        Route::get('/export/excel', [ProductController::class, 'exportExcel'])->name('products.export-excel');
-        Route::get('/export/pdf', [ProductController::class, 'exportPdf'])->name('products.export-pdf');
+        Route::get('/add', [AdminProductController::class, 'create'])->name('products.create');
+        Route::post('/add', [AdminProductController::class, 'store'])->name('products.store');
+        Route::get('/trashed', [AdminProductController::class, 'trashed'])->name('products.trashed');
+        Route::post('/trashed/{id}/restore', [AdminProductController::class, 'restore'])->name('products.restore');
+        Route::delete('/trashed/{id}/force-delete', [AdminProductController::class, 'forceDelete'])->name('products.force-delete');
+        Route::get('/{product}', [AdminProductController::class, 'show'])->name('products.show');
+        Route::get('/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
+        Route::put('/{product}', [AdminProductController::class, 'update'])->name('products.update');
+        Route::delete('/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
+        Route::delete('/gallery/{gallery}', [AdminProductController::class, 'deleteImage'])->name('products.delete-image');
+        Route::post('/gallery/{gallery}/set-primary', [AdminProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
+        Route::get('/export/excel', [AdminProductController::class, 'exportExcel'])->name('products.export-excel');
+        Route::get('/export/pdf', [AdminProductController::class, 'exportPdf'])->name('products.export-pdf');
     });
 
     // Variants
@@ -204,6 +214,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [ProductVariantController::class, 'index'])->name('index');
         Route::get('/create', [ProductVariantController::class, 'create'])->name('create');
         Route::post('/', [ProductVariantController::class, 'store'])->name('store');
+        Route::get('/trashed', [ProductVariantController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [ProductVariantController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [ProductVariantController::class, 'forceDelete'])->name('force-delete');
         Route::get('/{variant}/edit', [ProductVariantController::class, 'edit'])->name('edit');
         Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('update');
         Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('destroy');
@@ -214,6 +227,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [AdminCategoryController::class, 'index'])->name('list');
         Route::get('/create', [AdminCategoryController::class, 'create'])->name('create');
         Route::post('/store', [AdminCategoryController::class, 'store'])->name('store');
+        Route::get('/trashed', [AdminCategoryController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [AdminCategoryController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [AdminCategoryController::class, 'forceDelete'])->name('force-delete');
         Route::get('/edit/{id}', [AdminCategoryController::class, 'edit'])->name('edit');
         Route::put('/update/{id}', [AdminCategoryController::class, 'update'])->name('update');
         Route::delete('/delete/{id}', [AdminCategoryController::class, 'destroy'])->name('destroy');
@@ -225,6 +241,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
         Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
         Route::post('/', [AdminDiscountController::class, 'store'])->name('store');
+        Route::get('/trashed', [AdminDiscountController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [AdminDiscountController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [AdminDiscountController::class, 'forceDelete'])->name('force-delete');
         Route::get('/{discount}', [AdminDiscountController::class, 'show'])->name('show');
         Route::get('/{discount}/edit', [AdminDiscountController::class, 'edit'])->name('edit');
         Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
@@ -236,6 +255,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [BannerController::class, 'index'])->name('index');
         Route::get('/create', [BannerController::class, 'create'])->name('create');
         Route::post('/store', [BannerController::class, 'store'])->name('store');
+        Route::get('/trashed', [BannerController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [BannerController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [BannerController::class, 'forceDelete'])->name('force-delete');
         Route::get('/{banner}/edit', [BannerController::class, 'edit'])->name('edit');
         Route::put('/{banner}', [BannerController::class, 'update'])->name('update');
         Route::delete('/{banner}', [BannerController::class, 'destroy'])->name('delete');
@@ -247,6 +269,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [BrandController::class, 'index'])->name('index');
         Route::get('/create', [BrandController::class, 'create'])->name('create');
         Route::post('/store', [BrandController::class, 'store'])->name('store');
+        Route::get('/trashed', [BrandController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [BrandController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [BrandController::class, 'forceDelete'])->name('force-delete');
         Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
         Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('delete');
@@ -256,6 +281,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     Route::get('/', [PostController::class, 'index'])->name('post.index');
     Route::get('/create', [PostController::class, 'create'])->name('post.create');
     Route::post('/store', [PostController::class, 'store'])->name('post.store');
+    Route::get('/trashed', [PostController::class, 'trashed'])->name('post.trashed');
+    Route::post('/trashed/{id}/restore', [PostController::class, 'restore'])->name('post.restore');
+    Route::delete('/trashed/{id}/force-delete', [PostController::class, 'forceDelete'])->name('post.force-delete');
     Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
     Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
     Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
@@ -267,6 +295,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
         Route::get('/warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.add');
         Route::post('/warehouse/store', [WarehouseController::class, 'store'])->name('warehouse.store');
+        Route::get('/warehouse/trashed', [WarehouseController::class, 'trashed'])->name('warehouse.trashed');
+        Route::post('/warehouse/trashed/{id}/restore', [WarehouseController::class, 'restore'])->name('warehouse.restore');
+        Route::delete('/warehouse/trashed/{id}/force-delete', [WarehouseController::class, 'forceDelete'])->name('warehouse.force-delete');
         Route::get('/warehouse/{warehouse}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
         Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
         Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
@@ -320,6 +351,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     // Contacts
     Route::prefix('contacts')->name('admin.contacts.')->group(function () {
         Route::get('/', [ContactController::class, 'adminIndex'])->name('index');
+        Route::get('/trashed', [ContactController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [ContactController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [ContactController::class, 'forceDelete'])->name('force-delete');
         Route::get('/{contact}', [ContactController::class, 'adminShow'])->name('show');
         Route::post('/{contact}/update-status', [ContactController::class, 'adminUpdateStatus'])->name('update-status');
         Route::post('/{contact}/update-notes', [ContactController::class, 'adminUpdateNotes'])->name('update-notes');
@@ -339,6 +373,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
 
     Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
         Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');
+        Route::get('/trashed', [AdminNewsletterController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [AdminNewsletterController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [AdminNewsletterController::class, 'forceDelete'])->name('force-delete');
         Route::delete('/delete/{id}', [AdminNewsletterController::class, 'destroy'])->name('delete');
     });
     // Purchases
@@ -372,6 +409,9 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('list');
         Route::get('/create', [App\Http\Controllers\Admin\CustomerController::class, 'create'])->name('create');
         Route::post('/store', [App\Http\Controllers\Admin\CustomerController::class, 'store'])->name('store');
+        Route::get('/trashed', [App\Http\Controllers\Admin\CustomerController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [App\Http\Controllers\Admin\CustomerController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [App\Http\Controllers\Admin\CustomerController::class, 'forceDelete'])->name('force-delete');
         Route::get('/edit/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'edit'])->name('edit');
         Route::put('/update/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('update');
         Route::delete('/delete/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('destroy');
@@ -397,22 +437,16 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [AdminReviewController::class, 'index'])->name('index');
         Route::get('/create', [AdminReviewController::class, 'create'])->name('create');
         Route::post('/', [AdminReviewController::class, 'store'])->name('store');
+        Route::get('/trashed', [AdminReviewController::class, 'trashed'])->name('trashed');
+        Route::post('/trashed/{id}/restore', [AdminReviewController::class, 'restore'])->name('restore');
+        Route::delete('/trashed/{id}/force-delete', [AdminReviewController::class, 'forceDelete'])->name('force-delete');
         Route::get('/{review}/edit', [AdminReviewController::class, 'edit'])->name('edit');
         Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
         Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
         Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
     });
 
-    // Discounts
-    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
-        Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
-        Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
-        Route::post('/', [AdminDiscountController::class, 'store'])->name('store');
-        Route::get('/{discount}', [AdminDiscountController::class, 'show'])->name('show');
-        Route::get('/{discount}/edit', [AdminDiscountController::class, 'edit'])->name('edit');
-        Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
-        Route::delete('/{discount}', [AdminDiscountController::class, 'destroy'])->name('destroy');
-    });
+    // Discounts (duplicate - removing)
 
     // Contacts
     Route::prefix('contacts')->name('admin.contacts.')->group(function () {

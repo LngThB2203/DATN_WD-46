@@ -94,8 +94,41 @@ class PostController extends Controller{
 
     public function destroy($id)
     {
-        Post::destroy($id);
-        return redirect()->route('post.index')->with('success', 'Xóa bài viết thành công!');
+        // Soft delete
+        $post = Post::findOrFail($id);
+        $post->delete();
+        return redirect()->route('post.index')->with('success', 'Bài viết đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $post = Post::withTrashed()->findOrFail($id);
+        
+        if ($post->image && Storage::disk('public')->exists($post->image)) {
+            Storage::disk('public')->delete($post->image);
+        }
+
+        $post->forceDelete();
+        return redirect()->route('post.trashed')->with('success', 'Bài viết đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $post = Post::withTrashed()->findOrFail($id);
+        $post->restore();
+        return redirect()->route('post.trashed')->with('success', 'Bài viết đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Post::onlyTrashed()->with('category');
+
+        if ($request->search) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        $posts = $query->orderBy('deleted_at', 'desc')->paginate(10);
+        return view('admin.post.trashed', compact('posts'));
     }
 
     

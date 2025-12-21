@@ -89,12 +89,39 @@ class BannerController extends Controller
     // Xóa banner
     public function destroy(Banner $banner)
     {
+        // Soft delete
+        $banner->delete();
+
+        return redirect()->route('banner.index')->with('success', 'Banner đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $banner = Banner::withTrashed()->findOrFail($id);
+
         if ($banner->image && Storage::disk('public')->exists($banner->image)) {
             Storage::disk('public')->delete($banner->image);
         }
 
-        $banner->delete();
+        $banner->forceDelete();
 
-        return redirect()->route('banner.index')->with('success', 'Xóa banner thành công!');
+        return redirect()->route('banner.trashed')->with('success', 'Banner đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $banner = Banner::withTrashed()->findOrFail($id);
+        $banner->restore();
+
+        return redirect()->route('banner.trashed')->with('success', 'Banner đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $banners = Banner::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10);
+
+        return view('admin.banner.trashed', compact('banners'));
     }
 }
