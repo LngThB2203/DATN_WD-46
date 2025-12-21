@@ -74,13 +74,16 @@ class OrderController extends Controller
             'details.variant.concentration',
             'warehouse',
         ])->findOrFail($id);
+        
+        // Kiểm tra xem đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
 
         if (! $order->warehouse_id) {
             $this->autoAssignWarehouse($order);
             $order->refresh();
         }
 
-        return view('admin.orders.show', compact('order'));
+        return view('admin.orders.show', compact('order', 'isPaid'));
     }
 
     // Cập nhật trạng thái đơn hàng

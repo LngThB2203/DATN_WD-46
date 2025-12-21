@@ -100,10 +100,46 @@ class CustomerController extends Controller
      */
     public function destroy($id)
     {
+        // Soft delete
         $customer = Customer::findOrFail($id);
         $customer->delete();
 
-        return redirect()->route('admin.customers.list')->with('success', 'Xóa khách hàng thành công!');
+        return redirect()->route('admin.customers.list')->with('success', 'Khách hàng đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $customer = Customer::withTrashed()->findOrFail($id);
+        $customer->forceDelete();
+
+        return redirect()->route('admin.customers.trashed')->with('success', 'Khách hàng đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $customer = Customer::withTrashed()->findOrFail($id);
+        $customer->restore();
+
+        return redirect()->route('admin.customers.trashed')->with('success', 'Khách hàng đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Customer::onlyTrashed();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->orderBy('deleted_at', 'desc')->paginate(15);
+        $customers->appends($request->only('search'));
+
+        return view('admin.customers.trashed', compact('customers'));
     }
 
     /**

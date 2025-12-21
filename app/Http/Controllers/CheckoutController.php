@@ -30,12 +30,14 @@ class CheckoutController extends Controller
         }
 
         $pending = $request->session()->get('pending_order', []);
+        $user = $request->user();
 
+        // Nếu đã đăng nhập, bắt buộc lấy tên và email từ tài khoản
         $defaultCustomer = [
-            'customer_name'         => $pending['customer']['customer_name'] ?? optional($request->user())->name,
-            'customer_email'        => $pending['customer']['customer_email'] ?? optional($request->user())->email,
-            'customer_phone'        => $pending['customer']['customer_phone'] ?? optional($request->user())->phone,
-            'shipping_address_line' => $pending['customer']['shipping_address_line'] ?? optional($request->user())->address,
+            'customer_name'         => $user ? $user->name : ($pending['customer']['customer_name'] ?? ''),
+            'customer_email'        => $user ? $user->email : ($pending['customer']['customer_email'] ?? ''),
+            'customer_phone'        => $pending['customer']['customer_phone'] ?? optional($user)->phone,
+            'shipping_address_line' => $pending['customer']['shipping_address_line'] ?? optional($user)->address,
             'customer_note'         => $pending['customer']['customer_note'] ?? null,
         ];
 
@@ -61,19 +63,37 @@ class CheckoutController extends Controller
             }
         }
 
-        return view('client.checkout', compact('cart', 'selectedItems', 'defaultCustomer', 'myVouchers'));
+        $isLoggedIn = $user !== null;
+
+        return view('client.checkout', compact('cart', 'selectedItems', 'defaultCustomer', 'myVouchers', 'isLoggedIn'));
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'customer_name'         => 'required|string|max:150',
-            'customer_email'        => 'nullable|email|max:150',
-            'customer_phone'        => 'required|string|max:20',
-            'shipping_address_line' => 'required|string|max:255',
-            'customer_note'         => 'nullable|string|max:1000',
-            'payment_method'        => 'required|in:cod,online',
-        ]);
+        $user = $request->user();
+        
+        // Nếu đã đăng nhập, bắt buộc lấy tên và email từ tài khoản
+        if ($user) {
+            $validated = $request->validate([
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:255',
+                'customer_note'         => 'nullable|string|max:1000',
+                'payment_method'        => 'required|in:cod,online',
+            ]);
+            
+            // Lấy tên và email từ tài khoản
+            $validated['customer_name'] = $user->name;
+            $validated['customer_email'] = $user->email;
+        } else {
+            $validated = $request->validate([
+                'customer_name'         => 'required|string|max:150',
+                'customer_email'        => 'required|email|max:150',
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:255',
+                'customer_note'         => 'nullable|string|max:1000',
+                'payment_method'        => 'required|in:cod,online',
+            ]);
+        }
 
         $selectedItems = array_filter(array_map('intval',
             is_string($request->input('selected_items'))

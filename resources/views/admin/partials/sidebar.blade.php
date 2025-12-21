@@ -30,6 +30,16 @@
                 </a>
             </li>
 
+            <!-- Thùng rác -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.trash.index') }}">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:trash-bin-trash-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Thùng rác </span>
+                </a>
+            </li>
+
             <!-- Sản phẩm -->
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="#sidebarProducts" data-bs-toggle="collapse" role="button"

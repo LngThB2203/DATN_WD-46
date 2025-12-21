@@ -50,19 +50,35 @@
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label">Họ tên <span class="text-danger">*</span></label>
-                            <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror"
-                                value="{{ old('customer_name', $defaultCustomer['customer_name'] ?? '') }}" required>
-                            @error('customer_name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            @if($isLoggedIn)
+                                <input type="text" class="form-control bg-light"
+                                    value="{{ $defaultCustomer['customer_name'] }}" readonly disabled
+                                    title="Thông tin này được lấy từ tài khoản của bạn">
+                                <small class="text-muted"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
+                                <input type="hidden" name="customer_name" value="{{ $defaultCustomer['customer_name'] }}">
+                            @else
+                                <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror"
+                                    value="{{ old('customer_name', $defaultCustomer['customer_name'] ?? '') }}" required>
+                                @error('customer_name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            @endif
                         </div>
                         <div class="col-12">
                             <label class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" name="customer_email" class="form-control @error('customer_email') is-invalid @enderror"
-                                value="{{ old('customer_email', $defaultCustomer['customer_email'] ?? '') }}" required>
-                            @error('customer_email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            @if($isLoggedIn)
+                                <input type="email" class="form-control bg-light"
+                                    value="{{ $defaultCustomer['customer_email'] }}" readonly disabled
+                                    title="Thông tin này được lấy từ tài khoản của bạn">
+                                <small class="text-muted"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
+                                <input type="hidden" name="customer_email" value="{{ $defaultCustomer['customer_email'] }}">
+                            @else
+                                <input type="email" name="customer_email" class="form-control @error('customer_email') is-invalid @enderror"
+                                    value="{{ old('customer_email', $defaultCustomer['customer_email'] ?? '') }}" required>
+                                @error('customer_email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            @endif
                         </div>
                         <div class="col-12">
                             <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>

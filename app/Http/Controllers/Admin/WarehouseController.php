@@ -78,6 +78,18 @@ class WarehouseController extends Controller
     // Xóa kho
     public function destroy(Warehouse $warehouse)
     {
+        // Soft delete
+        $warehouse->delete();
+
+        return redirect()
+            ->route('inventories.warehouse')
+            ->with('success', 'Kho đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $warehouse = Warehouse::withTrashed()->findOrFail($id);
+
         // Kiểm tra tồn kho thực tế
         if (
             WarehouseProduct::where('warehouse_id', $warehouse->id)
@@ -85,14 +97,39 @@ class WarehouseController extends Controller
                 ->exists()
         ) {
             return redirect()
-                ->route('inventories.warehouse')
-                ->with('error', 'Không thể xóa kho vì vẫn còn tồn kho!');
+                ->route('inventories.warehouse.trashed')
+                ->with('error', 'Không thể xóa vĩnh viễn kho vì vẫn còn tồn kho!');
         }
 
-        $warehouse->delete();
+        $warehouse->forceDelete();
 
         return redirect()
-            ->route('inventories.warehouse')
-            ->with('success', 'Xóa kho thành công!');
+            ->route('inventories.warehouse.trashed')
+            ->with('success', 'Kho đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $warehouse = Warehouse::withTrashed()->findOrFail($id);
+        $warehouse->restore();
+
+        return redirect()
+            ->route('inventories.warehouse.trashed')
+            ->with('success', 'Kho đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Warehouse::onlyTrashed()->with('manager');
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('warehouse_name', 'like', "%{$search}%");
+        }
+
+        $warehouses = $query->orderBy('deleted_at', 'desc')->paginate(10);
+        $warehouses->appends($request->only('search'));
+
+        return view('admin.inventories.warehouse.trashed', compact('warehouses'));
     }
 }

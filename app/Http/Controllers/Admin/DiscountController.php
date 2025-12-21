@@ -180,11 +180,45 @@ class DiscountController extends Controller
     public function destroy(Discount $discount)
     {
         try {
+            // Soft delete
             $discount->delete();
-            return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được xóa thành công!');
+            return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được xóa (có thể khôi phục)!');
         } catch (\Exception $e) {
             return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
+    }
+
+    public function forceDelete($id)
+    {
+        try {
+            $discount = Discount::withTrashed()->findOrFail($id);
+            $discount->forceDelete();
+            return redirect()->route('admin.discounts.trashed')->with('success', 'Mã giảm giá đã được xóa vĩnh viễn!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
+    }
+
+    public function restore($id)
+    {
+        $discount = Discount::withTrashed()->findOrFail($id);
+        $discount->restore();
+        return redirect()->route('admin.discounts.trashed')->with('success', 'Mã giảm giá đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Discount::onlyTrashed();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('code', 'like', "%{$search}%");
+        }
+
+        $discounts = $query->orderBy('deleted_at', 'desc')->paginate(15);
+        $discounts->appends($request->only('search'));
+
+        return view('admin.discounts.trashed', compact('discounts'));
     }
 
     /**

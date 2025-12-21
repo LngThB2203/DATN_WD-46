@@ -56,15 +56,26 @@ class OrderController extends Controller
             }
         }
 
-        $order = $query->findOrFail($id);
+        $order = $query->with('payment')->findOrFail($id);
+        
+        // Kiểm tra xem đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
+        $mappedStatus = OrderStatusHelper::mapOldStatus($order->order_status);
+        $canUpdateShipping = $mappedStatus === OrderStatusHelper::PENDING && !$isPaid;
 
-        return view('client.orders.show', compact('order'));
+        return view('client.orders.show', compact('order', 'isPaid', 'canUpdateShipping'));
     }
 
     // Cập nhật thông tin giao hàng
     public function updateShipping(Request $request, $id)
     {
-        $order = Order::findOrFail($id);
+        $order = Order::with('payment')->findOrFail($id);
+
+        // Kiểm tra đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
+        if ($isPaid) {
+            return redirect()->back()->with('error', 'Đơn hàng đã thanh toán, không thể cập nhật thông tin giao hàng.');
+        }
 
         $mappedStatus = OrderStatusHelper::mapOldStatus($order->order_status);
         if ($mappedStatus !== OrderStatusHelper::PENDING) {
@@ -114,9 +125,9 @@ class OrderController extends Controller
     
     //Xác nhận nhận hàng
     public function confirmReceived(Request $request, $id)
-    {
-        $order = Order::where('user_id', $request->user()->id)
-                      ->findOrFail($id);
+{
+    $order = Order::where('user_id', $request->user()->id)
+                  ->findOrFail($id);
 
         // Map trạng thái để check
         $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
@@ -126,12 +137,12 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Chỉ có thể xác nhận đơn hàng đã được giao.');
         }
 
-        $order->update([
+    $order->update([
             'order_status' => \App\Helpers\OrderStatusHelper::COMPLETED,
-            'completed_at' => now(),
-        ]);
+        'completed_at' => now(),
+    ]);
 
-        return redirect()->back()->with('success', 'Cảm ơn bạn! Đơn hàng đã được xác nhận.');
-    }
+    return redirect()->back()->with('success', 'Cảm ơn bạn! Đơn hàng đã được xác nhận.');
+}
 
 }

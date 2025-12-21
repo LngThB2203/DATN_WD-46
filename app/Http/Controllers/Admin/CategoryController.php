@@ -101,14 +101,44 @@ class CategoryController extends Controller
 
     public function destroy($id)
     {
+        // Soft delete
         $category = Category::findOrFail($id);
+        $category->delete();
+        return redirect()->route('admin.categories.list')->with('success', 'Danh mục đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $category = Category::withTrashed()->findOrFail($id);
 
         if ($category->image && file_exists(public_path($category->image))) {
             unlink(public_path($category->image));
         }
 
-        $category->delete();
-        return redirect()->route('admin.categories.list')->with('success', 'Xóa danh mục thành công!');
+        $category->forceDelete();
+        return redirect()->route('admin.categories.trashed')->with('success', 'Danh mục đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $category = Category::withTrashed()->findOrFail($id);
+        $category->restore();
+        return redirect()->route('admin.categories.trashed')->with('success', 'Danh mục đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Category::onlyTrashed()->with('parent');
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('category_name', 'like', "%{$search}%");
+        }
+
+        $categories = $query->orderBy('deleted_at', 'desc')->paginate(10);
+        $categories->appends($request->only('search'));
+        
+        return view('admin.categories.trashed', compact('categories'));
     }
     public function toggleStatus($id)
     {
