@@ -174,6 +174,7 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/', [StatisticController::class, 'index'])->name('index');
         Route::get('/revenue-data', [StatisticController::class, 'revenueData'])->name('revenue-data');
         Route::get('/top-products', [StatisticController::class, 'topProducts'])->name('top-products');
+        Route::get('/product-stats', [StatisticController::class, 'productStats'])->name('product-stats');
         Route::get('/export/excel', [StatisticController::class, 'exportExcel'])->name('export-excel');
         Route::get('/export/pdf', [StatisticController::class, 'exportPdf'])->name('export-pdf');
     });
