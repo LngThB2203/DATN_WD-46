@@ -1,9 +1,27 @@
 <?php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Client\VNPayController;
+use App\Http\Controllers\Admin\StatisticController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Client\WishlistController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Client\ProductDetailController;
+use App\Http\Controllers\Admin\InventoryExportController;
+use App\Http\Controllers\Client\ProductListingController;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProductController;
@@ -16,25 +34,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Client\VNPayController;
-use App\Http\Controllers\Admin\StatisticController;
-use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Client\WishlistController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Client\ProductDetailController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use App\Http\Controllers\Admin\InventoryExportController;
-use App\Http\Controllers\Client\ProductListingController;
-use App\Http\Controllers\Admin\StockTransactionController;
-use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Client\OrderController as ClientOrderController;
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 
 Route::get('/test-form', function () {
     return '<form method="POST" action="/test-form-submit">'

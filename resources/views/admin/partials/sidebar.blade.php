@@ -244,7 +244,7 @@
                 </a>
             </li>
 
-            <!-- Cài đặt -->
+            {{-- <!-- Cài đặt -->
             <li class="nav-item">
                 <a class="nav-link" href="settings.html">
                     <span class="nav-icon">
@@ -331,7 +331,7 @@
                     </span>
                     <span class="nav-text"> Việc cần làm </span>
                 </a>
-            </li>
+            </li> --}}
 
         </ul>
     </div>
