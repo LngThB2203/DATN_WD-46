@@ -32,13 +32,29 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="badge bg-primary">Mã</span>
                                     @if($discount->discount_type === 'percent')
-                                        <span class="badge bg-info">Giảm {{ $discount->discount_value }}%</span>
+                                        <div class="text-end">
+                                            <span class="badge bg-info">Giảm {{ $discount->discount_value }}%</span>
+                                            @if(!is_null($discount->max_discount_amount))
+                                                <div class="small text-muted mt-1">
+                                                    Tối đa {{ number_format($discount->max_discount_amount, 0, ',', '.') }} đ
+                                                </div>
+                                            @endif
+                                        </div>
                                     @else
                                         <span class="badge bg-success">Giảm {{ number_format($discount->discount_value, 0, ',', '.') }} đ</span>
                                     @endif
                                 </div>
 
-                                <h5 class="card-title">{{ $discount->code }}</h5>
+                                @php
+                                    $isUsed = in_array($discount->id, $usedDiscountIds ?? []);
+                                @endphp
+
+                                <h5 class="card-title d-flex justify-content-between align-items-center">
+                                    <span>{{ $discount->code }}</span>
+                                    @if($isUsed)
+                                        <span class="badge bg-secondary ms-2">Đã sử dụng</span>
+                                    @endif
+                                </h5>
 
                                 @if($discount->min_order_value)
                                     <p class="mb-1 small text-muted">Đơn tối thiểu: {{ number_format($discount->min_order_value, 0, ',', '.') }} đ</p>
@@ -74,8 +90,10 @@
                                         </a>
                                     @endauth
 
-                                    <a href="{{ route('checkout.index') }}" class="btn btn-sm btn-primary">
-                                        Dùng ngay
+                                    <a href="{{ route('checkout.index') }}"
+                                       class="btn btn-sm {{ $isUsed ? 'btn-outline-secondary disabled' : 'btn-primary' }}"
+                                       {{ $isUsed ? 'aria-disabled=true' : '' }}>
+                                        {{ $isUsed ? 'Đã sử dụng' : 'Dùng ngay' }}
                                     </a>
                                 </div>
                             </div>

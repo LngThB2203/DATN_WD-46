@@ -153,6 +153,7 @@
                        @csrf
                        <input type="hidden" name="product_id" value="{{ $product->id }}">
                        <input type="hidden" name="variant_id" id="selectedVariantId">
+                       <input type="hidden" name="buy_now" id="buyNowFlag" value="0">
 
 
                        <div class="d-flex align-items-center gap-3 mb-3">
@@ -172,6 +173,12 @@
                            : '' }}>
                            <i class="bi bi-cart-plus"></i> {{ $totalStock > 0 ? 'Thêm vào giỏ' : 'Hết hàng' }}
                        </button>
+
+                       @if($totalStock > 0)
+                           <button type="button" class="btn btn-outline-primary ms-2" id="buyNowBtn">
+                               Mua ngay
+                           </button>
+                       @endif
                    </form>
 
 
@@ -274,6 +281,8 @@ document.addEventListener('DOMContentLoaded', function () {
    const addToCartBtn = document.getElementById('addToCartBtn');
    const quantityInput = document.getElementById('productQuantity');
    const availableStockInfo = document.getElementById('availableStockInfo');
+   const buyNowBtn = document.getElementById('buyNowBtn');
+   const buyNowFlag = document.getElementById('buyNowFlag');
 
    const selected = {
        size: null,
@@ -374,6 +383,17 @@ document.addEventListener('DOMContentLoaded', function () {
            if (currentValue > 1) {
                quantityInput.value = currentValue - 1;
            }
+       });
+   }
+
+   // Nút Mua ngay: set cờ buy_now và submit form
+   if (buyNowBtn && buyNowFlag) {
+       buyNowBtn.addEventListener('click', function () {
+           if (addToCartBtn && addToCartBtn.disabled) {
+               return;
+           }
+           buyNowFlag.value = '1';
+           document.getElementById('addToCartForm').submit();
        });
    }
 
