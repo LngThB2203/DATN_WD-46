@@ -360,6 +360,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::put('/update/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('update');
         Route::delete('/delete/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('destroy');
         Route::get('/export', [App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('export');
+        Route::patch('/toggle-user/{customer}',[App\Http\Controllers\Admin\CustomerController::class, 'toggleUser']
+)->name('toggleUser');
+
     });
 
     // Sellers
