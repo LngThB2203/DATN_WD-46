@@ -269,11 +269,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
    const variantMatrix = @json($variantMatrix);
    const defaultTotalStock = @json($totalStock);
+<<<<<<< Updated upstream
    const defaultAvailableText = @json(
        $totalStock > 0
            ? 'Có sẵn: {{ $totalStock }} sản phẩm'
            : 'Không còn hàng'
    );
+=======
+   @php
+       $availableText = $totalStock > 0 ? 'Có sẵn: ' . $totalStock . ' sản phẩm' : 'Không còn hàng';
+   @endphp
+   const defaultAvailableText = @json($availableText);
+   const hasVariants = variantMatrix && variantMatrix.length > 0;
+>>>>>>> Stashed changes
 
    const selectedVariantId = document.getElementById('selectedVariantId');
    const variantInfo = document.getElementById('variantInfo');
@@ -298,11 +306,24 @@ document.addEventListener('DOMContentLoaded', function () {
                '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
        }
        if (addToCartBtn) addToCartBtn.disabled = defaultTotalStock <= 0;
+<<<<<<< Updated upstream
        if (quantityInput) quantityInput.removeAttribute('max');
+=======
+       if (quantityInput) {
+           quantityInput.removeAttribute('max');
+           if (!hasVariants && defaultTotalStock > 0) {
+               quantityInput.setAttribute('max', defaultTotalStock);
+           }
+       }
+>>>>>>> Stashed changes
        if (availableStockInfo) availableStockInfo.textContent = defaultAvailableText;
    }
 
    function findMatchedVariant() {
+<<<<<<< Updated upstream
+=======
+       if (!hasVariants) return null;
+>>>>>>> Stashed changes
        return variantMatrix.find(v =>
            (!selected.size || v.size === selected.size) &&
            (!selected.scent || v.scent === selected.scent) &&
@@ -310,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function () {
        );
    }
 
+<<<<<<< Updated upstream
    // Chọn biến thể theo từng nhóm (size / scent / concentration)
    document.querySelectorAll('.variant-group').forEach(group => {
        const type = group.dataset.type;
@@ -372,6 +394,79 @@ document.addEventListener('DOMContentLoaded', function () {
            });
        });
    });
+=======
+   // Khởi tạo UI: nếu không có biến thể, cho phép thêm vào giỏ ngay
+   if (!hasVariants) {
+       if (selectedVariantId) selectedVariantId.value = '';
+       if (addToCartBtn) addToCartBtn.disabled = defaultTotalStock <= 0;
+   }
+
+   // Chọn biến thể theo từng nhóm (size / scent / concentration)
+   // Chỉ chạy nếu có biến thể
+   if (hasVariants) {
+       document.querySelectorAll('.variant-group').forEach(group => {
+           const type = group.dataset.type;
+
+           group.querySelectorAll('.variant-option').forEach(btn => {
+               btn.addEventListener('click', function () {
+                   // clear active trong group
+                   group.querySelectorAll('.variant-option').forEach(b => {
+                       b.classList.remove('btn-primary', 'text-white');
+                       b.classList.add('btn-outline-secondary');
+                   });
+
+                   // set active
+                   this.classList.remove('btn-outline-secondary');
+                   this.classList.add('btn-primary', 'text-white');
+
+                   selected[type] = this.dataset.value;
+
+                   const variant = findMatchedVariant();
+
+                   if (!variant) {
+                       resetUI();
+                       return;
+                   }
+
+                   // apply variant
+                   if (selectedVariantId) selectedVariantId.value = variant.id;
+
+                   if (variantInfo) {
+                       let info = [];
+                       if (variant.size) info.push('Kích thước: ' + variant.size);
+                       if (variant.scent) info.push('Mùi: ' + variant.scent);
+                       if (variant.concentration) info.push('Nồng độ: ' + variant.concentration);
+                       info.push('Tồn kho: ' + variant.stock);
+                       variantInfo.textContent = info.join(' | ');
+                   }
+
+                   if (productPriceSpan) {
+                       productPriceSpan.textContent =
+                           new Intl.NumberFormat('vi-VN').format(variant.price) + ' VNĐ';
+                   }
+
+                   if (addToCartBtn) {
+                       addToCartBtn.disabled = variant.stock <= 0;
+                   }
+
+                   if (quantityInput) {
+                       quantityInput.setAttribute('max', variant.stock);
+                       if (parseInt(quantityInput.value) > variant.stock) {
+                           quantityInput.value = variant.stock;
+                       }
+                   }
+
+                   if (availableStockInfo) {
+                       availableStockInfo.textContent =
+                           variant.stock > 0
+                               ? 'Có sẵn: ' + variant.stock + ' sản phẩm'
+                               : 'Không còn hàng';
+                   }
+               });
+           });
+       });
+   } // End if hasVariants
+>>>>>>> Stashed changes
 
    // Nút tăng / giảm số lượng
    const decreaseBtn = document.querySelector('.quantity-decrease');
@@ -400,12 +495,29 @@ document.addEventListener('DOMContentLoaded', function () {
    if (increaseBtn && quantityInput) {
        increaseBtn.addEventListener('click', function () {
            const currentValue = parseInt(quantityInput.value) || 1;
+<<<<<<< Updated upstream
            const max = parseInt(quantityInput.getAttribute('max')) || 100;
+=======
+           const max = parseInt(quantityInput.getAttribute('max')) || (hasVariants ? 100 : defaultTotalStock);
+>>>>>>> Stashed changes
            if (currentValue < max) {
                quantityInput.value = currentValue + 1;
            }
        });
    }
+<<<<<<< Updated upstream
+=======
+
+   // Form submit: nếu không có biến thể, đảm bảo variant_id là null
+   const addToCartForm = document.getElementById('addToCartForm');
+   if (addToCartForm && !hasVariants) {
+       addToCartForm.addEventListener('submit', function(e) {
+           if (selectedVariantId) {
+               selectedVariantId.value = '';
+           }
+       });
+   }
+>>>>>>> Stashed changes
 
 });
 </script>

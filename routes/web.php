@@ -27,6 +27,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\ProductController;
@@ -275,7 +276,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('delete');
         Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
     });
+    
     Route::prefix('post')->group(function () {
+<<<<<<< Updated upstream
     Route::get('/', [PostController::class, 'index'])->name('post.index');
     Route::get('/create', [PostController::class, 'create'])->name('post.create');
     Route::post('/store', [PostController::class, 'store'])->name('post.store');
@@ -285,6 +288,17 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
     Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
     Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
+=======
+        Route::get('/', [PostController::class, 'index'])->name('post.index');
+        Route::get('/create', [PostController::class, 'create'])->name('post.create');
+        Route::post('/store', [PostController::class, 'store'])->name('post.store');
+        Route::get('/trashed', [PostController::class, 'trashed'])->name('post.trashed');
+        Route::post('/trashed/{id}/restore', [PostController::class, 'restore'])->name('post.restore');
+        Route::delete('/trashed/{id}/force-delete', [PostController::class, 'forceDelete'])->name('post.force-delete');
+        Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
+        Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
+        Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
+>>>>>>> Stashed changes
     });
 
     // Inventories

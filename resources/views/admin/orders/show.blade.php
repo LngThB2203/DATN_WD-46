@@ -84,7 +84,7 @@
                                 <td>
                                     <img src="{{ $imageUrl }}" class="rounded border"
                                         style="width:60px;height:60px;object-fit:cover"
-                                        onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}'">
+                                        onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}';">
                                 </td>
                                 <td>
                                     @if($product)
@@ -119,7 +119,11 @@
                                             @endif
                                         </div>
                                     @else
+<<<<<<< Updated upstream
                                         <span class="text-muted">—</span>
+=======
+                                        <span class="text-muted small">Không có biến thể</span>
+>>>>>>> Stashed changes
                                     @endif
                                 </td>
                                 <td>{{ number_format($item->price, 0, ',', '.') }} đ</td>

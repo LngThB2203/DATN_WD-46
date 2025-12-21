@@ -82,17 +82,29 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Đơn hàng không thể cập nhật.');
         }
 
-        $request->validate([
-            'customer_name'    => 'required|string|max:255',
-            'customer_email'   => 'nullable|email|max:255',
-            'customer_phone'   => 'required|string|max:20',
-            'shipping_address' => 'required|string|max:500',
-            'customer_note'    => 'nullable|string|max:1000',
-        ]);
+        $user = $request->user();
+        
+        if ($user) {
+            // Nếu đã đăng nhập, lấy tên và email từ tài khoản
+            $validated = $request->validate([
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:500',
+                'customer_note'         => 'nullable|string|max:1000',
+            ]);
+            
+            $validated['customer_name'] = $user->name;
+            $validated['customer_email'] = $user->email;
+        } else {
+            $validated = $request->validate([
+                'customer_name'         => 'required|string|max:255',
+                'customer_email'        => 'nullable|email|max:255',
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:500',
+                'customer_note'         => 'nullable|string|max:1000',
+            ]);
+        }
 
-        $order->update($request->only([
-            'customer_name', 'customer_email', 'customer_phone', 'shipping_address', 'customer_note',
-        ]));
+        $order->update($validated);
 
         return redirect()->back()->with('success', 'Cập nhật thông tin giao hàng thành công.');
     }
