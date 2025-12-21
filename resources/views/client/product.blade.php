@@ -179,30 +179,9 @@
             @else
                 <p class="text-muted">Chưa có đánh giá.</p>
             @endif
-
-            @auth
-                <form action="{{ route('product.review.store', $product->slug ?? $product->id) }}" method="POST" class="border p-3 rounded">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="rating" class="form-label">Chấm điểm (1-5)</label>
-                        <select id="rating" name="rating" class="form-select" required>
-                            <option value="">Chọn</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="comment" class="form-label">Nhận xét</label>
-                        <textarea id="comment" name="comment" class="form-control" rows="3" placeholder="Viết nhận xét (tuỳ chọn)"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
-                </form>
-            @else
-                <p class="mt-3">Vui lòng <a href="{{ route('login') }}">đăng nhập</a> để đánh giá.</p>
-            @endauth
+            <p class="mt-3 text-muted">
+                Bạn có thể đánh giá sản phẩm trong mục <strong>Đơn hàng của tôi</strong> sau khi đơn hàng được hoàn thành (trong vòng 15 ngày).
+            </p>
         </div>
 
         @if(isset($relatedProducts) && $relatedProducts->count())

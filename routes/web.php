@@ -19,6 +19,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
 use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\Client\OrderReviewController;
 use App\Http\Controllers\Client\ProductDetailController;
 use App\Http\Controllers\Client\ProductListingController;
 use App\Http\Controllers\Client\VNPayController;
@@ -116,9 +117,12 @@ Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('v
 // Orders (Client)
 Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
 Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
-Route::put('/orders/{order}/update-shipping', [ClientOrderController::class, 'updateShipping'])->name('orders.updateShipping');
-Route::put('/orders/{order}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
-Route::put('/orders/{order}/confirm-received', [ClientOrderController::class, 'confirmReceived'])->name('orders.confirm-received');
+Route::put('/orders/{id}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
+Route::put('/orders/{id}/confirm-received', [ClientOrderController::class, 'confirmReceived'])->middleware('auth')->name('orders.confirm-received');
+Route::middleware('auth')->group(function () {
+    Route::get('/orders/{order}/review/{product}', [OrderReviewController::class, 'create'])->name('orders.review.form');
+    Route::post('/orders/{order}/review/{product}', [OrderReviewController::class, 'store'])->name('orders.review.store');
+});
 
 // Newsletter
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
