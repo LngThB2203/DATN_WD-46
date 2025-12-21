@@ -1,7 +1,7 @@
 <?php
-
 namespace App\Services;
 
+use App\Helpers\OrderStatusHelper;
 use App\Models\StockTransaction;
 use App\Models\WarehouseBatch;
 use App\Models\WarehouseProduct;
@@ -60,7 +60,9 @@ class StockService
     // Xuất kho chỉ qua đơn hàng
     public function exportByOrder($order): void
     {
-        if ($this->isOrderExported($order->id)) return;
+        if ($this->isOrderExported($order->id)) {
+            return;
+        }
 
         DB::transaction(function () use ($order) {
             foreach ($order->details as $detail) {
@@ -79,49 +81,74 @@ class StockService
     // Hủy đơn hàng (trả kho)
     public function cancelOrder($order): void
     {
-        if (!$this->isOrderExported($order->id)) return;
-
-        if (StockTransaction::where('reference_type', 'order_cancel')
-            ->where('reference_id', $order->id)
-            ->exists()) return;
-
         DB::transaction(function () use ($order) {
-            $exports = StockTransaction::where('reference_type', 'order')
-                ->where('reference_id', $order->id)
-                ->where('type', 'export')
-                ->get();
+            foreach ($order->details as $detail) {
+                $restoreQty = $detail->quantity;
 
-            foreach ($exports as $log) {
-                $batch = WarehouseBatch::lockForUpdate()->find($log->batch_id);
-                if (!$batch) continue;
+                // Sync tồn kho tổng (WarehouseProduct)
+                $wp = WarehouseProduct::lockForUpdate()->firstOrCreate(
+                    [
+                        'warehouse_id' => $order->warehouse_id,
+                        'product_id'   => $detail->product_id,
+                        'variant_id'   => $detail->variant_id,
+                    ],
+                    ['quantity' => 0]
+                );
+                $before = $wp->quantity;
+                $after  = $before + $restoreQty;
+                $wp->update(['quantity' => $after]);
 
-                $restore = abs($log->quantity);
-                $before  = $batch->quantity;
-                $after   = $before + $restore;
+                // Nếu có giao dịch xuất kho trước đó, cộng lại batch
+                $exports = StockTransaction::where('reference_type', 'order')
+                    ->where('reference_id', $order->id)
+                    ->where('product_id', $detail->product_id)
+                    ->where('variant_id', $detail->variant_id)
+                    ->where('type', 'export')
+                    ->get();
 
-                $batch->update(['quantity' => $after]);
+                foreach ($exports as $log) {
+                    $batch = WarehouseBatch::lockForUpdate()->find($log->batch_id);
+                    if (! $batch) {
+                        continue;
+                    }
 
+                    $batchBefore = $batch->quantity;
+                    $batchAfter  = $batchBefore + abs($log->quantity);
+                    $batch->update(['quantity' => $batchAfter]);
+
+                    StockTransaction::create([
+                        'warehouse_id'    => $batch->warehouse_id,
+                        'product_id'      => $batch->product_id,
+                        'variant_id'      => $batch->variant_id,
+                        'batch_id'        => $batch->id,
+                        'batch_code'      => $batch->batch_code,
+                        'type'            => 'import',
+                        'quantity'        => abs($log->quantity),
+                        'before_quantity' => $batchBefore,
+                        'after_quantity'  => $batchAfter,
+                        'reference_type'  => 'order_cancel',
+                        'reference_id'    => $order->id,
+                    ]);
+                }
+
+                // Ghi log tổng cho đơn hủy
                 StockTransaction::create([
-                    'warehouse_id'    => $batch->warehouse_id,
-                    'product_id'      => $batch->product_id,
-                    'variant_id'      => $batch->variant_id,
-                    'batch_id'        => $batch->id,
-                    'batch_code'      => $batch->batch_code,
+                    'warehouse_id'    => $order->warehouse_id,
+                    'product_id'      => $detail->product_id,
+                    'variant_id'      => $detail->variant_id,
+                    'batch_id'        => null,
+                    'batch_code'      => null,
                     'type'            => 'import',
-                    'quantity'        => $restore,
+                    'quantity'        => $restoreQty,
                     'before_quantity' => $before,
                     'after_quantity'  => $after,
                     'reference_type'  => 'order_cancel',
                     'reference_id'    => $order->id,
                 ]);
-
-                $this->syncWarehouseProduct(
-                    $batch->warehouse_id,
-                    $batch->product_id,
-                    $batch->variant_id,
-                    $restore
-                );
             }
+
+            // Cập nhật trạng thái đơn
+            $order->update(['order_status' => OrderStatusHelper::CANCELLED]);
         });
     }
 
@@ -178,7 +205,9 @@ class StockService
         $need = $quantity;
 
         foreach ($batches as $batch) {
-            if ($need <= 0) break;
+            if ($need <= 0) {
+                break;
+            }
 
             $take   = min($need, $batch->quantity);
             $before = $batch->quantity;

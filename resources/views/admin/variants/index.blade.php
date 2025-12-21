@@ -20,51 +20,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-        <form method="GET" class="row g-2 mb-3">
-    <div class="col-md-3">
-        <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Tìm kiếm SKU hoặc sản phẩm">
-    </div>
-
-    <div class="col-md-2">
-        <select name="size_id" class="form-select">
-            <option value="">-- Chọn Size --</option>
-            @foreach($sizes as $size)
-                <option value="{{ $size->id }}" {{ request('size_id') == $size->id ? 'selected' : '' }}>{{ $size->size_name ?? $size->name }}</option>
-            @endforeach
-        </select>
-    </div>
-
-    <div class="col-md-2">
-        <select name="scent_id" class="form-select">
-            <option value="">-- Chọn Mùi --</option>
-            @foreach($scents as $scent)
-                <option value="{{ $scent->id }}" {{ request('scent_id') == $scent->id ? 'selected' : '' }}>{{ $scent->scent_name ?? $scent->name }}</option>
-            @endforeach
-        </select>
-    </div>
-
-    <div class="col-md-2">
-        <select name="concentration_id" class="form-select">
-            <option value="">-- Chọn Nồng độ --</option>
-            @foreach($concentrations as $c)
-                <option value="{{ $c->id }}" {{ request('concentration_id') == $c->id ? 'selected' : '' }}>{{ $c->concentration_name ?? $c->name }}</option>
-            @endforeach
-        </select>
-    </div>
-
-    <div class="col-md-2">
-        <select name="gender" class="form-select">
-            <option value="">-- Chọn Giới tính --</option>
-            <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>Nam</option>
-            <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>Nữ</option>
-            <option value="unisex" {{ request('gender') == 'unisex' ? 'selected' : '' }}>Unisex</option>
-        </select>
-    </div>
-
-    <div class="col-md-1">
-        <button type="submit" class="btn btn-primary w-100">Lọc</button>
-    </div>
-</form>
 
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -96,6 +51,7 @@
                             @forelse($variants as $v)
                             <tr>
                                 <td>{{ $v->id }}</td>
+
                                 <td>
                                     @if($v->image)
                                         <img src="{{ asset('storage/'.$v->image) }}" width="55" height="55" class="rounded" style="object-fit: cover;">
