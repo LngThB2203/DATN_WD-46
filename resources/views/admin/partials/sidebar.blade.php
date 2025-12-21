@@ -123,7 +123,7 @@
                 <div class="collapse" id="sidebarNewsletter">
                     <ul class="nav sub-navbar-nav">
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.newsletters.list') }}">Danh sách email</a>
+                            <a class="sub-nav-link" href="{{ route('post.index') }}">Danh sách tin</a>
                         </li>
                     </ul>
                 </div>

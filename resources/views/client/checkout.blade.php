@@ -247,7 +247,9 @@
                                 <span>{{ number_format($cart['grand_total'] ?? 0) }} đ</span>
                             </div>
 
-                            <button class="btn btn-primary w-100" type="submit">Đặt hàng</button>
+                            <button class="btn btn-primary w-100" type="button" onclick="confirmOrder('{{ $item['name'] }}','{{ number_format($item['price']) }} đ', this)">
+                                Đặt hàng
+                            </button>
 
                         </div>
                     </div>
@@ -261,6 +263,7 @@
 
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 (function () {
     const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
@@ -338,8 +341,6 @@
     }
 })();
 
-<<<<<<< Updated upstream
-=======
 function confirmOrder(name, price, btn) {
     let timerInterval;
     let countdown = 5;
@@ -348,12 +349,12 @@ function confirmOrder(name, price, btn) {
         title: 'Xác nhận đơn hàng',
         html: `Bạn chắc chắn muốn đặt sản phẩm này?<br>Tên: <b>${name}</b><br>Giá: <b>${price}</b>`,
         icon: 'question',
-        showCancelButton: true,
+        showCancelButton: true, 
         confirmButtonText: `OK (${countdown})`,
         cancelButtonText: 'Hủy',
         didOpen: () => {
             const confirmBtn = Swal.getConfirmButton();
-            confirmBtn.disabled = true;
+            confirmBtn.disabled = true; 
             timerInterval = setInterval(() => {
                 countdown--;
                 confirmBtn.innerText = `OK (${countdown})`;
@@ -370,7 +371,7 @@ function confirmOrder(name, price, btn) {
         }
     });
 }
->>>>>>> Stashed changes
+
 </script>
 @endsection
 

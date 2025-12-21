@@ -6,7 +6,7 @@
 <main class="main">
 
     <!-- Hero Section -->
-    <section class="hero py-5">
+    <section class="hero py-1">
         <div class="container-fluid container-xl">
             <div class="row align-items-center g-4">
                 <div class="col-lg-6">
@@ -15,15 +15,44 @@
                     <a href="#" class="btn btn-primary btn-lg">Mua ngay</a>
                 </div>
                 <div class="col-lg-6">
-                    @if($heroBanner && $heroBanner->image)
-                    <img class="img-fluid rounded" src="{{ asset('storage/' . $heroBanner->image) }}" alt="Hero">
-                    @else
-                    <img class="img-fluid rounded" src="{{ asset('assets/client/img/default-hero.webp') }}" alt="Hero">
+                    @if(isset($heroBanners) && $heroBanners->count() > 0)
+                    @if($heroBanners->count() == 1)
+                    @php $product = $products->first(); @endphp
+                    @if($product)
+                        <a href="{{ route('product.show', $product->slug) }}">
+                            <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" 
+                                class="d-block w-100 rounded" 
+                                alt="Hero Banner">
+                        </a>
                     @endif
+                        @else
+                            <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                @foreach($heroBanners as $key => $banner)
+                                    <div class="carousel-item @if($key == 0) active @endif">
+                                            <a href="{{ isset($products) && $products->count() > 0 ? route('product.show', $products->first()->slug) : '#' }}">
+                                                <img src="{{ asset('storage/' . $banner->image) }}" class="d-block w-100 rounded" alt="Hero Banner">
+                                            </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                                <span class="visually-hidden"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                                <span class="visually-hidden"></span>
+                            </button>
+                        </div>
+                    @endif
+                @endif
                 </div>
             </div>
         </div>
-    </section>
+
+    </div>
+</section>
 
     <!-- Featured Products -->
 <section class="py-5 border-top">
@@ -90,7 +119,6 @@
 
     </div>
 </section>
-
 
 </main>
 
@@ -195,3 +223,15 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 @endsection
+<style>
+      #heroCarousel .carousel-item {
+    height: 400px; 
+    overflow: hidden;
+}
+
+#heroCarousel .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+</style>

@@ -1,58 +1,40 @@
 <?php
-use App\Http\Controllers\AccountController;
-use App\Http\Controllers\Admin\BannerController;
-<<<<<<< Updated upstream
-use App\Http\Controllers\Admin\BrandController;
-=======
-use App\Http\Controllers\Client\VNPayController;
-use App\Http\Controllers\Admin\StatisticController;
-use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Client\WishlistController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Client\ProductDetailController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use App\Http\Controllers\Admin\InventoryExportController;
-use App\Http\Controllers\Client\ProductListingController;
-use App\Http\Controllers\Admin\StockTransactionController;
-use App\Http\Controllers\Admin\WarehouseBatchController;
-use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Client\OrderController as ClientOrderController;
->>>>>>> Stashed changes
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
-use App\Http\Controllers\Admin\InventoryExportController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Admin\StatisticController;
-use App\Http\Controllers\Admin\StockTransactionController;
-use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Admin\WarehouseBatchController;
-use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
-use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\ClientBlogController;
-use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
-use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\Client\OrderController as ClientOrderController;
-use App\Http\Controllers\Client\ProductDetailController;
-use App\Http\Controllers\Client\ProductListingController;
-use App\Http\Controllers\Client\VNPayController;
-use App\Http\Controllers\Client\WishlistController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\DiscountController;
-use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReviewController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Client\VNPayController;
+use App\Http\Controllers\Admin\StatisticController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Client\WishlistController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Client\ProductDetailController;
+use App\Http\Controllers\Admin\InventoryExportController;
+use App\Http\Controllers\Client\ProductListingController;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\ClientBlogController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
 
 Route::get('/test-form', function () {
     return '<form method="POST" action="/test-form-submit">'
@@ -170,7 +152,9 @@ Route::get('/return-policy', fn() => view('client.return-policy'))->name('return
 // Route::get('/search', fn() => view('client.search-results'))->name('search.results');
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
-
+// Chat AI
+Route::get('/chat/messages', [ChatbotController::class, 'fetchMessages']);
+Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
 // Blog
 Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
@@ -261,6 +245,14 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('delete');
         Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
+    });
+    Route::prefix('post')->group(function () {
+    Route::get('/', [PostController::class, 'index'])->name('post.index');
+    Route::get('/create', [PostController::class, 'create'])->name('post.create');
+    Route::post('/store', [PostController::class, 'store'])->name('post.store');
+    Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
+    Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
+    Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
     });
 
     // Inventories
@@ -403,29 +395,6 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
         Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
         Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
-    });
-
-    // Banners
-    Route::prefix('banner')->group(function () {
-        Route::get('/', [BannerController::class, 'index'])->name('banner.index');
-        Route::get('/create', [BannerController::class, 'create'])->name('banner.create');
-        Route::post('/store', [BannerController::class, 'store'])->name('banner.store');
-        Route::get('/edit/{banner}', [BannerController::class, 'edit'])->name('banner.edit');
-        Route::post('/update/{banner}', [BannerController::class, 'update'])->name('banner.update');
-        Route::get('/delete/{banner}', [BannerController::class, 'destroy'])->name('banner.delete');
-        Route::post('/toggle-status/{banner}', [BannerController::class, 'toggleStatus'])->name('banner.toggleStatus');
-    });
-
-    // Brands
-    Route::prefix('brand')->group(function () {
-        Route::get('/', [BrandController::class, 'index'])->name('brand.index');
-        Route::get('/create', [BrandController::class, 'create'])->name('brand.create');
-        Route::post('/store', [BrandController::class, 'store'])->name('brand.store');
-        Route::get('/edit/{brand}', [BrandController::class, 'edit'])->name('brand.edit');
-        Route::post('/update/{brand}', [BrandController::class, 'update'])->name('brand.update');
-        Route::get('/delete/{brand}', [BrandController::class, 'destroy'])->name('brand.delete');
-        Route::post('/upload-logo/{brand}', [BrandController::class, 'uploadLogo'])->name('brand.uploadLogo');
-        Route::get('/{id}/products', [BrandController::class, 'showProducts'])->name('brand.products');
     });
 
     // Discounts
