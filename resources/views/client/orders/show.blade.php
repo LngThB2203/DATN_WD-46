@@ -65,6 +65,28 @@
                                                             @if($detail->variant->concentration) | Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? '' }} @endif
                                                         </div>
                                                     @endif
+                                                    @php
+                                                        $canReview = false;
+                                                        if(auth()->check() && $detail->product) {
+                                                            $user = auth()->user();
+                                                            if($order->user_id === $user->id && $order->order_status === 'completed' && $order->completed_at) {
+                                                                if(\Carbon\Carbon::now()->diffInDays($order->completed_at) <= 15) {
+                                                                    $alreadyReviewed = \App\Models\Review::where('user_id', $user->id)
+                                                                        ->where('product_id', $detail->product->id)
+                                                                        ->where('order_id', $order->id)
+                                                                        ->exists();
+                                                                    $canReview = ! $alreadyReviewed;
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if($canReview)
+                                                        <div class="mt-2">
+                                                            <a href="{{ route('orders.review.form', [$order->id, $detail->product->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                                ⭐ Đánh giá sản phẩm
+                                                            </a>
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
@@ -90,15 +112,22 @@
                         @if($order->customer_note)<p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>@endif
 
                         {{-- Nút hủy đơn --}}
-                        @if(in_array($order->order_status,['pending','processing']))
-                        <form method="POST" action="{{ route('orders.cancel', $order->id) }}">
+                        @php
+                            $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
+                            $canCancel = in_array($mappedStatus, [
+                                \App\Helpers\OrderStatusHelper::PENDING, 
+                                \App\Helpers\OrderStatusHelper::PREPARING
+                            ]);
+                        @endphp
+                        @if($canCancel)
+                        <form method="POST" action="{{ route('orders.cancel', $order->id) }}" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');">
                             @csrf @method('PUT')
                             <button type="submit" class="btn btn-danger mt-3 w-100">Hủy đơn hàng</button>
                         </form>
                         @endif
 
                         {{-- Nút xác nhận đã nhận hàng --}}
-                        @if($order->order_status === 'delivered')
+                        @if($mappedStatus === \App\Helpers\OrderStatusHelper::DELIVERED)
                         <form method="POST" action="{{ route('orders.confirm-received', $order->id) }}">
                             @csrf
                             @method('PUT')

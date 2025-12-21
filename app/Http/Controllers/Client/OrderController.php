@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\OrderStatusHelper;
 use App\Models\Order;
 use Illuminate\Http\Request;
 
@@ -65,7 +66,8 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        if ($order->order_status !== 'pending') {
+        $mappedStatus = OrderStatusHelper::mapOldStatus($order->order_status);
+        if ($mappedStatus !== OrderStatusHelper::PENDING) {
             return redirect()->back()->with('error', 'Đơn hàng không thể cập nhật.');
         }
 
@@ -89,29 +91,47 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        if (!in_array($order->order_status, ['pending', 'processing'])) {
-            return redirect()->back()->with('error', 'Đơn hàng không thể hủy.');
+        // Kiểm tra quyền sở hữu
+        if ($request->user() && $order->user_id != $request->user()->id) {
+            abort(403, 'Bạn không có quyền hủy đơn hàng này.');
+        }
+
+        // Map trạng thái cũ sang mới để check
+        $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
+        
+        // Chỉ cho hủy ở trạng thái PENDING hoặc PREPARING
+        if (!in_array($mappedStatus, [\App\Helpers\OrderStatusHelper::PENDING, \App\Helpers\OrderStatusHelper::PREPARING])) {
+            return redirect()->back()->with('error', 'Đơn hàng không thể hủy ở trạng thái hiện tại.');
         }
 
         $order->update([
-            'order_status' => 'canceled',
+            'order_status' => \App\Helpers\OrderStatusHelper::CANCELLED,
+            'cancelled_at' => now(),
         ]);
 
         return redirect()->back()->with('success', 'Đơn hàng đã được hủy thành công.');
     }
+    
     //Xác nhận nhận hàng
     public function confirmReceived(Request $request, $id)
-{
-    $order = Order::where('user_id', $request->user()->id)
-                  ->where('order_status', 'delivered')
-                  ->findOrFail($id);
+    {
+        $order = Order::where('user_id', $request->user()->id)
+                      ->findOrFail($id);
 
-    $order->update([
-        'order_status' => 'completed', // chuyển sang hoàn tất
-        'completed_at' => now(),
-    ]);
+        // Map trạng thái để check
+        $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
+        
+        // Chỉ cho xác nhận khi trạng thái là DELIVERED
+        if ($mappedStatus !== \App\Helpers\OrderStatusHelper::DELIVERED) {
+            return redirect()->back()->with('error', 'Chỉ có thể xác nhận đơn hàng đã được giao.');
+        }
 
-    return redirect()->back()->with('success', 'Cảm ơn bạn! Đơn hàng đã được xác nhận.');
-}
+        $order->update([
+            'order_status' => \App\Helpers\OrderStatusHelper::COMPLETED,
+            'completed_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Cảm ơn bạn! Đơn hàng đã được xác nhận.');
+    }
 
 }
