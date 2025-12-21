@@ -59,7 +59,7 @@ class BrandController extends Controller
         if ($request->hasFile('image')) {
         // Xóa ảnh cũ nếu có
         if ($brand->image && Storage::disk('public')->exists($brand->image)) {
-            \Storage::disk('public')->delete($brand->image);
+            Storage::disk('public')->delete($brand->image);
         }
         $data['image'] = $request->file('image')->store('brands', 'public');
     }

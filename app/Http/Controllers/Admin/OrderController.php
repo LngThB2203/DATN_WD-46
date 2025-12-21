@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\OrderStatusHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Warehouse;
+use App\Models\WarehouseProduct;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,18 +18,45 @@ class OrderController extends Controller
     {
         $query = Order::with(['user', 'details.product.galleries']);
 
-        // Filter theo trạng thái
         if ($request->filled('status')) {
             $query->where('order_status', $request->status);
         }
 
-        $orders = $query->orderBy('id', 'DESC')->paginate(15)->withQueryString();
-
-        // Lấy danh sách trạng thái để hiển thị trong filter
-        $statuses = \App\Helpers\OrderStatusHelper::getStatuses();
-        $selectedStatus = $request->status ?? null;
+        $orders = $query->orderByDesc('id')->paginate(15)->withQueryString();
+        $statuses = OrderStatusHelper::getStatuses();
+        $selectedStatus = $request->status;
 
         return view('admin.orders.list', compact('orders', 'statuses', 'selectedStatus'));
+    }
+    protected function autoAssignWarehouse(Order $order): void
+    {
+        $warehouses = Warehouse::orderBy('id')->get();
+
+        foreach ($warehouses as $warehouse) {
+            $canFulfill = true;
+
+            foreach ($order->details as $item) {
+                $stock = WarehouseProduct::where([
+                    'warehouse_id' => $warehouse->id,
+                    'product_id'   => $item->product_id,
+                    'variant_id'   => $item->variant_id,
+                ])->value('quantity') ?? 0;
+
+                if ($stock < $item->quantity) {
+                    $canFulfill = false;
+                    break;
+                }
+            }
+
+            if ($canFulfill) {
+                $order->update([
+                    'warehouse_id' => $warehouse->id,
+                ]);
+                return;
+            }
+        }
+
+        throw new \Exception('Không có kho nào đủ hàng cho đơn này');
     }
 
     // Chi tiết đơn hàng
@@ -43,43 +72,21 @@ class OrderController extends Controller
             'details.variant.scent',
             'details.variant.concentration',
             'warehouse',
-            'user',
         ])->findOrFail($id);
 
-        // Lấy tất cả kho để chọn
-        $warehouses = Warehouse::all();
-
-        return view('admin.orders.show', compact('order', 'warehouses'));
-    }
-
-    /**
-     * Gán kho – Chỉ 1 lần
-     */
-    public function updateWarehouse(Request $request, $id)
-    {
-        $order = Order::findOrFail($id);
-
-        if ($order->warehouse_id) {
-            return back()->withErrors('Đơn hàng đã được gán kho, không thể thay đổi');
+        if (! $order->warehouse_id) {
+            $this->autoAssignWarehouse($order);
+            $order->refresh();
         }
 
-        $request->validate([
-            'warehouse_id' => 'required|exists:warehouse,id',
-        ]);
-
-        $order->update([
-            'warehouse_id' => $request->warehouse_id,
-        ]);
-
-        return back()->with('success', 'Đã chọn kho xuất hàng');
+        return view('admin.orders.show', compact('order'));
     }
 
-    /**
-     * Cập nhật trạng thái
-     */
+    // Cập nhật trạng thái
     public function updateStatus(Request $request, $id, StockService $stockService)
     {
         $order = Order::with('details')->findOrFail($id);
+        $newStatus = $request->order_status;
 
         // Lấy trạng thái mới
         $newStatus = $request->input('order_status');
@@ -132,8 +139,7 @@ class OrderController extends Controller
                 }
 
                 $order->update([
-                    'cancellation_reason' => $request->input('cancellation_reason'),
-                    'cancelled_at'        => now(),
+                    'order_status' => $newStatus,
                 ]);
             }
             

@@ -1,31 +1,32 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CartItem extends Model
+class WarehouseBatch extends Model
 {
     use HasFactory;
 
+    protected $table = 'warehouse_batches';
+
     protected $fillable = [
-        'user_id',
-        'cart_id',
+        'warehouse_id',
         'product_id',
         'variant_id',
+        'batch_code',
+        'expired_at',
+        'import_price',
         'quantity',
-        'price',
     ];
 
-    protected $casts = [
-        'quantity' => 'integer',
-        'price' => 'decimal:2',
+    protected $dates = [
+        'expired_at',
     ];
 
-    public function cart()
+    public function warehouse()
     {
-        return $this->belongsTo(Cart::class);
+        return $this->belongsTo(Warehouse::class);
     }
 
     public function product()
@@ -35,10 +36,6 @@ class CartItem extends Model
 
     public function variant()
     {
-        return $this->belongsTo(ProductVariant::class);
-    }
-    public function user()
-    {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 }

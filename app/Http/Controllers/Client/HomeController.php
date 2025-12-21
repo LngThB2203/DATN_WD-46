@@ -15,10 +15,10 @@ class HomeController extends Controller
             ->latest()
             ->paginate(8); 
 
-        $heroBanner = Banner::latest('created_at')->first();
+        $heroBanners = Banner::active()->get();
         $categories = Category::withCount('products')->take(4)->get();
 
-        return view('client.home', compact('products', 'categories', 'heroBanner'));
+        return view('client.home', compact('products', 'categories', 'heroBanners'));
     }
 
     // AJAX search

@@ -14,9 +14,7 @@ class WarehouseProduct extends Model
         'warehouse_id',
         'product_id',
         'variant_id',
-        'batch_code',
         'quantity',
-        'expired_at',
     ];
 
     public function warehouse()
@@ -34,8 +32,10 @@ class WarehouseProduct extends Model
         return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
-    public function isLowStock()
+    public function batches()
     {
-        return $this->quantity < $this->min_stock_threshold;
+        return $this->hasMany(WarehouseBatch::class, 'product_id', 'product_id')
+            ->whereColumn('warehouse_batches.variant_id', 'warehouse_products.variant_id')
+            ->whereColumn('warehouse_batches.warehouse_id', 'warehouse_products.warehouse_id');
     }
 }

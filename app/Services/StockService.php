@@ -1,113 +1,66 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\StockTransaction;
+use App\Models\WarehouseBatch;
 use App\Models\WarehouseProduct;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 class StockService
 {
-    // Kiểm tra đơn đã xuất kho chưa
-    public function isOrderExported(int $orderId): bool
+    // Nhập kho
+    public function import(array $data, string $referenceType, ?int $referenceId = null): void
     {
-        return StockTransaction::where('reference_type', 'order')
-            ->where('reference_id', $orderId)
-            ->exists();
-    }
+        DB::transaction(function () use ($data, $referenceType, $referenceId) {
 
-    // Export FIFO
-    private function exportFIFO(
-        int $warehouseId,
-        int $productId,
-        ?int $variantId,
-        int $quantity,
-        string $referenceType,
-        ?int $referenceId = null
-    ) {
-        $batches = WarehouseProduct::lockForUpdate()
-            ->where('warehouse_id', $warehouseId)
-            ->where('product_id', $productId)
-            ->where('variant_id', $variantId)
-            ->where('quantity', '>', 0)
-            ->orderBy('expired_at')
-            ->get();
+            $batch = WarehouseBatch::lockForUpdate()->firstOrCreate(
+                [
+                    'warehouse_id' => $data['warehouse_id'],
+                    'product_id'   => $data['product_id'],
+                    'variant_id'   => $data['variant_id'],
+                    'batch_code'   => $data['batch_code'],
+                ],
+                [
+                    'quantity'     => 0,
+                    'expired_at'   => $data['expired_at'] ?? null,
+                    'import_price' => $data['import_price'] ?? 0,
+                ]
+            );
 
-        $totalStock = $batches->sum('quantity');
-
-        if ($totalStock < $quantity) {
-            throw new \Exception("Kho {$warehouseId} không đủ hàng. Còn lại $totalStock sản phẩm.");
-        }
-
-        $need = $quantity;
-        foreach ($batches as $batch) {
-            if ($need <= 0) {
-                break;
-            }
-
-            $take   = min($need, $batch->quantity);
             $before = $batch->quantity;
-            $after  = $before - $take;
+            $after  = $before + $data['quantity'];
 
             $batch->update(['quantity' => $after]);
 
             StockTransaction::create([
                 'warehouse_id'    => $batch->warehouse_id,
-                'product_id'      => $productId,
-                'variant_id'      => $variantId,
+                'product_id'      => $batch->product_id,
+                'variant_id'      => $batch->variant_id,
+                'batch_id'        => $batch->id,
                 'batch_code'      => $batch->batch_code,
-                'type'            => 'export',
-                'quantity'        => -$take,
-                'before_quantity' => $before,
-                'after_quantity'  => $after,
-                'reference_type'  => $referenceType,
-                'reference_id'    => $referenceId,
-            ]);
-
-            $need -= $take;
-        }
-    }
-    // Nhập kho thủ công
-    public function import(array $item, string $referenceType, ?int $referenceId = null)
-    {
-        DB::transaction(function () use ($item, $referenceType, $referenceId) {
-            $stock = WarehouseProduct::lockForUpdate()->firstOrCreate(
-                [
-                    'warehouse_id' => $item['warehouse_id'],
-                    'product_id'   => $item['product_id'],
-                    'variant_id'   => $item['variant_id'],
-                    'batch_code'   => $item['batch_code'],
-                ],
-                [
-                    'quantity'   => 0,
-                    'expired_at' => $item['expired_at'] ?? null,
-                ]
-            );
-
-            $before = $stock->quantity;
-            $after  = $before + $item['quantity'];
-            $stock->update(['quantity' => $after]);
-
-            StockTransaction::create([
-                'warehouse_id'    => $stock->warehouse_id,
-                'product_id'      => $stock->product_id,
-                'variant_id'      => $stock->variant_id,
-                'batch_code'      => $stock->batch_code,
                 'type'            => 'import',
-                'quantity'        => $item['quantity'],
+                'quantity'        => $data['quantity'],
                 'before_quantity' => $before,
                 'after_quantity'  => $after,
                 'reference_type'  => $referenceType,
                 'reference_id'    => $referenceId,
             ]);
+
+            $this->syncWarehouseProduct(
+                $batch->warehouse_id,
+                $batch->product_id,
+                $batch->variant_id,
+                $data['quantity']
+            );
         });
     }
 
-    // Xuất kho theo đơn hàng
-    public function exportByOrder($order)
+    // Xuất kho chỉ qua đơn hàng
+    public function exportByOrder($order): void
     {
-        if ($this->isOrderExported($order->id)) {
-            return;
-        }
+        if ($this->isOrderExported($order->id)) return;
 
         DB::transaction(function () use ($order) {
             foreach ($order->details as $detail) {
@@ -123,51 +76,142 @@ class StockService
         });
     }
 
-    // Hoàn kho khi hủy đơn
-    public function cancelOrder($order)
+    // Hủy đơn hàng (trả kho)
+    public function cancelOrder($order): void
     {
-        if (! $this->isOrderExported($order->id)) {
-            return;
-        }
+        if (!$this->isOrderExported($order->id)) return;
+
+        if (StockTransaction::where('reference_type', 'order_cancel')
+            ->where('reference_id', $order->id)
+            ->exists()) return;
 
         DB::transaction(function () use ($order) {
-            $logs = StockTransaction::where('reference_type', 'order')
+            $exports = StockTransaction::where('reference_type', 'order')
                 ->where('reference_id', $order->id)
                 ->where('type', 'export')
                 ->get();
 
-            foreach ($logs as $log) {
-                $stock = WarehouseProduct::lockForUpdate()
-                    ->where([
-                        'warehouse_id' => $log->warehouse_id,
-                        'product_id'   => $log->product_id,
-                        'variant_id'   => $log->variant_id,
-                        'batch_code'   => $log->batch_code,
-                    ])
-                    ->first();
+            foreach ($exports as $log) {
+                $batch = WarehouseBatch::lockForUpdate()->find($log->batch_id);
+                if (!$batch) continue;
 
-                if (! $stock) {
-                    continue;
-                }
+                $restore = abs($log->quantity);
+                $before  = $batch->quantity;
+                $after   = $before + $restore;
 
-                $before = $stock->quantity;
-                $after  = $before + abs($log->quantity);
-
-                $stock->update(['quantity' => $after]);
+                $batch->update(['quantity' => $after]);
 
                 StockTransaction::create([
-                    'warehouse_id'    => $log->warehouse_id,
-                    'product_id'      => $log->product_id,
-                    'variant_id'      => $log->variant_id,
-                    'batch_code'      => $log->batch_code,
+                    'warehouse_id'    => $batch->warehouse_id,
+                    'product_id'      => $batch->product_id,
+                    'variant_id'      => $batch->variant_id,
+                    'batch_id'        => $batch->id,
+                    'batch_code'      => $batch->batch_code,
                     'type'            => 'import',
-                    'quantity'        => abs($log->quantity),
+                    'quantity'        => $restore,
                     'before_quantity' => $before,
                     'after_quantity'  => $after,
                     'reference_type'  => 'order_cancel',
                     'reference_id'    => $order->id,
                 ]);
+
+                $this->syncWarehouseProduct(
+                    $batch->warehouse_id,
+                    $batch->product_id,
+                    $batch->variant_id,
+                    $restore
+                );
             }
         });
+    }
+
+    public function isOrderExported(int $orderId): bool
+    {
+        return StockTransaction::where('reference_type', 'order')
+            ->where('reference_id', $orderId)
+            ->where('type', 'export')
+            ->exists();
+    }
+
+    protected function exportFIFO(
+        int $warehouseId,
+        int $productId,
+        ?int $variantId,
+        int $quantity,
+        string $referenceType,
+        ?int $referenceId = null
+    ): void {
+        $currentStock = WarehouseProduct::where([
+            'warehouse_id' => $warehouseId,
+            'product_id'   => $productId,
+            'variant_id'   => $variantId,
+        ])->value('quantity') ?? 0;
+
+        if ($currentStock < $quantity) {
+            throw new Exception("Kho không đủ hàng (còn {$currentStock})");
+        }
+
+        $batches = WarehouseBatch::lockForUpdate()
+            ->where('warehouse_id', $warehouseId)
+            ->where('product_id', $productId)
+            ->when(is_null($variantId), fn($q) => $q->whereNull('variant_id'), fn($q) => $q->where('variant_id', $variantId))
+            ->where('quantity', '>', 0)
+            ->orderByRaw('expired_at IS NULL')
+            ->orderBy('expired_at')
+            ->orderBy('id')
+            ->get();
+
+        $need = $quantity;
+
+        foreach ($batches as $batch) {
+            if ($need <= 0) break;
+
+            $take   = min($need, $batch->quantity);
+            $before = $batch->quantity;
+            $after  = $before - $take;
+
+            $batch->update(['quantity' => $after]);
+
+            StockTransaction::create([
+                'warehouse_id'    => $warehouseId,
+                'product_id'      => $productId,
+                'variant_id'      => $variantId,
+                'batch_id'        => $batch->id,
+                'batch_code'      => $batch->batch_code,
+                'type'            => 'export',
+                'quantity'        => -$take,
+                'before_quantity' => $before,
+                'after_quantity'  => $after,
+                'reference_type'  => $referenceType,
+                'reference_id'    => $referenceId,
+            ]);
+
+            $this->syncWarehouseProduct($warehouseId, $productId, $variantId, -$take);
+            $need -= $take;
+        }
+
+        if ($need > 0) {
+            throw new Exception("Xuất kho thất bại, còn thiếu {$need} sản phẩm");
+        }
+    }
+
+    protected function syncWarehouseProduct(int $warehouseId, int $productId, ?int $variantId, int $change): void
+    {
+        $row = WarehouseProduct::lockForUpdate()->firstOrCreate(
+            [
+                'warehouse_id' => $warehouseId,
+                'product_id'   => $productId,
+                'variant_id'   => $variantId,
+            ],
+            ['quantity' => 0]
+        );
+
+        $newQty = $row->quantity + $change;
+
+        if ($newQty < 0) {
+            throw new Exception('Tồn kho âm');
+        }
+
+        $row->update(['quantity' => $newQty]);
     }
 }
