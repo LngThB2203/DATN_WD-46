@@ -65,6 +65,28 @@
                                                             @if($detail->variant->concentration) | Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? '' }} @endif
                                                         </div>
                                                     @endif
+                                                    @php
+                                                        $canReview = false;
+                                                        if(auth()->check() && $detail->product) {
+                                                            $user = auth()->user();
+                                                            if($order->user_id === $user->id && $order->order_status === 'completed' && $order->completed_at) {
+                                                                if(\Carbon\Carbon::now()->diffInDays($order->completed_at) <= 15) {
+                                                                    $alreadyReviewed = \App\Models\Review::where('user_id', $user->id)
+                                                                        ->where('product_id', $detail->product->id)
+                                                                        ->where('order_id', $order->id)
+                                                                        ->exists();
+                                                                    $canReview = ! $alreadyReviewed;
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if($canReview)
+                                                        <div class="mt-2">
+                                                            <a href="{{ route('orders.review.form', [$order->id, $detail->product->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                                ⭐ Đánh giá sản phẩm
+                                                            </a>
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
