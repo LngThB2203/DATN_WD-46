@@ -88,37 +88,71 @@ class OrderController extends Controller
         $order = Order::with('details')->findOrFail($id);
         $newStatus = $request->order_status;
 
+        // Lấy trạng thái mới
+        $newStatus = $request->input('order_status');
+
+        // Không cho null
+        if (! $newStatus) {
+            return back()->withErrors('Trạng thái đơn hàng không hợp lệ');
+        }
+
+        // Map trạng thái hiện tại
+        $currentStatus = OrderStatusHelper::mapOldStatus($order->order_status);
+
+        // Bắt buộc chọn kho trước khi PREPARING
+        if (
+            $newStatus === OrderStatusHelper::PREPARING &&
+            ! $order->warehouse_id
+        ) {
+            return back()->withErrors('Vui lòng chọn kho trước khi chuẩn bị hàng');
+        }
+
+        // Kiểm tra trạng thái có thể cập nhật (dùng trạng thái đã map)
         if (! OrderStatusHelper::canUpdateStatus($order->order_status, $newStatus)) {
-            return back()->withErrors('Không thể chuyển trạng thái này');
+            return back()->withErrors('Không thể chuyển từ trạng thái "' . OrderStatusHelper::getStatusName($order->order_status) . '" sang "' . OrderStatusHelper::getStatusName($newStatus) . '"');
         }
 
         try {
-            DB::transaction(function () use ($order, $newStatus, $stockService, $request) {
-
-                if (
-                    $order->order_status === OrderStatusHelper::PENDING &&
-                    $newStatus === OrderStatusHelper::PREPARING
-                ) {
+            DB::beginTransaction();
+            
+            // Trừ kho khi chuyển từ PENDING → PREPARING (kiểm tra cả trạng thái đã map)
+            $currentStatus = OrderStatusHelper::mapOldStatus($order->order_status);
+            if (
+                ($order->order_status === OrderStatusHelper::PENDING || $currentStatus === OrderStatusHelper::PENDING) &&
+                $newStatus === OrderStatusHelper::PREPARING
+            ) {
+                try {
                     $stockService->exportByOrder($order);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return back()->withErrors($e->getMessage());
                 }
-
-                if ($newStatus === OrderStatusHelper::CANCELLED) {
+            }
+            
+            // Hủy → hoàn kho
+            if ($newStatus === OrderStatusHelper::CANCELLED) {
+                try {
                     $stockService->cancelOrder($order);
-
-                    $order->update([
-                        'cancellation_reason' => $request->cancellation_reason,
-                        'cancelled_at' => now(),
-                    ]);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    return back()->withErrors('Không thể hủy đơn hàng: ' . $e->getMessage());
                 }
 
                 $order->update([
                     'order_status' => $newStatus,
                 ]);
-            });
+            }
+            
+            // Cập nhật trạng thái
+            $order->update([
+                'order_status' => $newStatus,
+            ]);
+            
+            DB::commit();
+            return back()->with('success', 'Cập nhật trạng thái thành công');
         } catch (\Exception $e) {
-            return back()->withErrors($e->getMessage());
+            DB::rollBack();
+            return back()->withErrors('Có lỗi xảy ra khi cập nhật trạng thái: ' . $e->getMessage());
         }
-
-        return back()->with('success', 'Cập nhật trạng thái thành công');
     }
 }
