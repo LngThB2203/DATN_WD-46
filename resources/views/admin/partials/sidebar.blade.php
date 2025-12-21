@@ -108,14 +108,14 @@
                 </div>
             </li>
 
-            <!-- Newsletter -->
+             <!-- Newsletter -->
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="#sidebarNewsletter" data-bs-toggle="collapse"
                    role="button" aria-expanded="false" aria-controls="sidebarNewsletter">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:clipboard-list-bold-duotone"></iconify-icon>
                     </span>
-                    <span class="nav-text"> Bản tin </span>
+                    <span class="nav-text"> Email nhận tin </span>
                 </a>
                 <div class="collapse" id="sidebarNewsletter">
                     <ul class="nav sub-navbar-nav">
@@ -241,7 +241,7 @@
                 </a>
             </li>
 
-            <!-- Cài đặt -->
+            {{-- <!-- Cài đặt -->
             <li class="nav-item">
                 <a class="nav-link" href="settings.html">
                     <span class="nav-icon">
@@ -328,7 +328,7 @@
                     </span>
                     <span class="nav-text"> Việc cần làm </span>
                 </a>
-            </li>
+            </li> --}}
 
         </ul>
     </div>

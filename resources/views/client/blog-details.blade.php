@@ -3,8 +3,8 @@
 @section('title', $post->title)
 
 @section('content')
-<!-- Breadcrumb -->
-<section class="py-4 border-bottom bg-light">
+<section class="py-2">
+    <section class="py-2 border-bottom bg-light">
     <div class="container-fluid container-xl">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
