@@ -180,7 +180,7 @@ class CheckoutController extends Controller
                 'shipping_cost'         => $cart['shipping_fee'],
                 'discount_total'        => $cart['discount_total'],
                 'grand_total'           => $cart['grand_total'],
-                'customer_name'         => $validated['customer_name'], 
+                'customer_name'         => $validated['customer_name'],
                 'customer_email'        => $validated['customer_email'],
                 'customer_phone'        => $validated['customer_phone'],
                 'shipping_address_line' => $validated['shipping_address_line'],
