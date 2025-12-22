@@ -303,12 +303,20 @@
                                     $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
                                     $isDisabled = $requiresWarehouse && !$order->warehouse_id;
                                     $isCurrent = ($order->order_status == $key || $currentStatusMapped == $key);
+                                    
+                                    // ĐIỀU KIỆN QUAN TRỌNG: Chỉ hiển thị option "Đã hủy" khi trạng thái là PENDING
+                                    $isCancelledOption = ($key === \App\Helpers\OrderStatusHelper::CANCELLED);
+                                    $isPending = ($currentStatusMapped === \App\Helpers\OrderStatusHelper::PENDING);
+                                    
+                                    // Nếu là option hủy và KHÔNG phải PENDING thì KHÔNG hiển thị
+                                    $showOption = $canUpdate && !($isCancelledOption && !$isPending);
                                 @endphp
-                                @if ($canUpdate)
+                                @if ($showOption)
                                     <option value="{{ $key }}" 
                                         {{ $isCurrent ? 'selected' : '' }}
                                         {{ $isDisabled ? 'disabled' : '' }}
-                                        data-requires-warehouse="{{ $requiresWarehouse ? '1' : '0' }}">
+                                        data-requires-warehouse="{{ $requiresWarehouse ? '1' : '0' }}"
+                                        data-is-cancelled="{{ $isCancelledOption ? '1' : '0' }}">
                                         {{ $label }}
                                         @if($isDisabled) (Cần chọn kho trước) @endif
                                         @if($isCurrent) - Hiện tại @endif
@@ -331,9 +339,38 @@
                 </form>
 
                 <script>
+                    // Ẩn/disable option "Đã hủy" khi trạng thái không phải PENDING
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const statusSelect = document.getElementById('statusSelect');
+                        const currentStatus = '{{ $currentStatusMapped }}';
+                        const pendingStatus = '{{ \App\Helpers\OrderStatusHelper::PENDING }}';
+                        const cancelledValue = '{{ \App\Helpers\OrderStatusHelper::CANCELLED }}';
+                        
+                        if (statusSelect && currentStatus !== pendingStatus) {
+                            // Ẩn hoặc disable option "Đã hủy" nếu không phải PENDING
+                            Array.from(statusSelect.options).forEach(option => {
+                                if (option.value === cancelledValue) {
+                                    option.style.display = 'none';
+                                    option.disabled = true;
+                                }
+                            });
+                        }
+                    });
+                    
                     function handleStatusChange(select) {
                         const selectedOption = select.options[select.selectedIndex];
                         const submitBtn = document.getElementById('submitStatusBtn');
+                        const currentStatus = '{{ $currentStatusMapped }}';
+                        const pendingStatus = '{{ \App\Helpers\OrderStatusHelper::PENDING }}';
+                        const cancelledValue = '{{ \App\Helpers\OrderStatusHelper::CANCELLED }}';
+                        
+                        // Ngăn chặn chọn "Đã hủy" nếu không phải PENDING
+                        if (selectedOption.value === cancelledValue && currentStatus !== pendingStatus) {
+                            select.value = '';
+                            alert('Chỉ có thể hủy đơn hàng khi đơn hàng ở trạng thái "Chờ xác nhận"!');
+                            if (submitBtn) submitBtn.disabled = true;
+                            return;
+                        }
                         
                         if (selectedOption.disabled) {
                             select.value = '';
@@ -347,10 +384,20 @@
                     document.getElementById('updateStatusForm')?.addEventListener('submit', function(e) {
                         const select = document.getElementById('statusSelect');
                         const selectedOption = select.options[select.selectedIndex];
+                        const currentStatus = '{{ $currentStatusMapped }}';
+                        const pendingStatus = '{{ \App\Helpers\OrderStatusHelper::PENDING }}';
+                        const cancelledValue = '{{ \App\Helpers\OrderStatusHelper::CANCELLED }}';
                         
                         if (!selectedOption || !selectedOption.value) {
                             e.preventDefault();
                             alert('Vui lòng chọn trạng thái!');
+                            return false;
+                        }
+                        
+                        // Kiểm tra lại: Không cho phép hủy nếu không phải PENDING
+                        if (selectedOption.value === cancelledValue && currentStatus !== pendingStatus) {
+                            e.preventDefault();
+                            alert('Chỉ có thể hủy đơn hàng khi đơn hàng ở trạng thái "Chờ xác nhận"!');
                             return false;
                         }
                         

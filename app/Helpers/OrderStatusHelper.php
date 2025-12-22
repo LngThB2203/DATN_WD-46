@@ -80,7 +80,7 @@ class OrderStatusHelper
 
     // ===== KIỂM TRA ĐƯỢC UPDATE KHÔNG =====
     // Logic chuyển theo mô hình Shopee: PENDING → PREPARING → SHIPPING → DELIVERED → COMPLETED
-    // Hoặc hủy: PENDING/PREPARING/SHIPPING → CANCELLED
+    // Chỉ có thể hủy khi trạng thái là PENDING (chờ xác nhận)
     public static function canUpdateStatus(string $currentStatus, string $newStatus): bool
     {
         $current = self::mapOldStatus($currentStatus);
@@ -100,13 +100,9 @@ class OrderStatusHelper
             return false;
         }
 
-        // Có thể hủy ở các trạng thái trước khi DELIVERED
+        // Chỉ có thể hủy khi trạng thái là PENDING (chờ xác nhận)
         if ($new === self::CANCELLED) {
-            return in_array($current, [
-                self::PENDING,
-                self::PREPARING,
-                self::SHIPPING,
-            ], true);
+            return $current === self::PENDING;
         }
 
         // Chỉ có thể chuyển sang COMPLETED từ DELIVERED
@@ -118,15 +114,15 @@ class OrderStatusHelper
         $flow = [
             self::PENDING   => [
                 self::PREPARING,  // Bước tiếp theo
-                self::CANCELLED,  // Hoặc hủy
+                self::CANCELLED,  // Hoặc hủy (chỉ khi PENDING)
             ],
             self::PREPARING => [
                 self::SHIPPING,   // Bước tiếp theo
-                self::CANCELLED,  // Hoặc hủy
+                // Không thể hủy từ PREPARING
             ],
             self::SHIPPING => [
                 self::DELIVERED,  // Bước tiếp theo
-                self::CANCELLED,  // Hoặc hủy (trước khi giao)
+                // Không thể hủy từ SHIPPING
             ],
             self::DELIVERED => [
                 self::COMPLETED,  // Chỉ có thể chuyển sang COMPLETED
@@ -137,12 +133,9 @@ class OrderStatusHelper
     }
 
     // ===== KIỂM TRA ĐƯỢC HỦY KHÔNG =====
+    // Chỉ cho phép hủy khi trạng thái là PENDING (chờ xác nhận)
     public static function canCancel(string $status): bool
     {
-        return in_array(self::mapOldStatus($status), [
-            self::PENDING,
-            self::PREPARING,
-            self::SHIPPING,
-        ], true);
+        return self::mapOldStatus($status) === self::PENDING;
     }
 }

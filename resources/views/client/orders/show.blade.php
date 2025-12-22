@@ -91,8 +91,7 @@
                                                             if($order->user_id === $user->id && \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status) === \App\Helpers\OrderStatusHelper::COMPLETED && $order->completed_at) {
                                                                 if(\Carbon\Carbon::now()->diffInDays($order->completed_at) <= 15) {
                                                                     $alreadyReviewed = \App\Models\Review::where('user_id', $user->id)
-                                                                        ->where('product_id', $detail->product->id)
-                                                                        ->where('order_id', $order->id)
+                                                                        ->where('order_detail_id', $detail->id)
                                                                         ->exists();
                                                                     $canReview = ! $alreadyReviewed;
                                                                 }
@@ -206,10 +205,8 @@
                         {{-- Nút hủy đơn --}}
                         @php
                             $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
-                            $canCancel = in_array($mappedStatus, [
-                                \App\Helpers\OrderStatusHelper::PENDING, 
-                                \App\Helpers\OrderStatusHelper::PREPARING
-                            ]);
+                            // Chỉ cho phép hủy khi trạng thái là PENDING (chờ xác nhận)
+                            $canCancel = $mappedStatus === \App\Helpers\OrderStatusHelper::PENDING;
                         @endphp
                         @if($canCancel)
                         <button type="button" class="btn btn-danger mt-3 w-100" id="cancelOrderBtn">Hủy đơn hàng</button>
