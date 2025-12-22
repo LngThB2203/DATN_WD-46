@@ -37,6 +37,17 @@
             </div>
         </div>
 
+        {{-- Lý do hủy (hiển thị với admin nếu có) --}}
+        @if($order->cancellation_reason)
+        <div class="card mb-4">
+            <div class="card-header">Lý do hủy</div>
+            <div class="card-body">
+                <p><strong>Lý do:</strong> {{ $order->cancellation_reason }}</p>
+                <p><strong>Thời điểm hủy:</strong> {{ $order->cancelled_at ? $order->cancelled_at->format('Y-m-d H:i') : '—' }}</p>
+            </div>
+        </div>
+        @endif
+
         {{-- Sản phẩm --}}
         <div class="card mb-4">
             <div class="card-header">Sản phẩm trong đơn</div>

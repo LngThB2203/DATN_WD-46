@@ -26,7 +26,10 @@ class OrderController extends Controller
                 $query->where('customer_phone', $phone);
             } else {
                 // Nếu không có email/phone và không đăng nhập, trả về collection rỗng
-                $orders = \Illuminate\Pagination\LengthAwarePaginator::make([], 0, 10);
+                $orders = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1, [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ]);
                 return view('client.orders.index', compact('orders'));
             }
         }
@@ -104,10 +107,27 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Đơn hàng không thể hủy ở trạng thái hiện tại.');
         }
 
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:1000',
+        ]);
+
+        $reason = trim($request->input('cancellation_reason') ?? '');
+
         $order->update([
             'order_status' => \App\Helpers\OrderStatusHelper::CANCELLED,
             'cancelled_at' => now(),
+            'cancellation_reason' => $reason ?: null,
         ]);
+
+        // Record cancelled history if the history table exists (non-blocking)
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('order_status_histories')) {
+                $note = $reason ?: 'Khách hàng hủy đơn';
+                $order->histories()->create(['status' => \App\Helpers\OrderStatusHelper::CANCELLED, 'note' => $note]);
+            }
+        } catch (\Exception $e) {
+            // ignore
+        }
 
         return redirect()->back()->with('success', 'Đơn hàng đã được hủy thành công.');
     }

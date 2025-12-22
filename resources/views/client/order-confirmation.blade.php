@@ -14,84 +14,147 @@
         </nav>
     </div>
 </section>
-<section class="py-5 text-center">
+
+<section class="py-5">
     <div class="container-fluid container-xl">
-        <h2 class="fw-bold mb-3 text-success">Cảm ơn bạn đã đặt hàng!</h2>
-
         @if(isset($order))
-            <p class="mb-2">Đơn hàng <strong>#{{ $order->id }}</strong> của bạn đã được xác nhận.</p>
+            {{-- Green Checkmark --}}
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center" 
+                     style="width:80px;height:80px;background:#28a745;border-radius:50%;color:white;font-size:50px;font-weight:bold;">
+                    ✓
+                </div>
+            </div>
 
-            <div class="card mx-auto" style="max-width:900px; text-align:left">
-                <div class="card-header bg-primary text-white fw-semibold">Thông tin đơn hàng</div>
-                <div class="card-body row">
-                    <div class="col-md-6">
-                        <h6 class="mb-2">Thông tin giao hàng</h6>
-                        <div><strong>Họ tên:</strong> {{ $order->customer_name }}</div>
-                        <div><strong>Số điện thoại:</strong> {{ $order->customer_phone }}</div>
-                        <div><strong>Địa chỉ:</strong> {{ $order->shipping_address_line }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="mb-2">Chi tiết đơn hàng</h6>
-                        <div><strong>Mã đơn hàng:</strong> #{{ $order->id }}</div>
-                        <div><strong>Ngày đặt:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</div>
-                        <div><strong>Phương thức thanh toán:</strong> {{ $order->payment_method === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online' }}</div>
-                        <div><strong>Trạng thái:</strong> {{ \App\Helpers\OrderStatusHelper::getStatusName($order->order_status) }}</div>
-                    </div>
+            {{-- Heading --}}
+            <h2 class="text-center fw-bold mb-2" style="color:#28a745;font-size:32px;">Cảm ơn bạn đã đặt hàng!</h2>
+            <p class="text-center text-muted mb-4">Đơn hàng #{{ str_pad($order->id, 2, '0', STR_PAD_LEFT) }} của bạn đã được xác nhận.</p>
 
-                    <div class="col-12 mt-4">
-                        <h6>Sản phẩm đã đặt</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Sản phẩm</th>
-                                        <th class="text-end">Đơn giá</th>
-                                        <th class="text-end">Số lượng</th>
-                                        <th class="text-end">Thành tiền</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($order->details as $d)
-                                        <tr>
-                                            <td style="max-width:420px">
-                                                @if($d->product && $d->product->primaryImage())
-                                                    <img src="{{ asset('storage/' . $d->product->primaryImage()->path) }}" alt="" style="height:40px; margin-right:8px; float:left">
-                                                @endif
-                                                <div style="overflow:hidden">{{ $d->product->name ?? 'Sản phẩm' }}</div>
-                                            </td>
-                                            <td class="text-end">{{ number_format($d->price, 0, ',', '.') }} đ</td>
-                                            <td class="text-end">{{ $d->quantity }}</td>
-                                            <td class="text-end">{{ number_format($d->subtotal, 0, ',', '.') }} đ</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+            {{-- Main Card --}}
+            <div class="card mx-auto" style="max-width:900px;">
+                {{-- Blue Header --}}
+                <div class="card-header" style="background:#0056b3;color:white;font-weight:600;padding:12px 20px;font-size:16px;">
+                    Thông tin đơn hàng
+                </div>
+
+                {{-- Content --}}
+                <div class="card-body">
+                    {{-- Two Column Info --}}
+                    <div class="row mb-4">
+                        {{-- Left Column --}}
+                        <div class="col-md-6">
+                            <h6 style="font-weight:600;margin-bottom:12px;">Thông tin giao hàng</h6>
+                            <div style="margin-bottom:8px;"><strong>Họ tên:</strong> {{ $order->customer_name }}</div>
+                            <div style="margin-bottom:8px;"><strong>Số điện thoại:</strong> {{ $order->customer_phone }}</div>
+                            <div style="margin-bottom:8px;"><strong>Địa chỉ:</strong> {{ $order->shipping_address_line }}</div>
                         </div>
 
-                        <div class="d-flex justify-content-end mt-3">
-                            <div style="min-width:300px">
-                                <div class="d-flex justify-content-between"><span>Tạm tính</span><span>{{ number_format($order->subtotal, 0, ',', '.') }} đ</span></div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Giảm giá @if($order->discount && $order->discount->code) (Mã: <strong>{{ $order->discount->code }}</strong>) @endif</span>
-                                    <span>- {{ number_format($order->discount_total, 0, ',', '.') }} đ</span>
+                        {{-- Right Column --}}
+                        <div class="col-md-6">
+                            <h6 style="font-weight:600;margin-bottom:12px;">Chi tiết đơn hàng</h6>
+                            <div style="margin-bottom:8px;"><strong>Mã đơn hàng:</strong> #{{ str_pad($order->id, 2, '0', STR_PAD_LEFT) }}</div>
+                            <div style="margin-bottom:8px;"><strong>Ngày đặt:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</div>
+                            <div style="margin-bottom:8px;">
+                                <strong>Phương thức thanh toán:</strong> 
+                                @if($order->payment_method === 'cod')
+                                    Thanh toán khi nhận hàng
+                                @elseif($order->payment_method === 'online')
+                                    Thanh toán online
+                                @else
+                                    {{ ucfirst(str_replace('_', ' ', $order->payment_method)) }}
+                                @endif
+                            </div>
+                            
+                        </div>
+                    </div>
+
+                    {{-- Products Section --}}
+                    <h6 style="font-weight:600;margin-bottom:12px;">Sản phẩm đã đặt</h6>
+                    <div class="table-responsive">
+                        <table class="table" style="margin-bottom:0;">
+                            <thead>
+                                <tr style="border-bottom:2px solid #ddd;">
+                                    <th style="padding:10px;text-align:left;font-weight:600;">Sản phẩm</th>
+                                    <th style="padding:10px;text-align:right;font-weight:600;width:120px;">Đơn giá</th>
+                                    <th style="padding:10px;text-align:center;font-weight:600;width:100px;">Số lượng</th>
+                                    <th style="padding:10px;text-align:right;font-weight:600;width:120px;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($order->details as $d)
+                                    <tr style="border-bottom:1px solid #ddd;">
+                                        <td style="padding:12px;text-align:left;">
+                                            <div style="display:flex;gap:10px;align-items:flex-start;">
+                                                @if($d->product && $d->product->primaryImage())
+                                                    <img src="{{ $d->product->primaryImage()->image_url }}" alt="" 
+                                                         style="width:50px;height:50px;object-fit:cover;border-radius:4px;flex-shrink:0;">
+                                                @else
+                                                    <div style="width:50px;height:50px;background:#f0f0f0;border-radius:4px;flex-shrink:0;"></div>
+                                                @endif
+                                                <div>
+                                                    <div style="font-weight:600;margin-bottom:4px;">{{ $d->product->name ?? 'Sản phẩm' }}</div>
+                                                    @if($d->variant)
+                                                        <div style="font-size:12px;color:#999;line-height:1.4;">
+                                                            @if($d->variant->size)
+                                                                <div>{{ $d->variant->size->size_name ?? '' }}</div>
+                                                            @endif
+                                                            @if($d->variant->scent)
+                                                                <div>{{ $d->variant->scent->scent_name ?? '' }}</div>
+                                                            @endif
+                                                            @if($d->variant->concentration)
+                                                                <div>{{ $d->variant->concentration->concentration_name ?? '' }}</div>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding:12px;text-align:right;">{{ number_format($d->price, 0, ',', '.') }} đ</td>
+                                        <td style="padding:12px;text-align:center;">{{ $d->quantity }}</td>
+                                        <td style="padding:12px;text-align:right;font-weight:600;">{{ number_format($d->subtotal, 0, ',', '.') }} đ</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Totals --}}
+                    <div style="display:flex;justify-content:flex-end;margin-top:20px;padding-top:12px;border-top:2px solid #ddd;">
+                        <div style="min-width:250px;">
+                            @if($order->discount_total > 0 && $order->discount_id)
+                                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                                    <span>Giảm giá:</span>
+                                    <span>-{{ number_format($order->discount_total, 0, ',', '.') }} đ</span>
                                 </div>
-                                <div class="d-flex justify-content-between"><span>Phí vận chuyển</span><span>{{ number_format($order->shipping_cost, 0, ',', '.') }} đ</span></div>
-                                <hr>
-                                <div class="d-flex justify-content-between fw-semibold"><span>Tổng cộng</span><span>{{ number_format($order->grand_total, 0, ',', '.') }} đ</span></div>
+                            @endif
+                            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                                <span>Phí vận chuyển:</span>
+                                <span>{{ number_format($order->shipping_cost, 0, ',', '.') }} đ</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16px;padding-top:12px;border-top:1px solid #ddd;">
+                                <span>Tổng cộng:</span>
+                                <span style="color:#0056b3;">{{ number_format($order->grand_total, 0, ',', '.') }} đ</span>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
 
-            <div class="mt-3">
-                <a class="btn btn-outline-secondary" href="{{ route('orders.index') }}">Xem đơn hàng của tôi</a>
-                <a class="btn btn-primary ms-2" href="{{ route('home') }}">Tiếp tục mua sắm</a>
+            {{-- Buttons --}}
+            <div class="text-center mt-4">
+                <a href="{{ route('home') }}" class="btn" style="background:#e84c89;color:white;padding:10px 30px;border:none;border-radius:4px;margin-right:10px;text-decoration:none;">
+                    Trang chủ
+                </a>
+                <a href="{{ route('orders.index') }}" class="btn" style="background:white;color:#e84c89;padding:10px 30px;border:1px solid #e84c89;border-radius:4px;text-decoration:none;">
+                    Xem đơn hàng của tôi
+                </a>
             </div>
         @else
-            <p class="mb-4">Đơn hàng đã được xác nhận. Bạn có thể xem chi tiết trong trang <a href="{{ route('orders.index') }}">Đơn hàng của tôi</a>.</p>
-            <a class="btn btn-primary" href="{{ route('home') }}">Tiếp tục mua sắm</a>
+            <div class="text-center">
+                <h2 class="fw-bold mb-3" style="color:#28a745;">Cảm ơn bạn đã đặt hàng!</h2>
+                <p class="mb-4">Đơn hàng đã được xác nhận. Bạn có thể xem chi tiết trong trang <a href="{{ route('orders.index') }}">Đơn hàng của tôi</a>.</p>
+                <a class="btn btn-primary" href="{{ route('home') }}">Tiếp tục mua sắm</a>
+            </div>
         @endif
     </div>
 </section>

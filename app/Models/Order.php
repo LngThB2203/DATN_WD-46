@@ -40,6 +40,8 @@ class Order extends Model
         'subtotal'       => 'decimal:2',
         'discount_total' => 'decimal:2',
         'grand_total'    => 'decimal:2',
+        'cancelled_at'   => 'datetime',
+        'completed_at'   => 'datetime',
     ];
 
     public function user()

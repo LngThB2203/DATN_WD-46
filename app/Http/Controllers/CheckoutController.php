@@ -195,13 +195,19 @@ class CheckoutController extends Controller
         });
 
         $subtotal = $items->sum('subtotal');
+        
+        // Only apply discount if a discount_id is set; otherwise reset discount_total to 0
+        $discountTotal = 0;
+        if ($request->session()->has('cart.discount_id') && $request->session()->get('cart.discount_id')) {
+            $discountTotal = $sessionCart['discount_total'] ?? 0;
+        }
 
         return [
             'items' => $items->values()->all(),
             'subtotal' => $subtotal,
             'shipping_fee' => $sessionCart['shipping_fee'],
-            'discount_total' => $sessionCart['discount_total'],
-            'grand_total' => max($subtotal + $sessionCart['shipping_fee'] - $sessionCart['discount_total'], 0),
+            'discount_total' => $discountTotal,
+            'grand_total' => max($subtotal + $sessionCart['shipping_fee'] - $discountTotal, 0),
         ];
     }
 
@@ -210,7 +216,12 @@ class CheckoutController extends Controller
         $orderId = session('last_order_id') ?? $request->session()->get('last_order_id');
         $order = null;
         if ($orderId) {
-            $order = Order::with('details')->find($orderId);
+            $order = Order::with([
+                'details.product',
+                'details.variant.size',
+                'details.variant.scent',
+                'details.variant.concentration'
+            ])->find($orderId);
         }
 
         return view('client.order-confirmation', compact('order'));
