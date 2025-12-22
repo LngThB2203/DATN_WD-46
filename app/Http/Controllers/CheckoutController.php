@@ -213,12 +213,18 @@ class CheckoutController extends Controller
                 'amount'         => $order->grand_total,
                 'status'         => 'pending',
             ]);
-            // Gửi email xác nhận đơn hàng
-            if (!empty($order->customer_email)) {
-    Mail::to($order->customer_email)->send(
-        new OrderSuccessMail($order)
-    );
-}
+
+
+       $orderForMail = Order::with([
+    'details.product.galleries',
+    'details.variant.size',
+    'details.variant.scent',
+    'details.variant.concentration',
+])->find($order->id);
+
+Mail::to($order->customer_email)->send(
+    new OrderSuccessMail($orderForMail)
+);
 
             // Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
             if ($order->discount_id) {

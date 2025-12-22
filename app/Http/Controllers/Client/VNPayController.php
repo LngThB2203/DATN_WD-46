@@ -98,12 +98,16 @@ class VNPayController extends Controller
                 'status'           => 'paid',
                 'paid_at'          => now(),
             ]);
-            // Gửi email xác nhận đơn hàng
-            if (!empty($order->customer_email)) {
-    Mail::to($order->customer_email)->send(
-        new OrderSuccessMail($order)
-    );
-}
+       $orderForMail = Order::with([
+    'details.product.galleries',
+    'details.variant.size',
+    'details.variant.scent',
+    'details.variant.concentration',
+])->find($order->id);
+
+Mail::to($order->customer_email)->send(
+    new OrderSuccessMail($orderForMail)
+);
 
 
 
