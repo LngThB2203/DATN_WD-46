@@ -172,17 +172,33 @@
         <div class="container-fluid container-xl">
             <nav id="navmenu" class="navmenu">
                 <ul class="d-flex flex-wrap justify-content-center gap-3 py-2 mb-0 list-unstyled">
-                    <li><a href="{{ route('home') }}" class="active">Trang chủ</a></li>
-                    <li><a href="{{ route('about') }}">Giới thiệu</a></li>
-                    <li><a href="{{ route('blog.index') }}">Bài viết</a></li>
-                    <li><a href="{{ route('contact.index') }}">Liên hệ</a></li>
-                    <li><a href="{{ route('client.products.index') }}">Sản phẩm</a></li>
-                    <li><a href="{{ route('category.index') }}">Danh mục</a></li>
+                    <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}">Trang chủ</a></li>
+                    <li><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'active' : '' }}">Giới thiệu</a></li>
+                    <li><a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'active' : '' }}">Bài viết</a></li>
+                    <li><a href="{{ route('contact.index') }}" class="{{ request()->routeIs('contact.*') ? 'active' : '' }}">Liên hệ</a></li>
+                    <li><a href="{{ route('client.products.index') }}" class="{{ request()->routeIs('client.products.*') ? 'active' : '' }}">Sản phẩm</a></li>
+                    <li><a href="{{ route('category.index') }}" class="{{ request()->routeIs('category.*') ? 'active' : '' }}">Danh mục</a></li>
                 </ul>
             </nav>
         </div>
     </div>
+<style>
+.navmenu ul li a.active {
+    color: #007bff !important;   
+    font-weight: 700;           
+}
 
+.navmenu ul li a.active::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;              
+    left: 0;
+    right: 0;
+    height: 3px;             
+    background-color: #007bff;  
+    border-radius: 2px;
+}
+</style>
     <!-- AJAX Search Script -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {

@@ -97,14 +97,14 @@ class WarehouseController extends Controller
                 ->exists()
         ) {
             return redirect()
-                ->route('inventories.warehouse.trashed')
+                ->route('admin.trash.index', ['type' => 'warehouses'])
                 ->with('error', 'Không thể xóa vĩnh viễn kho vì vẫn còn tồn kho!');
         }
 
         $warehouse->forceDelete();
 
         return redirect()
-            ->route('inventories.warehouse.trashed')
+            ->route('admin.trash.index', ['type' => 'warehouses'])
             ->with('success', 'Kho đã được xóa vĩnh viễn!');
     }
 
@@ -114,7 +114,7 @@ class WarehouseController extends Controller
         $warehouse->restore();
 
         return redirect()
-            ->route('inventories.warehouse.trashed')
+            ->route('admin.trash.index', ['type' => 'warehouses'])
             ->with('success', 'Kho đã được khôi phục!');
     }
 

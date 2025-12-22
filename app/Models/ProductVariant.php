@@ -16,14 +16,13 @@ class ProductVariant extends Model
         'concentration_id',
         'sku',
         'image',
-        'stock',
         'price_adjustment',
         'gender',
     ];
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     public function size()
@@ -40,14 +39,19 @@ class ProductVariant extends Model
     {
         return $this->belongsTo(VariantConcentration::class, 'concentration_id');
     }
+
     public function warehouseStock()
     {
         return $this->hasMany(WarehouseProduct::class, 'variant_id', 'id');
+    }
+
+    public function getTotalStockAttribute()
+    {
+        return $this->warehouseStock->sum('quantity');
     }
 
     public function getStockAttribute()
     {
         return $this->warehouseStock->sum('quantity');
     }
-    
 }

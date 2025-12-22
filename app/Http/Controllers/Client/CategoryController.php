@@ -23,9 +23,31 @@ class CategoryController extends Controller
         $categories = Category::where('status', 1)->get();
         $category   = Category::where('slug', $slug)->firstOrFail();
 
-        $products = Product::where('category_id', $category->id)
-            ->where('status', 1)
-            ->paginate(12);
+        $query = Product::where('category_id', $category->id)
+            ->where('status', 1);
+
+        // Tìm kiếm
+        if (request()->filled('search')) {
+            $search = request('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        // Sắp xếp
+        $sort = request('sort', '');
+        if ($sort == 'new') {
+            $query->latest();
+        } elseif ($sort == 'asc') {
+            $query->orderBy('price', 'asc');
+        } elseif ($sort == 'desc') {
+            $query->orderBy('price', 'desc');
+        } else {
+            $query->latest();
+        }
+
+        $products = $query->paginate(12)->withQueryString();
 
         return view('client.category', compact('categories', 'category', 'products'));
     }

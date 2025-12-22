@@ -10,22 +10,27 @@ use App\Models\OrderDetail;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\OrderSuccessMail;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Customer;
+use App\Mail\OrderSuccessMail;
+use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
+
     public function index(Request $request)
     {
+         if (Auth::check() && Auth::user()->status == 0) {
+        return redirect()->route('cart.index')
+            ->with('error', 'Tài khoản của bạn đang bị khóa, không thể thanh toán đơn hàng.Vui lòng liên hệ quản trị viên.');
+    }
         $selectedItems = array_filter(array_map('intval',
             is_string($request->input('selected_items'))
                 ? explode(',', $request->input('selected_items'))
                 : (array) $request->input('selected_items', [])
         ));
 
-        // Khi mở trang checkout từ giỏ hàng, reset lại discount cũ (nếu có)
+        //
         $cart = $this->prepareCart($request, $selectedItems, true);
 
         if (empty($cart['items'])) {
@@ -74,17 +79,28 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
+          if (!Auth::check()) {
+        return redirect()->route('login')
+            ->with('error', 'Vui lòng đăng nhập trước khi đặt hàng');
+    }
+
+    //CHẶN USER BỊ KHÓA
+    if (Auth::user()->status == 0) {
+        return redirect()->route('checkout.index')
+            ->with('error', 'Tài khoản của bạn đang bị khóa. Vui lòng liên hệ quản trị viên.');
+    }
          $user = $request->user();
 
         // Nếu đã đăng nhập, bắt buộc lấy tên và email từ tài khoản
         if ($user) {
-        $validated = $request->validate([
-            'customer_phone'        => 'required|string|max:20',
-            'shipping_address_line' => 'required|string|max:255',
-            'customer_note'         => 'nullable|string|max:1000',
-            'payment_method'        => 'required|in:cod,online',
-        ]);
-         // Lấy tên và email từ tài khoản
+            $validated = $request->validate([
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:255',
+                'customer_note'         => 'nullable|string|max:1000',
+                'payment_method'        => 'required|in:cod,online',
+            ]);
+
+            // Lấy tên và email từ tài khoản
             $validated['customer_name'] = $user->name;
             $validated['customer_email'] = $user->email;
         } else {
@@ -97,7 +113,6 @@ class CheckoutController extends Controller
                 'payment_method'        => 'required|in:cod,online',
             ]);
         }
-
 
         $selectedItems = array_filter(array_map('intval',
             is_string($request->input('selected_items'))
@@ -139,7 +154,10 @@ class CheckoutController extends Controller
 
             $request->session()->put('pending_order', [
                 'customer'      => $validated,
-                'cart'          => $cart,
+                'cart'          => array_merge($cart, [
+                    'discount_id' => $request->session()->get('cart.discount_id'),
+                    'discount_code' => $request->session()->get('cart.code'),
+                ]),
                 'user_id'       => optional($request->user())->id,
                 'selectedItems' => $selectedItems,
                 'vnp_txn_ref'   => $vnpTxnRef,
@@ -149,18 +167,13 @@ class CheckoutController extends Controller
         }
 
         // ===== COD =====
-        DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
-              $customer = Customer::firstOrCreate(
-        ['user_id' => Auth::id()],
-        [
-            'membership_level' => 'Silver',
-            'address' => $request->shipping_address_line ?? null,
-        ]
-    );
+        $lastOrderId = null;
+        DB::transaction(function () use (&$lastOrderId, $validated, $cart, $request, $selectedItems) {
+            $customer = Customer::where('user_id', auth()->id())->first();
+
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
-        'customer_id'           => $customer->id,
-        'discount_id'           => $cart['discount_id'] ?? null,
+                'discount_id'           => $cart['discount_id'] ?? $request->session()->get('cart.discount_id') ?? null,
                 'order_status'          => 'pending',
                 'payment_method'        => 'cod',
                 'subtotal'              => $cart['subtotal'],
@@ -173,6 +186,13 @@ class CheckoutController extends Controller
                 'shipping_address_line' => $validated['shipping_address_line'],
                 'customer_note'         => $validated['customer_note'] ?? null,
             ]);
+
+            // tăng số lượt dùng mã (nếu có)
+            if ($order->discount_id) {
+                Discount::where('id', $order->discount_id)->increment('used_count');
+            }
+
+            $lastOrderId = $order->id;
 
             foreach ($cart['items'] as $item) {
                 if (!in_array($item['cart_item_id'], $selectedItems)) continue;
@@ -194,21 +214,24 @@ class CheckoutController extends Controller
                 'status'         => 'pending',
             ]);
             // Gửi email xác nhận đơn hàng
-                  if (!empty($order->customer_email)) {
+            if (!empty($order->customer_email)) {
     Mail::to($order->customer_email)->send(
         new OrderSuccessMail($order)
     );
 }
-// Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
+
+            // Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
             if ($order->discount_id) {
                 $order->discount?->incrementUsage();
             }
+
             // Xóa sản phẩm đã thanh toán trong giỏ
             $this->removePaidItemsFromCart($request, $selectedItems);
         });
 
-        return redirect()->route('orders.index')
-            ->with('success', 'Đặt hàng thành công');
+        return redirect()->route('order.confirmation')
+            ->with('success', 'Đặt hàng thành công')
+            ->with('last_order_id', $lastOrderId);
     }
 
     private function redirectToVNPay(array $cart, Request $request, string $txnRef)
@@ -264,6 +287,39 @@ class CheckoutController extends Controller
 
         $maxPerItem = 10;
 
+        // Nếu session cart không có variant_name, load lại từ database
+        $needsReload = collect($sessionCart['items'])->first(function ($item) {
+            return !isset($item['variant_name']) && !empty($item['variant_id']);
+        });
+
+        if ($needsReload && $request->user()) {
+            $cart = Cart::where('user_id', $request->user()->id)->first();
+            if ($cart) {
+                $cartItems = $cart->items()
+                    ->with(['product.galleries', 'variant.size', 'variant.scent', 'variant.concentration'])
+                    ->whereIn('id', collect($sessionCart['items'])->pluck('cart_item_id'))
+                    ->get();
+
+                foreach ($sessionCart['items'] as &$sessionItem) {
+                    $cartItem = $cartItems->firstWhere('id', $sessionItem['cart_item_id']);
+                    if ($cartItem && $cartItem->variant) {
+                        $parts = [];
+                        if ($cartItem->variant->size) {
+                            $parts[] = 'Kích thước: ' . ($cartItem->variant->size->size_name ?? $cartItem->variant->size->name ?? '');
+                        }
+                        if ($cartItem->variant->scent) {
+                            $parts[] = 'Mùi hương: ' . ($cartItem->variant->scent->scent_name ?? $cartItem->variant->scent->name ?? '');
+                        }
+                        if ($cartItem->variant->concentration) {
+                            $parts[] = 'Nồng độ: ' . ($cartItem->variant->concentration->concentration_name ?? $cartItem->variant->concentration->name ?? '');
+                        }
+                        $sessionItem['variant_name'] = implode(' • ', $parts);
+                    }
+                }
+                unset($sessionItem);
+            }
+        }
+
         $items = collect($sessionCart['items'])->filter(
             fn($i) => empty($selectedItems) || in_array($i['cart_item_id'], $selectedItems)
         )->map(function ($i) use ($maxPerItem) {
@@ -278,6 +334,12 @@ class CheckoutController extends Controller
 
         $subtotal = $items->sum('subtotal');
 
+        // Only apply discount if a discount_id is set; otherwise reset discount_total to 0
+        $discountTotal = 0;
+        if ($request->session()->has('cart.discount_id') && $request->session()->get('cart.discount_id')) {
+            $discountTotal = $sessionCart['discount_total'] ?? 0;
+        }
+
         return [
             'items'          => $items->values()->all(),
             'subtotal'       => $subtotal,
@@ -286,6 +348,22 @@ class CheckoutController extends Controller
             'grand_total'    => max($subtotal + $sessionCart['shipping_fee'] - $sessionCart['discount_total'], 0),
             'discount_id'    => $sessionCart['discount_id'] ?? null,
         ];
+    }
+
+    public function confirmation(Request $request)
+    {
+        $orderId = session('last_order_id') ?? $request->session()->get('last_order_id');
+        $order = null;
+        if ($orderId) {
+            $order = Order::with([
+                'details.product',
+                'details.variant.size',
+                'details.variant.scent',
+                'details.variant.concentration'
+            ])->find($orderId);
+        }
+
+        return view('client.order-confirmation', compact('order'));
     }
 
     private function removePaidItemsFromCart(Request $request, array $paidItemIds): void

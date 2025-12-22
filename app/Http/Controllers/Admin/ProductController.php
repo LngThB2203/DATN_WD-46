@@ -301,7 +301,7 @@ class ProductController extends Controller
             $product->forceDelete();
 
             DB::commit();
-            return redirect()->route('products.trashed')->with('success', 'Sản phẩm đã được xóa vĩnh viễn!');
+            return redirect()->route('admin.trash.index')->with('success', 'Sản phẩm đã được xóa vĩnh viễn!');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Có lỗi xảy ra khi xóa sản phẩm: ' . $e->getMessage());
@@ -313,7 +313,7 @@ class ProductController extends Controller
         $product = Product::withTrashed()->findOrFail($id);
         $product->restore();
 
-        return redirect()->route('products.trashed')->with('success', 'Sản phẩm đã được khôi phục!');
+        return redirect()->route('admin.trash.index')->with('success', 'Sản phẩm đã được khôi phục!');
     }
 
     public function trashed(Request $request)

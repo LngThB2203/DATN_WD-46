@@ -43,4 +43,15 @@ class StockTransactionController extends Controller
             'warehouses'
         ));
     }
+
+    public function printInvoice($id)
+    {
+        $transaction = StockTransaction::with([
+            'warehouse',
+            'product',
+            'variant',
+        ])->findOrFail($id);
+
+        return view('admin.inventories.invoice', compact('transaction'));
+    }
 }

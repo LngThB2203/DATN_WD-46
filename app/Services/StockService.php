@@ -6,10 +6,34 @@ use App\Models\StockTransaction;
 use App\Models\WarehouseBatch;
 use App\Models\WarehouseProduct;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StockService
 {
+    protected function createStockTransaction(array $data): void
+    {
+        static $hasTypeColumn = null;
+        static $hasBatchIdColumn = null;
+
+        if ($hasTypeColumn === null) {
+            $hasTypeColumn = Schema::hasColumn('stock_transactions', 'type');
+        }
+        if ($hasBatchIdColumn === null) {
+            $hasBatchIdColumn = Schema::hasColumn('stock_transactions', 'batch_id');
+        }
+
+        if (! $hasTypeColumn) {
+            unset($data['type']);
+        }
+        if (! $hasBatchIdColumn) {
+            unset($data['batch_id']);
+        }
+
+        StockTransaction::create($data);
+    }
+
     // Nhập kho
     public function import(array $data, string $referenceType, ?int $referenceId = null): void
     {
@@ -34,7 +58,7 @@ class StockService
 
             $batch->update(['quantity' => $after]);
 
-            StockTransaction::create([
+            $this->createStockTransaction([
                 'warehouse_id'    => $batch->warehouse_id,
                 'product_id'      => $batch->product_id,
                 'variant_id'      => $batch->variant_id,
@@ -55,6 +79,26 @@ class StockService
                 $data['quantity']
             );
         });
+    }
+
+    // Xuất kho thủ công
+    public function export(
+        int $warehouseId,
+        int $productId,
+        ?int $variantId,
+        int $quantity,
+        string $referenceType,
+        ?int $referenceId = null,
+        ?string $note = null
+    ): void {
+        $this->exportFIFO(
+            $warehouseId,
+            $productId,
+            $variantId,
+            $quantity,
+            $referenceType,
+            $referenceId
+        );
     }
 
     // Xuất kho chỉ qua đơn hàng
@@ -99,12 +143,27 @@ class StockService
                 $wp->update(['quantity' => $after]);
 
                 // Nếu có giao dịch xuất kho trước đó, cộng lại batch
-                $exports = StockTransaction::where('reference_type', 'order')
+                $baseExportsQuery = StockTransaction::where('reference_type', 'order')
                     ->where('reference_id', $order->id)
                     ->where('product_id', $detail->product_id)
-                    ->where('variant_id', $detail->variant_id)
-                    ->where('type', 'export')
-                    ->get();
+                    ->where('variant_id', $detail->variant_id);
+
+                try {
+                    $exportsQuery = clone $baseExportsQuery;
+                    if (Schema::hasColumn('stock_transactions', 'type')) {
+                        $exportsQuery->where('type', 'export');
+                    } else {
+                        $exportsQuery->where('quantity', '<', 0);
+                    }
+
+                    $exports = $exportsQuery->get();
+                } catch (QueryException $e) {
+                    if (str_contains($e->getMessage(), "Unknown column 'type'")) {
+                        $exports = (clone $baseExportsQuery)->where('quantity', '<', 0)->get();
+                    } else {
+                        throw $e;
+                    }
+                }
 
                 foreach ($exports as $log) {
                     $batch = WarehouseBatch::lockForUpdate()->find($log->batch_id);
@@ -116,7 +175,7 @@ class StockService
                     $batchAfter  = $batchBefore + abs($log->quantity);
                     $batch->update(['quantity' => $batchAfter]);
 
-                    StockTransaction::create([
+                    $this->createStockTransaction([
                         'warehouse_id'    => $batch->warehouse_id,
                         'product_id'      => $batch->product_id,
                         'variant_id'      => $batch->variant_id,
@@ -132,7 +191,7 @@ class StockService
                 }
 
                 // Ghi log tổng cho đơn hủy
-                StockTransaction::create([
+                $this->createStockTransaction([
                     'warehouse_id'    => $order->warehouse_id,
                     'product_id'      => $detail->product_id,
                     'variant_id'      => $detail->variant_id,
@@ -158,10 +217,25 @@ class StockService
 
     public function isOrderExported(int $orderId): bool
     {
-        return StockTransaction::where('reference_type', 'order')
-            ->where('reference_id', $orderId)
-            ->where('type', 'export')
-            ->exists();
+        $baseQuery = StockTransaction::where('reference_type', 'order')
+            ->where('reference_id', $orderId);
+
+        try {
+            $query = clone $baseQuery;
+
+            if (Schema::hasColumn('stock_transactions', 'type')) {
+                $query->where('type', 'export');
+            } else {
+                $query->where('quantity', '<', 0);
+            }
+
+            return $query->exists();
+        } catch (QueryException $e) {
+            if (str_contains($e->getMessage(), "Unknown column 'type'")) {
+                return (clone $baseQuery)->where('quantity', '<', 0)->exists();
+            }
+            throw $e;
+        }
     }
 
     protected function exportFIFO(
@@ -225,7 +299,7 @@ class StockService
 
             $batch->update(['quantity' => $after]);
 
-            StockTransaction::create([
+            $this->createStockTransaction([
                 'warehouse_id'    => $warehouseId,
                 'product_id'      => $productId,
                 'variant_id'      => $variantId,

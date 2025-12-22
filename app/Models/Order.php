@@ -12,7 +12,6 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'customer_id',
-        'warehouse_id',
         'discount_id',
         'payment_id',
         'order_status',
@@ -33,7 +32,6 @@ class Order extends Model
         'payment_method',
         'cancellation_reason',
         'cancelled_at',
-        'completed_at',
     ];
 
     protected $casts = [
@@ -41,9 +39,9 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'discount_total' => 'decimal:2',
-        'grand_total' => 'decimal:2',
-        'cancelled_at' => 'datetime',
-        'completed_at' => 'datetime',
+        'grand_total'    => 'decimal:2',
+        'cancelled_at'   => 'datetime',
+        'completed_at'   => 'datetime',
     ];
 
     public function user()

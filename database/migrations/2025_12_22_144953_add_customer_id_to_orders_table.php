@@ -9,21 +9,18 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
+   public function up()
 {
     Schema::table('orders', function (Blueprint $table) {
-        $table->unsignedBigInteger('customer_id')
+        $table->foreignId('customer_id')
               ->nullable()
-              ->after('user_id');
-
-        $table->foreign('customer_id')
-              ->references('id')
-              ->on('customers')
-              ->onDelete('set null');
+              ->after('user_id')
+              ->constrained()
+              ->onDelete('cascade');
     });
 }
 
-public function down(): void
+public function down()
 {
     Schema::table('orders', function (Blueprint $table) {
         $table->dropForeign(['customer_id']);

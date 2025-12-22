@@ -1,42 +1,50 @@
-
 @extends('admin.layouts.admin')
 
 @section('content')
-<div class="container mt-4">
-    <h2>Thêm bài viết</h2>
-
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+<div class="page-content">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white border-bottom">
+            <h5 class="mb-0 text-success">➕ <strong>Thêm bài viết mới</strong></h5>
         </div>
-    @endif
+        <div class="card-body">
+            @if ($errors->any())
+                <div class="alert alert-danger py-2">
+                    <ul class="mb-0 small">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-    <form action="{{ route('post.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
+            <form action="{{ route('post.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tiêu đề bài viết <span class="text-danger">*</span></label>
+                    <input type="text" name="title" class="form-control" value="{{ old('title') }}" placeholder="Nhập tiêu đề..." required>
+                </div>
 
-        <div class="mb-3">
-            <label>Tiêu đề</label>
-            <input type="text" name="title" class="form-control" value="{{ old('title') }}" required>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Ảnh đại diện</label>
+                    <input type="file" name="image" class="form-control" accept="image/*">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nội dung chi tiết</label>
+                    <textarea name="content" id="content_summernote" class="form-control">{{ old('content') }}</textarea>
+                </div>
+
+                <div class="border-top pt-3 text-end">
+                    <a href="{{ route('post.index') }}" class="btn btn-secondary px-4">Hủy</a>
+                    <button type="submit" class="btn btn-success px-4">Lưu bài viết</button>
+                </div>
+            </form>
         </div>
-
-        <div class="mb-3">
-            <label>Ảnh đại diện</label>
-            <input type="file" name="image" class="form-control" accept="image/*">
-        </div>
-
-        <div class="mb-3">
-            <label for="content_summernote">Nội dung</label>
-            <textarea name="content" id="content_summernote" class="form-control">{{ old('content') }}</textarea>
-        </div>
-        <button type="submit" class="btn btn-success">Lưu</button>
-        <a href="{{ route('post.index') }}" class="btn btn-secondary">Hủy</a>
-    </form>
+    </div>
 </div>
 @endsection
+
+{{-- Giữ nguyên phần @push('styles') và @push('scripts') như bạn đã viết --}}
 @push('styles')
 {{-- 1. Thêm CSS của Summernote --}}
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
