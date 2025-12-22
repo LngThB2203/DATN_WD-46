@@ -72,13 +72,14 @@ class DiscountController extends Controller
         ]);
 
         $request->validate([
-            'code'            => 'required|string|max:100|unique:discounts,code',
-            'discount_type'   => 'required|in:percent,fixed',
-            'discount_value'  => 'required|numeric|min:0',
-            'min_order_value' => 'nullable|numeric|min:0',
-            'start_date'      => 'nullable|date',
-            'expiry_date'     => 'nullable|date|after_or_equal:start_date',
-            'usage_limit'     => 'nullable|integer|min:1',
+            'code'               => 'required|string|max:100|unique:discounts,code',
+            'discount_type'      => 'required|in:percent,fixed',
+            'discount_value'     => 'required|numeric|min:0',
+            'max_discount_amount'=> 'nullable|numeric|min:0',
+            'min_order_value'    => 'nullable|numeric|min:0',
+            'start_date'         => 'nullable|date',
+            'expiry_date'        => 'nullable|date|after_or_equal:start_date',
+            'usage_limit'        => 'nullable|integer|min:1',
         ], [
             'code.required'              => 'Vui lòng nhập mã giảm giá',
             'code.unique'                => 'Mã giảm giá đã tồn tại',
@@ -89,10 +90,11 @@ class DiscountController extends Controller
 
         try {
             $discount = Discount::create([
-                'code'            => strtoupper($request->code),
-                'discount_type'   => $request->discount_type,
-                'discount_value'  => $request->discount_value,
-                'min_order_value' => $request->min_order_value,
+                'code'               => strtoupper($request->code),
+                'discount_type'      => $request->discount_type,
+                'discount_value'     => $request->discount_value,
+                'max_discount_amount'=> $request->max_discount_amount,
+                'min_order_value'    => $request->min_order_value,
                 'start_date'      => $request->start_date,
                 'expiry_date'     => $request->expiry_date,
                 'usage_limit'     => $request->usage_limit,
@@ -137,13 +139,14 @@ class DiscountController extends Controller
     public function update(Request $request, Discount $discount)
     {
         $request->validate([
-            'code'            => 'required|string|max:100|unique:discounts,code,' . $discount->id,
-            'discount_type'   => 'required|in:percent,fixed',
-            'discount_value'  => 'required|numeric|min:0',
-            'min_order_value' => 'nullable|numeric|min:0',
-            'start_date'      => 'nullable|date',
-            'expiry_date'     => 'nullable|date|after_or_equal:start_date',
-            'usage_limit'     => 'nullable|integer|min:1',
+            'code'               => 'required|string|max:100|unique:discounts,code,' . $discount->id,
+            'discount_type'      => 'required|in:percent,fixed',
+            'discount_value'     => 'required|numeric|min:0',
+            'max_discount_amount'=> 'nullable|numeric|min:0',
+            'min_order_value'    => 'nullable|numeric|min:0',
+            'start_date'         => 'nullable|date',
+            'expiry_date'        => 'nullable|date|after_or_equal:start_date',
+            'usage_limit'        => 'nullable|integer|min:1',
         ], [
             'code.required'              => 'Vui lòng nhập mã giảm giá',
             'code.unique'                => 'Mã giảm giá đã tồn tại',
@@ -154,14 +157,15 @@ class DiscountController extends Controller
 
         try {
             $discount->update([
-                'code'            => strtoupper($request->code),
-                'discount_type'   => $request->discount_type,
-                'discount_value'  => $request->discount_value,
-                'min_order_value' => $request->min_order_value,
-                'start_date'      => $request->start_date,
-                'expiry_date'     => $request->expiry_date,
-                'usage_limit'     => $request->usage_limit,
-                'active'          => $request->has('active'),
+                'code'               => strtoupper($request->code),
+                'discount_type'      => $request->discount_type,
+                'discount_value'     => $request->discount_value,
+                'max_discount_amount'=> $request->max_discount_amount,
+                'min_order_value'    => $request->min_order_value,
+                'start_date'         => $request->start_date,
+                'expiry_date'        => $request->expiry_date,
+                'usage_limit'        => $request->usage_limit,
+                'active'             => $request->has('active'),
             ]);
 
             return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được cập nhật thành công!');
@@ -176,11 +180,45 @@ class DiscountController extends Controller
     public function destroy(Discount $discount)
     {
         try {
+            // Soft delete
             $discount->delete();
-            return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được xóa thành công!');
+            return redirect()->route('admin.discounts.index')->with('success', 'Mã giảm giá đã được xóa (có thể khôi phục)!');
         } catch (\Exception $e) {
             return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
+    }
+
+    public function forceDelete($id)
+    {
+        try {
+            $discount = Discount::withTrashed()->findOrFail($id);
+            $discount->forceDelete();
+            return redirect()->route('admin.discounts.trashed')->with('success', 'Mã giảm giá đã được xóa vĩnh viễn!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
+    }
+
+    public function restore($id)
+    {
+        $discount = Discount::withTrashed()->findOrFail($id);
+        $discount->restore();
+        return redirect()->route('admin.discounts.trashed')->with('success', 'Mã giảm giá đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Discount::onlyTrashed();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('code', 'like', "%{$search}%");
+        }
+
+        $discounts = $query->orderBy('deleted_at', 'desc')->paginate(15);
+        $discounts->appends($request->only('search'));
+
+        return view('admin.discounts.trashed', compact('discounts'));
     }
 
     /**

@@ -47,6 +47,9 @@ class CustomerController extends Controller
 }
 
 
+    /**
+     * Chuyển đổi trạng thái (bật/tắt)
+     */
     public function toggle($id)
     {
         $customer = Customer::findOrFail($id);

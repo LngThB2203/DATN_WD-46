@@ -64,6 +64,8 @@
                                                             @if($detail->variant->scent) | Mùi: {{ $detail->variant->scent->scent_name ?? $detail->variant->scent->name ?? '' }} @endif
                                                             @if($detail->variant->concentration) | Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? '' }} @endif
                                                         </div>
+                                                    @else
+                                                        <div class="small text-muted mt-1">Không có biến thể</div>
                                                     @endif
                                                     @php
                                                         $canReview = false;
@@ -105,11 +107,81 @@
                 <div class="card mt-4">
                     <div class="card-header"><h5>Thông tin giao hàng</h5></div>
                     <div class="card-body">
-                        <p><strong>Họ tên:</strong> {{ $order->customer_name }}</p>
-                        @if($order->customer_email)<p><strong>Email:</strong> {{ $order->customer_email }}</p>@endif
-                        <p><strong>Điện thoại:</strong> {{ $order->customer_phone }}</p>
-                        <p><strong>Địa chỉ:</strong> {{ $order->shipping_address_line }}</p>
+                        @if(isset($canUpdateShipping) && $canUpdateShipping)
+                            {{-- Form cập nhật thông tin --}}
+                            <form method="POST" action="{{ route('orders.update-shipping', $order->id) }}">
+                                @csrf
+                                @method('PUT')
+                                
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Họ tên</strong> <span class="text-danger">*</span></label>
+                                    @if(auth()->check())
+                                        <input type="text" name="customer_name" class="form-control" 
+                                               value="{{ old('customer_name', auth()->user()->name) }}" readonly disabled>
+                                        <input type="hidden" name="customer_name" value="{{ auth()->user()->name }}">
+                                        <small class="text-muted">Thông tin từ tài khoản</small>
+                                    @else
+                                        <input type="text" name="customer_name" class="form-control" 
+                                               value="{{ old('customer_name', $order->customer_name) }}" required>
+                                    @endif
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Email</strong></label>
+                                    @if(auth()->check())
+                                        <input type="email" name="customer_email" class="form-control" 
+                                               value="{{ old('customer_email', auth()->user()->email) }}" readonly disabled>
+                                        <input type="hidden" name="customer_email" value="{{ auth()->user()->email }}">
+                                        <small class="text-muted">Thông tin từ tài khoản</small>
+                                    @else
+                                        <input type="email" name="customer_email" class="form-control" 
+                                               value="{{ old('customer_email', $order->customer_email) }}">
+                                    @endif
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Số điện thoại</strong> <span class="text-danger">*</span></label>
+                                    <input type="text" name="customer_phone" class="form-control" 
+                                           value="{{ old('customer_phone', $order->customer_phone) }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Địa chỉ</strong> <span class="text-danger">*</span></label>
+                                    <textarea name="shipping_address_line" class="form-control" rows="3" required>{{ old('shipping_address_line', $order->shipping_address_line ?? $order->shipping_address ?? '') }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Ghi chú</strong></label>
+                                    <textarea name="customer_note" class="form-control" rows="2">{{ old('customer_note', $order->customer_note) }}</textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Cập nhật thông tin</button>
+                            </form>
+                        @else
+                            {{-- Chỉ hiển thị thông tin (đã thanh toán hoặc không cho phép chỉnh sửa) --}}
+                            <div class="mb-3">
+                                @if(isset($isPaid) && $isPaid)
+                                    <div class="alert alert-info">
+                                        <small><i class="bi bi-info-circle"></i> Đơn hàng đã thanh toán, không thể thay đổi thông tin giao hàng.</small>
+                                    </div>
+                                @endif
+                            </div>
+                            <p><strong>Họ tên:</strong> {{ $order->customer_name }}</p>
+                            @if($order->customer_email)<p><strong>Email:</strong> {{ $order->customer_email }}</p>@endif
+                            <p><strong>Điện thoại:</strong> {{ $order->customer_phone }}</p>
+                            <p><strong>Địa chỉ:</strong> {{ $order->shipping_address_line ?? $order->shipping_address }}</p>
+                            @if($order->shipping_province || $order->shipping_district || $order->shipping_ward)
+                                <p><strong>Địa chỉ đầy đủ:</strong><br>
+                                    {{ $order->shipping_address_line }},
+                                    {{ $order->shipping_ward }},
+                                    {{ $order->shipping_district }},
+                                    {{ $order->shipping_province }}
+                                </p>
+                            @endif
                         @if($order->customer_note)<p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>@endif
+                        @endif
+
+                        <hr>
 
                         {{-- Nút hủy đơn --}}
                         @php

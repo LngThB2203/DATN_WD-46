@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,15 +33,14 @@ class Order extends Model
         'payment_method',
         'cancellation_reason',
         'cancelled_at',
-        'completed_at',
     ];
 
     protected $casts = [
-        'total_price'    => 'decimal:2',
-        'shipping_cost'  => 'decimal:2',
-        'subtotal'       => 'decimal:2',
+        'total_price' => 'decimal:2',
+        'shipping_cost' => 'decimal:2',
+        'subtotal' => 'decimal:2',
         'discount_total' => 'decimal:2',
-        'grand_total'    => 'decimal:2',
+        'grand_total' => 'decimal:2',
     ];
 
     public function user()
@@ -67,9 +67,9 @@ class Order extends Model
     {
         return $this->hasOne(Shipment::class);
     }
+
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
     }
-
 }

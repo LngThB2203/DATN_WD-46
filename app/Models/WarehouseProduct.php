@@ -15,6 +15,7 @@ class WarehouseProduct extends Model
         'product_id',
         'variant_id',
         'quantity',
+        'min_stock_threshold',
     ];
 
     public function warehouse()
@@ -37,5 +38,16 @@ class WarehouseProduct extends Model
         return $this->hasMany(WarehouseBatch::class, 'product_id', 'product_id')
             ->whereColumn('warehouse_batches.variant_id', 'warehouse_products.variant_id')
             ->whereColumn('warehouse_batches.warehouse_id', 'warehouse_products.warehouse_id');
+    }
+
+    /**
+     * Kiểm tra xem tồn kho có thấp không
+     * @param int $threshold Ngưỡng tồn kho thấp (mặc định 10)
+     * @return bool
+     */
+    public function isLowStock(?int $threshold = null): bool
+    {
+        $threshold = $threshold ?? $this->min_stock_threshold ?? 10;
+        return $this->quantity <= $threshold;
     }
 }

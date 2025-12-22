@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Discount;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -20,11 +21,21 @@ class DiscountController extends Controller
             ->withQueryString();
 
         $savedIds = [];
+        $usedDiscountIds = [];
         if ($request->user()) {
             $savedIds = $request->user()->userVouchers()->pluck('discount_id')->toArray();
+
+            $usedDiscountIds = Order::where('user_id', $request->user()->id)
+                ->whereNotNull('discount_id')
+                ->where(function ($q) {
+                    $q->whereNull('order_status')
+                      ->orWhere('order_status', '!=', 'cancelled');
+                })
+                ->pluck('discount_id')
+                ->toArray();
         }
 
-        return view('client.vouchers.index', compact('discounts', 'savedIds'));
+        return view('client.vouchers.index', compact('discounts', 'savedIds', 'usedDiscountIds'));
     }
 
     /**
@@ -44,6 +55,7 @@ class DiscountController extends Controller
             'code' => 'required|string|max:100|unique:discounts,code',
             'discount_type' => 'required|in:percent,fixed',
             'discount_value' => 'required|numeric|min:0',
+            'max_discount_amount' => 'nullable|numeric|min:0',
             'min_order_value' => 'nullable|numeric|min:0',
             'start_date' => 'nullable|date',
             'expiry_date' => 'nullable|date|after_or_equal:start_date',
@@ -61,6 +73,7 @@ class DiscountController extends Controller
                 'code' => strtoupper($request->code),
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
+                'max_discount_amount' => $request->max_discount_amount,
                 'min_order_value' => $request->min_order_value,
                 'start_date' => $request->start_date,
                 'expiry_date' => $request->expiry_date,
@@ -85,7 +98,16 @@ class DiscountController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        return view('client.vouchers.my', compact('discounts'));
+        $usedDiscountIds = Order::where('user_id', $user->id)
+            ->whereNotNull('discount_id')
+            ->where(function ($q) {
+                $q->whereNull('order_status')
+                  ->orWhere('order_status', '!=', 'cancelled');
+            })
+            ->pluck('discount_id')
+            ->toArray();
+
+        return view('client.vouchers.my', compact('discounts', 'usedDiscountIds'));
     }
 
     /**
@@ -113,6 +135,7 @@ class DiscountController extends Controller
             'code' => 'required|string|max:100|unique:discounts,code,' . $discount->id,
             'discount_type' => 'required|in:percent,fixed',
             'discount_value' => 'required|numeric|min:0',
+            'max_discount_amount' => 'nullable|numeric|min:0',
             'min_order_value' => 'nullable|numeric|min:0',
             'start_date' => 'nullable|date',
             'expiry_date' => 'nullable|date|after_or_equal:start_date',
@@ -130,6 +153,7 @@ class DiscountController extends Controller
                 'code' => strtoupper($request->code),
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
+                'max_discount_amount' => $request->max_discount_amount,
                 'min_order_value' => $request->min_order_value,
                 'start_date' => $request->start_date,
                 'expiry_date' => $request->expiry_date,
@@ -229,6 +253,14 @@ class DiscountController extends Controller
             'code' => 'required|string',
         ]);
 
+        $user = $request->user();
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập để sử dụng mã giảm giá.',
+            ], 401);
+        }
+
         $discount = Discount::where('code', strtoupper($request->code))->first();
 
         if (! $discount) {
@@ -238,11 +270,54 @@ class DiscountController extends Controller
             ], 404);
         }
 
+        // Mỗi mã giảm giá, mỗi tài khoản chỉ được dùng một lần (trừ đơn bị hủy)
+        $alreadyUsed = Order::where('user_id', $user->id)
+            ->where('discount_id', $discount->id)
+            ->where(function ($q) {
+                $q->whereNull('order_status')
+                  ->orWhere('order_status', '!=', 'cancelled');
+            })
+            ->exists();
+
         $sessionCart = $request->session()->get('cart', [
             'items'          => [],
             'shipping_fee'   => 30000,
             'discount_total' => 0,
         ]);
+
+        if ($alreadyUsed) {
+            // Nếu user đã dùng mã này trước đó, xóa mọi thông tin giảm giá hiện tại khỏi giỏ
+            $items = collect($sessionCart['items'] ?? [])->map(function ($item) {
+                $item['quantity'] = max(1, (int) ($item['quantity'] ?? 1));
+                $item['price']    = (float) ($item['price'] ?? 0);
+                $item['subtotal'] = $item['quantity'] * $item['price'];
+                return $item;
+            });
+
+            $subtotal    = $items->sum('subtotal');
+            $shippingFee = (float) ($sessionCart['shipping_fee'] ?? 0);
+
+            $sessionCart['items']          = $items->all();
+            $sessionCart['discount_id']    = null;
+            $sessionCart['discount_total'] = 0;
+            $sessionCart['subtotal']       = $subtotal;
+            $sessionCart['grand_total']    = max($subtotal + $shippingFee, 0);
+            $sessionCart['discount_code']  = null;
+
+            $request->session()->put('cart', $sessionCart);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Mã giảm giá này đã được sử dụng và không thể áp dụng cho đơn hàng mới.',
+                'cart'    => [
+                    'subtotal'       => $sessionCart['subtotal'],
+                    'shipping_fee'   => $shippingFee,
+                    'discount_total' => $sessionCart['discount_total'],
+                    'grand_total'    => $sessionCart['grand_total'],
+                    'discount_code'  => null,
+                ],
+            ], 400);
+        }
 
         $items = collect($sessionCart['items'] ?? [])->map(function ($item) {
             $item['quantity'] = max(1, (int) ($item['quantity'] ?? 1));
@@ -286,7 +361,8 @@ class DiscountController extends Controller
         $sessionCart['discount_total'] = $discountAmount;
         $sessionCart['subtotal']       = $subtotal;
         $sessionCart['grand_total']    = max(($subtotal + $shippingFee) - $discountAmount, 0);
-        $sessionCart['code']           = $discount->code;
+        // Lưu đúng tên khóa 'discount_code' để khớp với checkout.blade.php
+        $sessionCart['discount_code']  = $discount->code;
 
         $request->session()->put('cart', $sessionCart);
 
@@ -298,7 +374,7 @@ class DiscountController extends Controller
                 'shipping_fee'   => $shippingFee,
                 'discount_total' => $sessionCart['discount_total'],
                 'grand_total'    => $sessionCart['grand_total'],
-                'code'           => $discount->code,
+                'discount_code'  => $discount->code,
             ],
         ]);
     }

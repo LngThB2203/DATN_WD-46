@@ -30,6 +30,16 @@
                 </a>
             </li>
 
+            <!-- Thùng rác -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.trash.index') }}">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:trash-bin-trash-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Thùng rác </span>
+                </a>
+            </li>
+
             <!-- Sản phẩm -->
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="#sidebarProducts" data-bs-toggle="collapse" role="button"
@@ -186,7 +196,7 @@
                             <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Tồn kho</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('inventories.stock-transactions.index') }}">Lịch sử nhập/xuất</a>
+                            <a class="sub-nav-link" href="{{ route('inventories.transactions') }}">Lịch sử nhập/xuất</a>
                         </li>
                     </ul>
                 </div>

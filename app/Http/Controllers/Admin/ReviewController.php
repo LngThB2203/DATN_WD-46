@@ -74,8 +74,41 @@ class ReviewController extends Controller
 
     public function destroy(Review $review)
     {
+        // Soft delete
         $review->delete();
-        return redirect()->route('admin.reviews.index')->with('success','Đã xoá đánh giá.');
+        return redirect()->route('admin.reviews.index')->with('success','Đánh giá đã được xóa (có thể khôi phục).');
+    }
+
+    public function forceDelete($id)
+    {
+        $review = Review::withTrashed()->findOrFail($id);
+        $review->forceDelete();
+        return redirect()->route('admin.reviews.trashed')->with('success','Đánh giá đã được xóa vĩnh viễn.');
+    }
+
+    public function restore($id)
+    {
+        $review = Review::withTrashed()->findOrFail($id);
+        $review->restore();
+        return redirect()->route('admin.reviews.trashed')->with('success','Đánh giá đã được khôi phục.');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Review::onlyTrashed()->with(['product', 'user']);
+
+        if ($request->filled('status')) {
+            $query->where('status', (int) $request->status);
+        }
+        if ($request->filled('product')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('name', 'like', '%'.$request->product.'%');
+            });
+        }
+
+        $reviews = $query->orderBy('deleted_at', 'desc')->paginate(15);
+
+        return view('admin.reviews.trashed', compact('reviews'));
     }
 
     public function toggleStatus(Review $review)

@@ -226,12 +226,6 @@ class ChatbotController extends Controller
                 }
             } else {
                 $useFallback = true;
-            }
-            
-            $useFallback = false;
-
-        if (!$response || !$response->successful()) {
-            $useFallback = true;
             $statusCode = $response ? $response->status() : 0;
             $errorBody = $response ? $response->json() : null;
             $lastError = $errorBody['error']['message'] ?? ($lastError ?? "HTTP {$statusCode}: Unknown Error");
@@ -244,18 +238,14 @@ class ChatbotController extends Controller
             ]);
         }
 
+            // Kiểm tra nếu response rỗng hoặc không hợp lệ
         if (!$useFallback && (empty($aiReplyText) || mb_strlen(trim($aiReplyText), 'UTF-8') < 3)) {
             $useFallback = true;
             Log::warning("Gemini API returned empty/invalid response, using fallback");
         }
 
-        if ($useFallback) {
-            $fallbackService = new ChatbotFallbackService();
-            $aiReplyText = $fallbackService->processQuestion($request->message);
-        }
-
-            
-            if (empty($aiReplyText) || mb_strlen(trim($aiReplyText), 'UTF-8') < 3) {
+            // Sử dụng fallback nếu cần
+            if ($useFallback || empty($aiReplyText) || mb_strlen(trim($aiReplyText), 'UTF-8') < 3) {
                 $fallbackService = new ChatbotFallbackService();
                 $aiReplyText = $fallbackService->processQuestion($request->message);
             }
@@ -263,7 +253,11 @@ class ChatbotController extends Controller
             Log::error('Gemini Exception: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
+            $fallbackService = new ChatbotFallbackService();
+            $aiReplyText = $fallbackService->processQuestion($request->message);
+            if (empty($aiReplyText)) {
             $aiReplyText = "Có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.";
+            }
         }
     }
 
