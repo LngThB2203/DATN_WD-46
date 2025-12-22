@@ -189,7 +189,7 @@ class OrderController extends Controller
             'order_status' => 'required|string',
         ]);
         
-        $newStatus = $request->input('order_status');
+        $newStatus = OrderStatusHelper::mapOldStatus((string) $request->input('order_status'));
 
         // Bắt buộc chọn kho trước khi PREPARING
         if ($newStatus === OrderStatusHelper::PREPARING && ! $order->warehouse_id) {
@@ -248,6 +248,11 @@ class OrderController extends Controller
 
             // Cập nhật trạng thái khác
             $order->order_status = $newStatus;
+
+            if ($newStatus === OrderStatusHelper::COMPLETED && ! $order->completed_at) {
+                $order->completed_at = now();
+            }
+
             $order->save();
 
             DB::commit();

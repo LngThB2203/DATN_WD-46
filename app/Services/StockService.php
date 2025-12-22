@@ -148,7 +148,11 @@ class StockService
             }
 
             // Cập nhật trạng thái đơn
-            $order->update(['order_status' => OrderStatusHelper::CANCELLED]);
+            $order->update([
+                'order_status' => OrderStatusHelper::CANCELLED,
+                'cancelled_at' => now(),
+                'completed_at' => null,
+            ]);
         });
     }
 
