@@ -59,13 +59,27 @@
                                                 <div>
                                                     <strong>{{ $detail->product->name ?? 'Sản phẩm đã bị xóa' }}</strong>
                                                     @if($detail->variant)
-                                                        <div class="small text-muted">
-                                                            @if($detail->variant->size) Kích thước: {{ $detail->variant->size->size_name ?? $detail->variant->size->name ?? '' }} @endif
-                                                            @if($detail->variant->scent) | Mùi: {{ $detail->variant->scent->scent_name ?? $detail->variant->scent->name ?? '' }} @endif
-                                                            @if($detail->variant->concentration) | Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? '' }} @endif
+                                                        <div class="small mt-1">
+                                                            @if($detail->variant->size)
+                                                                <span class="badge bg-secondary me-1">
+                                                                    <i class="bi bi-rulers"></i> Kích thước: {{ $detail->variant->size->size_name ?? $detail->variant->size->name ?? 'N/A' }}
+                                                                </span>
+                                                            @endif
+                                                            @if($detail->variant->scent)
+                                                                <span class="badge bg-info me-1">
+                                                                    <i class="bi bi-flower1"></i> Mùi: {{ $detail->variant->scent->scent_name ?? $detail->variant->scent->name ?? 'N/A' }}
+                                                                </span>
+                                                            @endif
+                                                            @if($detail->variant->concentration)
+                                                                <span class="badge bg-warning text-dark me-1">
+                                                                    <i class="bi bi-droplet"></i> Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? 'N/A' }}
+                                                                </span>
+                                                            @endif
                                                         </div>
                                                     @else
-                                                        <div class="small text-muted mt-1">Không có biến thể</div>
+                                                        <div class="small text-muted mt-1">
+                                                            <span class="badge bg-light text-dark">Không có biến thể</span>
+                                                        </div>
                                                     @endif
                                                     @php
                                                         $canReview = false;

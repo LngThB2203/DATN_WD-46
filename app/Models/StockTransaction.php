@@ -12,6 +12,7 @@ class StockTransaction extends Model
         'warehouse_id',
         'product_id',
         'variant_id',
+        'batch_id',
         'batch_code',
         'type',
         'quantity',

@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\StatisticController;
 use App\Http\Controllers\Admin\StockTransactionController;
 use App\Http\Controllers\Admin\TrashController;
+use App\Http\Controllers\Admin\WarehouseBatchController;
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\WarehouseProductController;
 use App\Http\Controllers\ChatbotController;
@@ -299,26 +300,29 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/warehouse/{warehouse}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
         Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
         Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
+        Route::post('/warehouse/{id}/restore', [WarehouseController::class, 'restore'])->name('warehouse.restore');
+        Route::delete('/warehouse/{id}/force-delete', [WarehouseController::class, 'forceDelete'])->name('warehouse.force-delete');
 
 
         // Stock
         Route::get('/received-orders', [WarehouseProductController::class, 'index'])->name('received-orders');
         Route::put('/received-orders/{id}', [WarehouseProductController::class, 'updateQuantity'])->name('updateQuantity');
         Route::get('/get-variants/{product}', [WarehouseProductController::class, 'getVariants'])->name('getVariants');
+        Route::get('/stock/{product}/{variant?}', [WarehouseProductController::class, 'show'])->name('stock.show');
 
 
         // Import
-        Route::get('/import', [WarehouseProductController::class, 'createImport'])->name('import.create');
-        Route::post('/import', [WarehouseProductController::class, 'import'])->name('import.store');
+        Route::get('/import', [WarehouseBatchController::class, 'createImport'])->name('import.create');
+        Route::post('/import', [WarehouseBatchController::class, 'storeImport'])->name('import.store');
 
 
         // Export
-        Route::get('/export', [WarehouseProductController::class, 'createExport'])->name('export.create');
-        Route::post('/export', [WarehouseProductController::class, 'export'])->name('export.store');
+        Route::get('/export', [WarehouseBatchController::class, 'createExport'])->name('export.create');
+        Route::post('/export', [WarehouseBatchController::class, 'storeExport'])->name('export.store');
 
 
         // Transactions
-        Route::get('/transactions', [StockTransactionController::class, 'log'])->name('transactions');
+        Route::get('/transactions', [StockTransactionController::class, 'index'])->name('transactions');
         Route::get('/transactions/{id}/print', [StockTransactionController::class, 'printInvoice'])->name('transactions.print');
     });
 

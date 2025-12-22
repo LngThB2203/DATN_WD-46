@@ -190,22 +190,7 @@ class OrderController extends Controller
         ]);
         
         $newStatus = $request->input('order_status');
-
-        // Bắt buộc chọn kho trước khi PREPARING
-        if ($newStatus === OrderStatusHelper::PREPARING && ! $order->warehouse_id) {
-            // Tự động thử gán kho trước khi báo lỗi
-            try {
-                // Đảm bảo details đã được load
-                if (!$order->relationLoaded('details')) {
-                    $order->load('details');
-                }
-                $this->autoAssignWarehouse($order);
-                // Reload lại order từ database để lấy warehouse_id mới
-                $order = Order::with('details')->findOrFail($id);
-            } catch (\Exception $e) {
-                return back()->withErrors('Vui lòng chọn kho trước khi chuẩn bị hàng. ' . $e->getMessage());
-            }
-        }
+        $currentStatus = OrderStatusHelper::mapOldStatus($order->order_status);
 
         // Kiểm tra trạng thái có thể cập nhật
         if (! OrderStatusHelper::canUpdateStatus($order->order_status, $newStatus)) {
@@ -217,20 +202,51 @@ class OrderController extends Controller
             );
         }
 
+        // Bắt buộc chọn kho trước khi PREPARING, SHIPPING, DELIVERED, COMPLETED
+        $statusesRequiringWarehouse = [
+            OrderStatusHelper::PREPARING,
+            OrderStatusHelper::SHIPPING,
+            OrderStatusHelper::DELIVERED,
+            OrderStatusHelper::COMPLETED
+        ];
+        
+        if (in_array($newStatus, $statusesRequiringWarehouse) && ! $order->warehouse_id) {
+            // Tự động thử gán kho trước khi báo lỗi
+            try {
+                if (!$order->relationLoaded('details')) {
+                    $order->load('details');
+                }
+                $this->autoAssignWarehouse($order);
+                $order->refresh();
+            } catch (\Exception $e) {
+                return back()->withErrors('Vui lòng chọn kho trước khi chuyển trạng thái. ' . $e->getMessage());
+            }
+        }
+
         try {
             DB::beginTransaction();
 
-            // Trừ kho khi chuyển từ PENDING sang PREPARING (bước đầu tiên)
-            $currentStatus = OrderStatusHelper::mapOldStatus($order->order_status);
+            // Trừ kho khi chuyển từ PENDING sang PREPARING (bước đầu tiên chuẩn bị hàng)
+            // Chỉ trừ kho một lần duy nhất khi bắt đầu chuẩn bị hàng
             if ($currentStatus === OrderStatusHelper::PENDING && 
                 $newStatus === OrderStatusHelper::PREPARING &&
                 !$stockService->isOrderExported($order->id)) {
                 try {
+                    // Đảm bảo có warehouse_id
+                    if (!$order->warehouse_id) {
+                        if (!$order->relationLoaded('details')) {
+                            $order->load('details');
+                        }
+                        $this->autoAssignWarehouse($order);
+                        $order->refresh();
+                    }
+                    
+                    // Trừ tồn kho
                     $stockService->exportByOrder($order);
                     $order->refresh();
                 } catch (\Exception $e) {
                     DB::rollBack();
-                    return back()->withErrors($e->getMessage());
+                    return back()->withErrors('Không thể trừ tồn kho: ' . $e->getMessage());
                 }
             }
 
