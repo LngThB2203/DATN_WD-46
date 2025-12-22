@@ -9,6 +9,9 @@ use App\Models\Payment;
 use App\Models\Discount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderSuccessMail;
+
 
 class VNPayController extends Controller
 {
@@ -91,6 +94,12 @@ class VNPayController extends Controller
                 'status'           => 'paid',
                 'paid_at'          => now(),
             ]);
+            // Gửi email xác nhận đơn hàng
+            if (!empty($order->customer_email)) {
+    Mail::to($order->customer_email)->send(
+        new OrderSuccessMail($order)
+    );
+}
 
 
 
