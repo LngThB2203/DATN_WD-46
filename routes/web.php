@@ -192,6 +192,7 @@ Route::post('/vouchers/save', [DiscountController::class, 'saveForUser'])
 
 
 
+
 // Discount API
 Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');
 Route::post('/api/apply-discount', [DiscountController::class, 'apply'])->name('api.apply-discount');
@@ -535,3 +536,5 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 Route::fallback(function () {
    return response()->view('client.404', [], 404);
 });
+
+

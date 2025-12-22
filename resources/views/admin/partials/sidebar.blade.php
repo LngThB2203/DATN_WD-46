@@ -220,6 +220,30 @@
                 </div>
             </li>
 
+            <!-- Đánh giá -->
+            <li class="nav-item">
+                <a class="nav-link menu-arrow" href="#sidebarReviews" data-bs-toggle="collapse" role="button"
+                   aria-expanded="false" aria-controls="sidebarReviews">
+                    <span class="nav-icon">
+                        <iconify-icon icon="solar:star-bold-duotone"></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Đánh giá </span>
+                </a>
+                <div class="collapse" id="sidebarReviews">
+                    <ul class="nav sub-navbar-nav">
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.reviews.index') }}">Danh sách</a>
+                        </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.reviews.trashed') }}">Đã xóa</a>
+                        </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="{{ route('admin.reviews.create') }}">Thêm mới</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
             <!-- Mã giảm giá -->
             <li class="nav-item">
                 <a class="nav-link menu-arrow" href="#sidebarDiscounts" data-bs-toggle="collapse" role="button"
