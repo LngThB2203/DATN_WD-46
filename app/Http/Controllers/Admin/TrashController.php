@@ -14,6 +14,7 @@ use App\Models\Discount;
 use App\Models\Post;
 use App\Models\Banner;
 use App\Models\Customer;
+use App\Models\Review;
 use Illuminate\Http\Request;
 
 class TrashController extends Controller
@@ -200,6 +201,29 @@ class TrashController extends Controller
             $allItems = $allItems->merge($discounts);
         }
 
+        if ($type === 'all' || $type === 'reviews') {
+            $reviews = Review::onlyTrashed()
+                ->when($search, function($q) use ($search) {
+                    $q->where('comment', 'like', "%{$search}%")
+                      ->orWhere('rating', 'like', "%{$search}%");
+                })
+                ->with(['product', 'user'])
+                ->get()
+                ->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'type' => 'review',
+                        'type_label' => 'Đánh giá',
+                        'name' => $item->product ? $item->product->name : 'N/A',
+                        'description' => 'Đánh giá ' . $item->rating . ' sao' . ($item->user ? ' bởi ' . $item->user->name : ''),
+                        'deleted_at' => $item->deleted_at,
+                        'restore_route' => route('reviews.restore', $item->id),
+                        'force_delete_route' => route('reviews.force-delete', $item->id),
+                    ];
+                });
+            $allItems = $allItems->merge($reviews);
+        }
+
         if ($type === 'all' || $type === 'posts') {
             $posts = Post::onlyTrashed()
                 ->when($search, function($q) use ($search) {
@@ -283,6 +307,7 @@ class TrashController extends Controller
                     Contact::onlyTrashed()->count() +
                     Warehouse::onlyTrashed()->count() +
                     Discount::onlyTrashed()->count() +
+                    Review::onlyTrashed()->count() +
                     Post::onlyTrashed()->count() +
                     Banner::onlyTrashed()->count() +
                     Customer::onlyTrashed()->count(),
@@ -294,6 +319,7 @@ class TrashController extends Controller
             'contacts' => Contact::onlyTrashed()->count(),
             'warehouses' => Warehouse::onlyTrashed()->count(),
             'discounts' => Discount::onlyTrashed()->count(),
+            'reviews' => Review::onlyTrashed()->count(),
             'posts' => Post::onlyTrashed()->count(),
             'banners' => Banner::onlyTrashed()->count(),
             'customers' => Customer::onlyTrashed()->count(),
