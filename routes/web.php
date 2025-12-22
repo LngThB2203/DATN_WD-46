@@ -183,7 +183,7 @@ Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
 // ========================
 // ADMIN ROUTES
 // ========================
-Route::prefix('admin')->middleware('auth')->group(function () {
+Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', fn() => redirect()->route('admin.statistics.index'))->name('admin.dashboard');
 
     // Statistics

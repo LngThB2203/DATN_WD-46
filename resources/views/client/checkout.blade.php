@@ -415,11 +415,11 @@ function confirmOrder(btn) {
     // Lấy giá và số lượng sản phẩm từ DOM (đã được cập nhật động)
     const grandTotalEl = document.getElementById('cartGrandTotal');
     const totalPrice = grandTotalEl ? grandTotalEl.textContent.trim() : '0 đ';
-    
+
     // Đếm số lượng sản phẩm từ danh sách items
     const itemCount = document.querySelectorAll('.cart-item-row').length || {{ count($cart['items'] ?? []) }};
     const productCount = itemCount + ' sản phẩm';
-    
+
     let timerInterval;
     let countdown = 5;
 
@@ -427,12 +427,12 @@ function confirmOrder(btn) {
         title: 'Xác nhận đơn hàng',
         html: `Bạn chắc chắn muốn đặt đơn hàng này?<br>Sản phẩm: <b>${productCount}</b><br>Tổng tiền: <b>${totalPrice}</b>`,
         icon: 'question',
-        showCancelButton: true, 
+        showCancelButton: true,
         confirmButtonText: `OK (${countdown})`,
         cancelButtonText: 'Hủy',
         didOpen: () => {
             const confirmBtn = Swal.getConfirmButton();
-            confirmBtn.disabled = true; 
+            confirmBtn.disabled = true;
             timerInterval = setInterval(() => {
                 countdown--;
                 confirmBtn.innerText = `OK (${countdown})`;

@@ -17,15 +17,20 @@ use App\Models\Customer;
 
 class CheckoutController extends Controller
 {
+
     public function index(Request $request)
     {
+         if (Auth::check() && Auth::user()->status == 0) {
+        return redirect()->route('cart.index')
+            ->with('error', 'Tài khoản của bạn đang bị khóa, không thể thanh toán đơn hàng.Vui lòng liên hệ quản trị viên.');
+    }
         $selectedItems = array_filter(array_map('intval',
             is_string($request->input('selected_items'))
                 ? explode(',', $request->input('selected_items'))
                 : (array) $request->input('selected_items', [])
         ));
 
-        // Khi mở trang checkout từ giỏ hàng, reset lại discount cũ (nếu có)
+        //
         $cart = $this->prepareCart($request, $selectedItems, true);
 
         if (empty($cart['items'])) {
@@ -74,6 +79,16 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
+        if (!Auth::check()) {
+        return redirect()->route('login')
+            ->with('error', 'Vui lòng đăng nhập trước khi đặt hàng');
+    }
+
+    //CHẶN USER BỊ KHÓA
+    if (Auth::user()->status == 0) {
+        return redirect()->route('checkout.index')
+            ->with('error', 'Tài khoản của bạn đang bị khóa. Vui lòng liên hệ quản trị viên.');
+    }
          $user = $request->user();
 
         // Nếu đã đăng nhập, bắt buộc lấy tên và email từ tài khoản
