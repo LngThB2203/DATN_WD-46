@@ -198,10 +198,103 @@
                             ]);
                         @endphp
                         @if($canCancel)
-                        <form method="POST" action="{{ route('orders.cancel', $order->id) }}" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');">
-                            @csrf @method('PUT')
-                            <button type="submit" class="btn btn-danger mt-3 w-100">Hủy đơn hàng</button>
-                        </form>
+                        <button type="button" class="btn btn-danger mt-3 w-100" id="cancelOrderBtn">Hủy đơn hàng</button>
+
+                        <!-- Cancel reason modal -->
+                        <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <form id="cancelOrderForm" method="POST" action="{{ route('orders.cancel', $order->id) }}">
+                              @csrf
+                              @method('PUT')
+                              <input type="hidden" name="cancellation_reason" id="cancellation_reason_input">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="cancelOrderModalLabel">Lý do hủy đơn hàng</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                </div>
+                                <div class="modal-body">
+                                  <div class="mb-3">
+                                    <label class="form-label">Chọn lý do hủy (tùy chọn)</label>
+                                    <div class="btn-group d-flex flex-column mb-2" role="group" aria-label="Cancel reasons">
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cancellation_reason_radio" id="cancel_reason_wrong_address" value="Nhập sai địa chỉ / muốn thay đổi địa chỉ giao hàng">
+                                        <label class="form-check-label" for="cancel_reason_wrong_address">Nhập sai địa chỉ / muốn thay đổi địa chỉ giao hàng</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cancellation_reason_radio" id="cancel_reason_change_items" value="Muốn thay đổi sản phẩm/số lượng">
+                                        <label class="form-check-label" for="cancel_reason_change_items">Muốn thay đổi sản phẩm/số lượng</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cancellation_reason_radio" id="cancel_reason_finance" value="Tài chính / muốn hoãn lại">
+                                        <label class="form-check-label" for="cancel_reason_finance">Tài chính / muốn hoãn lại</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cancellation_reason_radio" id="cancel_reason_price" value="Nhận được thông tin giá/chi phí chưa hợp lý">
+                                        <label class="form-check-label" for="cancel_reason_price">Nhận được thông tin giá/chi phí chưa hợp lý</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cancellation_reason_radio" id="cancel_reason_no_need" value="Không còn nhu cầu">
+                                        <label class="form-check-label" for="cancel_reason_no_need">Không còn nhu cầu</label>
+                                      </div>
+                                      <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="cancellation_reason_radio" id="cancel_reason_other" value="other">
+                                        <label class="form-check-label" for="cancel_reason_other">Khác (ghi rõ bên dưới)</label>
+                                      </div>
+                                    </div>
+
+                                    <label for="cancellation_reason" class="form-label">Ghi chi tiết (tùy chọn)</label>
+                                    <textarea class="form-control" id="cancellation_reason" rows="3" placeholder="Nhập lý do..."></textarea>
+                                    <small class="form-text text-muted">Bạn có thể chọn một lý do nhanh ở trên hoặc nhập chi tiết nếu chọn "Khác".</small>
+                                  </div>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                  <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+
+                        <script>
+                        (function(){
+                            var btn = document.getElementById('cancelOrderBtn');
+                            if (btn) {
+                                btn.addEventListener('click', function(){
+                                    var modalEl = document.getElementById('cancelOrderModal');
+                                    if (modalEl && window.bootstrap) {
+                                        var bs = new bootstrap.Modal(modalEl);
+                                        bs.show();
+                                    }
+                                });
+                            }
+
+                            var form = document.getElementById('cancelOrderForm');
+                            if (form) {
+                                var reasonTa = document.getElementById('cancellation_reason');
+                                var radios = document.querySelectorAll('input[name="cancellation_reason_radio"]');
+
+                                if (radios && radios.length) {
+                                    radios.forEach(function(r){
+                                        r.addEventListener('change', function(){
+                                            if (!reasonTa) return;
+                                            if (this.value === 'other') {
+                                                reasonTa.value = '';
+                                                reasonTa.focus();
+                                            } else {
+                                                reasonTa.value = this.value;
+                                            }
+                                        });
+                                    });
+                                }
+
+                                form.addEventListener('submit', function(){
+                                    var reason = reasonTa ? reasonTa.value : '';
+                                    document.getElementById('cancellation_reason_input').value = reason.trim();
+                                });
+                            }
+                        })();
+                        </script>
                         @endif
 
                         {{-- Nút xác nhận đã nhận hàng --}}
@@ -242,6 +335,9 @@
                         <div class="mt-3">
                             <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary w-100">Quay lại danh sách</a>
                         </div>
+                    </div>
+                </div>
+
                     </div>
                 </div>
             </div>

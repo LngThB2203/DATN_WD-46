@@ -9,7 +9,7 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('blog.index') }}">Blog</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('blog.index') }}">Bài viết</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{ $post->title }}</li>
             </ol>
         </nav>
