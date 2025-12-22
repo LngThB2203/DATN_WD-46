@@ -287,6 +287,39 @@ class CheckoutController extends Controller
 
         $maxPerItem = 10;
 
+        // Nếu session cart không có variant_name, load lại từ database
+        $needsReload = collect($sessionCart['items'])->first(function ($item) {
+            return !isset($item['variant_name']) && !empty($item['variant_id']);
+        });
+
+        if ($needsReload && $request->user()) {
+            $cart = Cart::where('user_id', $request->user()->id)->first();
+            if ($cart) {
+                $cartItems = $cart->items()
+                    ->with(['product.galleries', 'variant.size', 'variant.scent', 'variant.concentration'])
+                    ->whereIn('id', collect($sessionCart['items'])->pluck('cart_item_id'))
+                    ->get();
+
+                foreach ($sessionCart['items'] as &$sessionItem) {
+                    $cartItem = $cartItems->firstWhere('id', $sessionItem['cart_item_id']);
+                    if ($cartItem && $cartItem->variant) {
+                        $parts = [];
+                        if ($cartItem->variant->size) {
+                            $parts[] = 'Kích thước: ' . ($cartItem->variant->size->size_name ?? $cartItem->variant->size->name ?? '');
+                        }
+                        if ($cartItem->variant->scent) {
+                            $parts[] = 'Mùi hương: ' . ($cartItem->variant->scent->scent_name ?? $cartItem->variant->scent->name ?? '');
+                        }
+                        if ($cartItem->variant->concentration) {
+                            $parts[] = 'Nồng độ: ' . ($cartItem->variant->concentration->concentration_name ?? $cartItem->variant->concentration->name ?? '');
+                        }
+                        $sessionItem['variant_name'] = implode(' • ', $parts);
+                    }
+                }
+                unset($sessionItem);
+            }
+        }
+
         $items = collect($sessionCart['items'])->filter(
             fn($i) => empty($selectedItems) || in_array($i['cart_item_id'], $selectedItems)
         )->map(function ($i) use ($maxPerItem) {
