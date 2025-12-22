@@ -68,7 +68,7 @@ class Product extends Model
 
     public function variants()
     {
-        return $this->hasMany(ProductVariant::class);
+        return $this->hasMany(ProductVariant::class, 'product_id');
     }
 
     public function getStockQuantityAttribute()
@@ -116,4 +116,5 @@ class Product extends Model
         return $this->belongsTo(Brand::class);
     }
     protected $dates = ['deleted_at'];
+
 }

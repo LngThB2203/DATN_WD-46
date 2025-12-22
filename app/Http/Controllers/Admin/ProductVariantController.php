@@ -46,7 +46,6 @@ class ProductVariantController extends Controller
             'gender'           => 'required|in:male,female,unisex',
         ]);
 
-        // 🚫 Check trùng biến thể
         $exists = ProductVariant::where([
             'product_id'       => $data['product_id'],
             'size_id'          => $data['size_id'],
@@ -96,7 +95,6 @@ class ProductVariantController extends Controller
             'gender'           => 'required|in:male,female,unisex',
         ]);
 
-        // 🚫 Check trùng (bỏ qua chính nó)
         $exists = ProductVariant::where([
             'product_id'       => $data['product_id'],
             'size_id'          => $data['size_id'],
