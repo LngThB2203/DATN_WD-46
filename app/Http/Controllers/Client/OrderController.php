@@ -142,9 +142,9 @@ class OrderController extends Controller
         // Map trạng thái cũ sang mới để check
         $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
         
-        // Chỉ cho hủy ở trạng thái PENDING hoặc PREPARING
-        if (!in_array($mappedStatus, [\App\Helpers\OrderStatusHelper::PENDING, \App\Helpers\OrderStatusHelper::PREPARING])) {
-            return redirect()->back()->with('error', 'Đơn hàng không thể hủy ở trạng thái hiện tại.');
+        // Chỉ cho hủy khi trạng thái là PENDING (chờ xác nhận)
+        if ($mappedStatus !== \App\Helpers\OrderStatusHelper::PENDING) {
+            return redirect()->back()->with('error', 'Chỉ có thể hủy đơn hàng khi đơn hàng đang ở trạng thái "Chờ xác nhận".');
         }
 
         $request->validate([

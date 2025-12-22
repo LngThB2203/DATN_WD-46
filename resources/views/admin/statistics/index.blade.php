@@ -28,7 +28,7 @@
             <div class="col-md-3">
                 <div class="card">
                     <div class="card-body text-center">
-                        <div class="h6">Số đơn hàng</div>
+                        <div class="h6">Số đơn hàng đã thành công</div>
                         <div class="h3 fw-bold">{{ $summary['orders'] ?? 0 }}</div>
                     </div>
                 </div>

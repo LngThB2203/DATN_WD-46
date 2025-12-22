@@ -213,6 +213,17 @@ class OrderController extends Controller
             }
         }
 
+        // Hủy → hoàn kho (xử lý riêng vì cancelOrder đã có transaction riêng)
+        if ($newStatus === OrderStatusHelper::CANCELLED) {
+            try {
+                $stockService->cancelOrder($order);
+                $order->refresh();
+                return redirect()->route('admin.orders.show', $order->id)->with('success', 'Hủy đơn hàng và hoàn kho thành công');
+            } catch (\Exception $e) {
+                return back()->withErrors('Không thể hủy đơn hàng: ' . $e->getMessage());
+            }
+        }
+
         try {
             DB::beginTransaction();
 
@@ -237,18 +248,6 @@ class OrderController extends Controller
                 } catch (\Exception $e) {
                     DB::rollBack();
                     return back()->withErrors('Không thể trừ tồn kho: ' . $e->getMessage());
-                }
-            }
-
-            // Hủy → hoàn kho
-            if ($newStatus === OrderStatusHelper::CANCELLED) {
-                try {
-                    $stockService->cancelOrder($order);
-                    DB::commit();
-                    return redirect()->route('admin.orders.show', $order->id)->with('success', 'Hủy đơn hàng và hoàn kho thành công');
-                } catch (\Exception $e) {
-                    DB::rollBack();
-                    return back()->withErrors('Không thể hủy đơn hàng: ' . $e->getMessage());
                 }
             }
 
