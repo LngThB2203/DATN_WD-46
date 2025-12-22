@@ -43,77 +43,75 @@
                     : implode(',', collect($cart['items'] ?? [])->pluck('cart_item_id')->all())
             }}">
 
-            {{-- CUSTOMER INFO --}}
-            <div class="card mb-4">
-                <div class="card-header fw-semibold">Thông tin người nhận</div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label">Họ tên <span class="text-danger">*</span></label>
-                            @if($isLoggedIn)
-                                <input type="text" class="form-control bg-light"
-                                    value="{{ $defaultCustomer['customer_name'] }}" readonly disabled
-                                    title="Thông tin này được lấy từ tài khoản của bạn">
-                                <small class="text-muted"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
-                                <input type="hidden" name="customer_name" value="{{ $defaultCustomer['customer_name'] }}">
-                            @else
-                                <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror"
-                                    value="{{ old('customer_name', $defaultCustomer['customer_name'] ?? '') }}" required>
-                                @error('customer_name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            @endif
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Email <span class="text-danger">*</span></label>
-                            @if($isLoggedIn)
-                                <input type="email" class="form-control bg-light"
-                                    value="{{ $defaultCustomer['customer_email'] }}" readonly disabled
-                                    title="Thông tin này được lấy từ tài khoản của bạn">
-                                <small class="text-muted"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
-                                <input type="hidden" name="customer_email" value="{{ $defaultCustomer['customer_email'] }}">
-                            @else
-                                <input type="email" name="customer_email" class="form-control @error('customer_email') is-invalid @enderror"
-                                    value="{{ old('customer_email', $defaultCustomer['customer_email'] ?? '') }}" required>
-                                @error('customer_email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            @endif
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
-                            <input type="text" name="customer_phone" class="form-control @error('customer_phone') is-invalid @enderror"
-                                value="{{ old('customer_phone', $defaultCustomer['customer_phone'] ?? '') }}"
-                                placeholder="Nhập số điện thoại" required>
-                            @error('customer_phone')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
-                            <textarea name="shipping_address_line" class="form-control @error('shipping_address_line') is-invalid @enderror"
-                                rows="3" placeholder="Nhập địa chỉ giao hàng" required>{{ old('shipping_address_line', $defaultCustomer['shipping_address_line'] ?? '') }}</textarea>
-                            @error('shipping_address_line')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
             <div class="row g-4">
                 <div class="col-lg-7">
+                    {{-- CUSTOMER INFO --}}
+                    <div class="card mb-3">
+                        <div class="card-header fw-semibold py-2">Thông tin người nhận</div>
+                        <div class="card-body py-2">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="form-label small mb-1">Họ tên <span class="text-danger">*</span></label>
+                                    @if($isLoggedIn)
+                                        <input type="text" class="form-control form-control-sm bg-light"
+                                            value="{{ $defaultCustomer['customer_name'] }}" readonly disabled
+                                            title="Thông tin này được lấy từ tài khoản của bạn">
+                                        <small class="text-muted small"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
+                                        <input type="hidden" name="customer_name" value="{{ $defaultCustomer['customer_name'] }}">
+                                    @else
+                                        <input type="text" name="customer_name" class="form-control form-control-sm @error('customer_name') is-invalid @enderror"
+                                            value="{{ old('customer_name', $defaultCustomer['customer_name'] ?? '') }}" required>
+                                        @error('customer_name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    @endif
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small mb-1">Email <span class="text-danger">*</span></label>
+                                    @if($isLoggedIn)
+                                        <input type="email" class="form-control form-control-sm bg-light"
+                                            value="{{ $defaultCustomer['customer_email'] }}" readonly disabled
+                                            title="Thông tin này được lấy từ tài khoản của bạn">
+                                        <small class="text-muted small"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
+                                        <input type="hidden" name="customer_email" value="{{ $defaultCustomer['customer_email'] }}">
+                                    @else
+                                        <input type="email" name="customer_email" class="form-control form-control-sm @error('customer_email') is-invalid @enderror"
+                                            value="{{ old('customer_email', $defaultCustomer['customer_email'] ?? '') }}" required>
+                                        @error('customer_email')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    @endif
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small mb-1">Số điện thoại <span class="text-danger">*</span></label>
+                                    <input type="text" name="customer_phone" class="form-control form-control-sm @error('customer_phone') is-invalid @enderror"
+                                        value="{{ old('customer_phone', $defaultCustomer['customer_phone'] ?? '') }}"
+                                        placeholder="Nhập số điện thoại" required>
+                                    @error('customer_phone')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small mb-1">Địa chỉ <span class="text-danger">*</span></label>
+                                    <textarea name="shipping_address_line" class="form-control form-control-sm @error('shipping_address_line') is-invalid @enderror"
+                                        rows="2" placeholder="Nhập địa chỉ giao hàng" required>{{ old('shipping_address_line', $defaultCustomer['shipping_address_line'] ?? '') }}</textarea>
+                                    @error('shipping_address_line')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     {{-- CUSTOMER NOTE --}}
-                    <div class="card mb-4">
-                        <div class="card-header fw-semibold">Thông tin giao hàng</div>
-                        <div class="card-body">
+                    <div class="card mb-3">
+                        <div class="card-header fw-semibold py-2">Thông tin giao hàng</div>
+                        <div class="card-body py-2">
 
-                            <label class="form-label">Ghi chú cho đơn hàng</label>
+                            <label class="form-label small mb-1">Ghi chú cho đơn hàng</label>
                             <textarea name="customer_note"
-                                      class="form-control @error('customer_note') is-invalid @enderror"
-                                      rows="3">{{ old('customer_note') }}</textarea>
+                                      class="form-control form-control-sm @error('customer_note') is-invalid @enderror"
+                                      rows="2">{{ old('customer_note') }}</textarea>
 
                             @error('customer_note')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -124,8 +122,8 @@
 
                     {{-- PAYMENT METHODS --}}
                     <div class="card">
-                        <div class="card-header fw-semibold">Phương thức thanh toán</div>
-                        <div class="card-body">
+                        <div class="card-header fw-semibold py-2">Phương thức thanh toán</div>
+                        <div class="card-body py-2">
 
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="radio" name="payment_method"
@@ -175,7 +173,7 @@
 
                 {{-- CART SUMMARY --}}
                 <div class="col-lg-5">
-                    <div class="card">
+                    <div class="card h-100">
                         <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
                             <span>Đơn hàng</span>
                             <span class="badge bg-secondary">{{ count($cart['items'] ?? []) }} sản phẩm</span>
@@ -186,13 +184,63 @@
                             @if(!empty($cart['items']))
                                 <div class="mb-3">
                                     @foreach($cart['items'] as $item)
-                                        <div class="d-flex justify-content-between py-2 border-bottom">
-                                            <div>
-                                                <div class="fw-semibold">{{ $item['name'] ?? 'Sản phẩm' }}</div>
-                                                <small class="text-muted">x{{ $item['quantity'] ?? 1 }}</small>
-                                            </div>
-                                            <div class="text-end">
-                                                {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }} đ
+                                        <div class="py-2 border-bottom">
+                                            <div class="d-flex align-items-start gap-2">
+                                                {{-- Product Image --}}
+                                                <div class="flex-shrink-0">
+                                                    @if(!empty($item['image']))
+                                                        <img src="{{ asset('storage/' . $item['image']) }}" 
+                                                             alt="{{ $item['name'] ?? 'Sản phẩm' }}"
+                                                             class="img-thumbnail"
+                                                             style="width: 60px; height: 60px; object-fit: cover;"
+                                                             onerror="this.onerror=null; this.src='{{ asset('assets/client/img/product/default.jpg') }}';">
+                                                    @else
+                                                        <img src="{{ asset('assets/client/img/product/default.jpg') }}" 
+                                                             alt="{{ $item['name'] ?? 'Sản phẩm' }}"
+                                                             class="img-thumbnail"
+                                                             style="width: 60px; height: 60px; object-fit: cover;">
+                                                    @endif
+                                                </div>
+                                                {{-- Product Info --}}
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-semibold small">{{ $item['name'] ?? 'Sản phẩm' }}</div>
+                                                    @if(!empty($item['variant_name']))
+                                                        <div class="small mt-1">
+                                                            @php
+                                                                $variantParts = explode(' • ', $item['variant_name']);
+                                                            @endphp
+                                                            @foreach($variantParts as $part)
+                                                                @if(strpos($part, 'Kích thước:') !== false)
+                                                                    <span class="badge bg-secondary me-1" style="font-size: 0.7rem;">
+                                                                        <i class="bi bi-rulers"></i> {{ $part }}
+                                                                    </span>
+                                                                @elseif(strpos($part, 'Mùi hương:') !== false)
+                                                                    <span class="badge bg-info me-1" style="font-size: 0.7rem;">
+                                                                        <i class="bi bi-flower1"></i> {{ $part }}
+                                                                    </span>
+                                                                @elseif(strpos($part, 'Nồng độ:') !== false)
+                                                                    <span class="badge bg-warning text-dark me-1" style="font-size: 0.7rem;">
+                                                                        <i class="bi bi-droplet"></i> {{ $part }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">{{ $part }}</span>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @else
+                                                        <div class="small text-muted mt-1">
+                                                            <span class="badge bg-light text-dark" style="font-size: 0.7rem;">Không có biến thể</span>
+                                                        </div>
+                                                    @endif
+                                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                                        <div class="small text-muted">
+                                                            Số lượng: <strong>x{{ $item['quantity'] ?? 1 }}</strong>
+                                                        </div>
+                                                        <div class="text-end fw-semibold small">
+                                                            {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }} đ
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -233,9 +281,7 @@
                                     @endif
                                 @endauth
 
-                                <div id="appliedDiscountInfo" class="mt-1 small text-success" style="{{ empty($cart['discount_code']) ? 'display:none;' : '' }}">
-                                    Đang áp dụng mã: <strong id="appliedDiscountCode">{{ $cart['discount_code'] ?? '' }}</strong>
-                                </div>
+
 
                                 <div class="mt-1 small">
                                     <a href="{{ route('client.vouchers.index') }}" class="text-decoration-underline">Xem kho voucher</a>
@@ -275,7 +321,7 @@
 
                             <button class="btn btn-primary w-100" type="button" onclick="confirmOrder(this)">
                                 Đặt hàng
-                            </button> 
+                            </button>
 
                         </div>
                     </div>
@@ -312,10 +358,10 @@
     const messageEl = document.getElementById('discountMessage');
     const savedSelect = document.getElementById('savedVoucherSelect');
 
-    const subtotalEl = document.getElementById('cartSubtotal');
-    const discountEl = document.getElementById('cartDiscount');
-    const shippingEl = document.getElementById('cartShipping');
-    const grandTotalEl = document.getElementById('cartGrandTotal');
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const discountEl = document.getElementById('checkoutDiscount');
+    const shippingEl = document.getElementById('checkoutShipping');
+    const grandTotalEl = document.getElementById('checkoutTotal');
     const appliedInfoEl = document.getElementById('appliedDiscountInfo');
     const appliedCodeEl = document.getElementById('appliedDiscountCode');
 
@@ -509,6 +555,7 @@ function parseNumberFromText(str) {
 }
 
 function confirmOrder(btn) {
+
     let timerInterval;
     let countdown = 5;
 

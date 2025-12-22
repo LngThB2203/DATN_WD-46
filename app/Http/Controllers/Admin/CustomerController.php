@@ -30,14 +30,6 @@ class CustomerController extends Controller
         return view('admin.customers.list', compact('customers', 'search'));
     }
 
-    /**
-     * Form thêm khách hàng
-     */
-    public function create()
-{
-    $users = User::whereDoesntHave('customer')->get();
-    return view('admin.customers.create', compact('users'));
-}
 
     /**
      * Lưu khách hàng mới
@@ -62,14 +54,6 @@ class CustomerController extends Controller
         ->with('success', 'Thêm khách hàng thành công!');
 }
 
-    /**
-     * Form sửa khách hàng
-     */
-    public function edit($id)
-    {
-        $customer = Customer::findOrFail($id);
-        return view('admin.customers.edit', compact('customer'));
-    }
 
     /**
      * Cập nhật khách hàng

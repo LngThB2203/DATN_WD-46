@@ -3,7 +3,10 @@
 @section('title', 'Trang chủ')
 
 @section('content')
+
 <main class="main">
+
+
 
     <!-- Hero Section -->
     <section class="hero py-1">
