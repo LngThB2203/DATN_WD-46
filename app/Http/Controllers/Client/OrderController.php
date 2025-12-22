@@ -56,32 +56,69 @@ class OrderController extends Controller
             }
         }
 
-        $order = $query->findOrFail($id);
+        $order = $query->with('payment')->findOrFail($id);
 
-        return view('client.orders.show', compact('order'));
+        // Kiểm tra xem đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
+        $mappedStatus = OrderStatusHelper::mapOldStatus($order->order_status);
+        $canUpdateShipping = $mappedStatus === OrderStatusHelper::PENDING && !$isPaid;
+
+        return view('client.orders.show', compact('order', 'isPaid', 'canUpdateShipping'));
     }
 
     // Cập nhật thông tin giao hàng
     public function updateShipping(Request $request, $id)
     {
-        $order = Order::findOrFail($id);
+        $order = Order::with('payment')->findOrFail($id);
 
+        // Kiểm tra quyền truy cập
+        if ($request->user()) {
+            if ($order->user_id != $request->user()->id) {
+                abort(403, 'Bạn không có quyền cập nhật đơn hàng này.');
+            }
+        } else {
+            // Nếu không đăng nhập, kiểm tra email/phone
+            $email = $request->input('email') ?? $request->session()->get('last_order_email');
+            $phone = $request->input('phone') ?? $request->session()->get('last_order_phone');
+            
+            if ($email && $order->customer_email !== $email) {
+                abort(403, 'Bạn không có quyền cập nhật đơn hàng này.');
+            } elseif ($phone && $order->customer_phone !== $phone) {
+                abort(403, 'Bạn không có quyền cập nhật đơn hàng này.');
+            }
+        }
+
+        // Kiểm tra xem đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
         $mappedStatus = OrderStatusHelper::mapOldStatus($order->order_status);
-        if ($mappedStatus !== OrderStatusHelper::PENDING) {
+        
+        if ($mappedStatus !== OrderStatusHelper::PENDING || $isPaid) {
             return redirect()->back()->with('error', 'Đơn hàng không thể cập nhật.');
         }
 
-        $request->validate([
-            'customer_name'    => 'required|string|max:255',
-            'customer_email'   => 'nullable|email|max:255',
-            'customer_phone'   => 'required|string|max:20',
-            'shipping_address' => 'required|string|max:500',
-            'customer_note'    => 'nullable|string|max:1000',
-        ]);
+        $user = $request->user();
+        
+        if ($user) {
+            // Nếu đã đăng nhập, lấy tên và email từ tài khoản
+            $validated = $request->validate([
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:500',
+                'customer_note'         => 'nullable|string|max:1000',
+            ]);
 
-        $order->update($request->only([
-            'customer_name', 'customer_email', 'customer_phone', 'shipping_address', 'customer_note',
-        ]));
+            $validated['customer_name'] = $user->name;
+            $validated['customer_email'] = $user->email;
+        } else {
+            $validated = $request->validate([
+                'customer_name'         => 'required|string|max:255',
+                'customer_email'        => 'nullable|email|max:255',
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:500',
+                'customer_note'         => 'nullable|string|max:1000',
+            ]);
+        }
+
+        $order->update($validated);
 
         return redirect()->back()->with('success', 'Cập nhật thông tin giao hàng thành công.');
     }

@@ -27,6 +27,7 @@ use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\ClientBlogController;
@@ -122,6 +123,7 @@ Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('v
 // Orders (Client)
 Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
 Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
+Route::put('/orders/{id}/update-shipping', [ClientOrderController::class, 'updateShipping'])->name('orders.update-shipping');
 Route::put('/orders/{id}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
 Route::put('/orders/{id}/confirm-received', [ClientOrderController::class, 'confirmReceived'])->middleware('auth')->name('orders.confirm-received');
 Route::middleware('auth')->group(function () {
@@ -253,12 +255,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
     });
     Route::prefix('post')->group(function () {
-    Route::get('/', [PostController::class, 'index'])->name('post.index');
-    Route::get('/create', [PostController::class, 'create'])->name('post.create');
-    Route::post('/store', [PostController::class, 'store'])->name('post.store');
-    Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
-    Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
-    Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
+        Route::get('/', [PostController::class, 'index'])->name('post.index');
+        Route::get('/create', [PostController::class, 'create'])->name('post.create');
+        Route::post('/store', [PostController::class, 'store'])->name('post.store');
+        Route::get('/trashed', [PostController::class, 'trashed'])->name('post.trashed');
+        Route::post('/trashed/{id}/restore', [PostController::class, 'restore'])->name('post.restore');
+        Route::delete('/trashed/{id}/force-delete', [PostController::class, 'forceDelete'])->name('post.force-delete');
+        Route::get('/edit/{post}', [PostController::class, 'edit'])->name('post.edit');
+        Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
+        Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
     });
 
     // Inventories
