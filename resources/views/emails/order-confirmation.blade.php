@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xác nhận đơn hàng</title>
 </head>
 <body style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 24px;">

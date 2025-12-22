@@ -271,7 +271,7 @@
                 @if (!$order->warehouse_id && $currentStatusMapped === \App\Helpers\OrderStatusHelper::PENDING)
                     <div class="alert alert-warning mb-3">
                         <i class="bi bi-exclamation-triangle"></i> 
-                        <strong>Lưu ý:</strong> Vui lòng chọn kho xuất hàng trước khi chuyển sang "Đang chuẩn bị hàng" hoặc các trạng thái tiếp theo.
+                        <strong>Lưu ý:</strong> Vui lòng chọn kho xuất hàng trước khi chuyển sang "Chờ lấy hàng" hoặc các trạng thái tiếp theo.
                     </div>
                 @endif
 
