@@ -107,6 +107,27 @@ class CheckoutController extends Controller
             return back()->withErrors(['cart' => 'Giỏ hàng trống']);
         }
 
+        // Lấy danh sách item được chọn trong đơn
+        $selectedCartItems = collect($cart['items'])->filter(function ($item) use ($selectedItems) {
+            return empty($selectedItems) || in_array($item['cart_item_id'], $selectedItems);
+        })->values();
+
+        // 1) Tối đa 10 dòng sản phẩm trong một đơn hàng
+        if ($selectedCartItems->count() > 10) {
+            return back()->withErrors([
+                'cart' => 'Bạn chỉ có thể mua tối đa 10 dòng sản phẩm trong mỗi đơn hàng.',
+            ]);
+        }
+
+        // 2) Mỗi dòng sản phẩm tối đa 10 chiếc (phòng trường hợp dữ liệu cũ vượt 10)
+        foreach ($selectedCartItems as $item) {
+            if ((int) ($item['quantity'] ?? 0) > 10) {
+                return back()->withErrors([
+                    'cart' => 'Mỗi sản phẩm trong đơn hàng chỉ được mua tối đa 10 chiếc.',
+                ]);
+            }
+        }
+
         // ===== ONLINE =====
         if ($validated['payment_method'] === 'online') {
 
@@ -226,11 +247,17 @@ class CheckoutController extends Controller
             $sessionCart['discount_code']  = null;
         }
 
+        $maxPerItem = 10;
+
         $items = collect($sessionCart['items'])->filter(
             fn($i) => empty($selectedItems) || in_array($i['cart_item_id'], $selectedItems)
-        )->map(function ($i) {
-            $i['quantity'] = max(1, (int)$i['quantity']);
-            $i['subtotal'] = $i['quantity'] * $i['price'];
+        )->map(function ($i) use ($maxPerItem) {
+            // Chuẩn hóa quantity: tối thiểu 1, tối đa 10 để tránh dữ liệu cũ vượt giới hạn hiển thị
+            $qty = (int) ($i['quantity'] ?? 1);
+            $qty = max(1, min($maxPerItem, $qty));
+
+            $i['quantity'] = $qty;
+            $i['subtotal'] = $qty * $i['price'];
             return $i;
         });
 

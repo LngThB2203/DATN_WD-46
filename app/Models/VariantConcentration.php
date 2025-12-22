@@ -12,13 +12,23 @@ class VariantConcentration extends Model
     // Accessor để map 'name' thành 'concentration_name'
     public function getConcentrationNameAttribute()
     {
-        return $this->attributes['name'] ?? null;
+        return $this->attributes['concentration_name'] ?? ($this->attributes['name'] ?? null);
     }
 
     // Mutator để map 'concentration_name' thành 'name'
     public function setConcentrationNameAttribute($value)
     {
-        $this->attributes['name'] = $value;
+        $this->attributes['concentration_name'] = $value;
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->attributes['concentration_name'] ?? null;
+    }
+
+    public function setNameAttribute($value)
+    {
+        $this->attributes['concentration_name'] = $value;
     }
 
     public function variants()
