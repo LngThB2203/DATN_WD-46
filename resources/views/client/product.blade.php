@@ -156,16 +156,28 @@
                        <input type="hidden" name="buy_now" id="buyNowFlag" value="0">
 
 
-                       <div class="d-flex align-items-center gap-3 mb-3">
-                           <div class="input-group" style="width: 140px;">
-                               <button class="btn btn-outline-secondary quantity-decrease" type="button">-</button>
-                               <input type="number" name="quantity" id="productQuantity" value="1" min="1"
-                                   class="form-control text-center">
-                               <button class="btn btn-outline-secondary quantity-increase" type="button">+</button>
+                       <div class="mb-2">
+                           <div class="d-flex align-items-center gap-3">
+                               <div class="input-group" style="width: 140px;">
+                                   <button class="btn btn-outline-secondary quantity-decrease" type="button">-</button>
+                                   <input
+                                       type="number"
+                                       name="quantity"
+                                       id="productQuantity"
+                                       value="1"
+                                       min="1"
+                                       max="{{ $totalStock > 0 ? $totalStock : 999 }}"
+                                       class="form-control text-center">
+                                   <button class="btn btn-outline-secondary quantity-increase" type="button">+</button>
+                               </div>
+                               <div class="text-muted small" id="availableStockInfo">
+                                   {{ $totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng' }}
+                               </div>
                            </div>
-                           <div class="text-muted small" id="availableStockInfo">
-                               {{ $totalStock > 0 ? 'Có sẵn: '.$totalStock.' sản phẩm' : 'Không còn hàng' }}
-                           </div>
+
+                           @error('quantity')
+                               <div class="text-danger small mt-1">{{ $message }}</div>
+                           @enderror
                        </div>
 
 
@@ -298,7 +310,13 @@ document.addEventListener('DOMContentLoaded', function () {
                '{{ $product->formatted_sale_price ?? $product->formatted_price }}';
        }
        if (addToCartBtn) addToCartBtn.disabled = defaultTotalStock <= 0;
-       if (quantityInput) quantityInput.removeAttribute('max');
+       if (quantityInput) {
+           const maxByStock = defaultTotalStock > 0 ? defaultTotalStock : 999;
+           quantityInput.setAttribute('max', maxByStock);
+           if (parseInt(quantityInput.value) > maxByStock) {
+               quantityInput.value = maxByStock;
+           }
+       }
        if (availableStockInfo) availableStockInfo.textContent = defaultAvailableText;
    }
 
@@ -357,9 +375,10 @@ document.addEventListener('DOMContentLoaded', function () {
                }
 
                if (quantityInput) {
-                   quantityInput.setAttribute('max', variant.stock);
-                   if (parseInt(quantityInput.value) > variant.stock) {
-                       quantityInput.value = variant.stock;
+                   const maxByStock = variant.stock > 0 ? variant.stock : 999;
+                   quantityInput.setAttribute('max', maxByStock);
+                   if (parseInt(quantityInput.value) > maxByStock) {
+                       quantityInput.value = maxByStock;
                    }
                }
 
@@ -400,7 +419,8 @@ document.addEventListener('DOMContentLoaded', function () {
    if (increaseBtn && quantityInput) {
        increaseBtn.addEventListener('click', function () {
            const currentValue = parseInt(quantityInput.value) || 1;
-           const max = parseInt(quantityInput.getAttribute('max')) || 100;
+           const maxAttr = parseInt(quantityInput.getAttribute('max'));
+           const max = Number.isFinite(maxAttr) && maxAttr > 0 ? maxAttr : 9999;
            if (currentValue < max) {
                quantityInput.value = currentValue + 1;
            }

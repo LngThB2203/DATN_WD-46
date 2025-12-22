@@ -181,6 +181,10 @@
                                         </div>
                                     @endforeach
                                 </div>
+
+                                <div class="mb-3 small text-muted">
+                                    Mỗi đơn hàng được mua tối đa 10 sản phẩm. Nếu có nhu cầu mua số lượng lớn, vui lòng liên hệ.
+                                </div>
                             @else
                                 <p class="text-muted mb-3">Giỏ hàng của bạn đang trống.</p>
                             @endif
