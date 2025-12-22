@@ -49,4 +49,9 @@ class ProductVariant extends Model
     {
         return $this->warehouseStock->sum('quantity');
     }
+
+    public function getStockAttribute()
+    {
+        return $this->warehouseStock->sum('quantity');
+    }
 }
