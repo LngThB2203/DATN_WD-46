@@ -15,6 +15,9 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0">Danh sách email đăng ký nhận tin</h4>
+                <a href="{{ route('admin.newsletters.send') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-send me-2"></i>Gửi Tin Newsletter
+                </a>
             </div>
 
             <div class="table-responsive">

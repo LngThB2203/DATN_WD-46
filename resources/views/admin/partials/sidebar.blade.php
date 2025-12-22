@@ -233,12 +233,6 @@
                         <li class="sub-nav-item">
                             <a class="sub-nav-link" href="{{ route('admin.reviews.index') }}">Danh sách</a>
                         </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.reviews.trashed') }}">Đã xóa</a>
-                        </li>
-                        <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('admin.reviews.create') }}">Thêm mới</a>
-                        </li>
                     </ul>
                 </div>
             </li>

@@ -27,6 +27,10 @@
                         <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" class="d-block w-100 rounded"
                             alt="Hero Banner">
                     </a>
+                    <a href="{{ route('product.show', $product->slug) }}">
+                        <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" class="d-block w-100 rounded"
+                            alt="Hero Banner">
+                    </a>
                     @endif
                     @else
                     <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
@@ -227,9 +231,13 @@
                 {{ $products->links('pagination::bootstrap-5') }}
             </div>
 
-        </div>
-    </section>
-
+    </div>
+</section>
+ @if(session('error'))
+<script>
+    alert(@json(session('error')));
+</script>
+@endif
 </main>
 
 <script>
@@ -395,10 +403,10 @@
 </script>
 @endsection
 <style>
-    #heroCarousel .carousel-item {
-        height: 400px;
-        overflow: hidden;
-    }
+      #heroCarousel .carousel-item {
+    height: 400px;
+    overflow: hidden;
+}
 
     #heroCarousel .carousel-item img {
         width: 100%;
