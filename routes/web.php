@@ -1,44 +1,44 @@
 <?php
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
-use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
-use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PostController;
-use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Client\VNPayController;
 use App\Http\Controllers\Admin\StatisticController;
-use App\Http\Controllers\Admin\StockTransactionController;
-use App\Http\Controllers\Admin\TrashController;
-use App\Http\Controllers\Admin\WarehouseBatchController;
 use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\ChatbotController;
-use App\Http\Controllers\Client\OrderReviewController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Client\WishlistController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
-use App\Http\Controllers\Client\HomeController;
-use App\Http\Controllers\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\Client\OrderReviewController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Client\ProductDetailController;
+use App\Http\Controllers\Admin\InventoryExportController;
 use App\Http\Controllers\Client\ProductListingController;
-use App\Http\Controllers\Client\VNPayController;
-use App\Http\Controllers\Client\WishlistController;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\TrashController;
+use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\Admin\WarehouseBatchController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ReviewController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Client\HomeController;
 
 Route::get('/test-form', function () {
     return '<form method="POST" action="/test-form-submit">'
@@ -47,11 +47,9 @@ Route::get('/test-form', function () {
         . '</form>';
 });
 
-
 Route::post('/test-form-submit', function () {
     return 'Form submitted successfully!';
 });
-
 
 // ========================
 // AUTH ROUTES
@@ -62,13 +60,11 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
-
 // Account & Email Verification
 Route::middleware('auth')->group(function () {
     Route::get('/account', [AccountController::class, 'show'])->name('account.show');
     Route::get('/account/edit', [AccountController::class, 'edit'])->name('account.edit');
     Route::post('/account/update', [AccountController::class, 'update'])->name('account.update');
-
 
     // Email verification
     Route::get('/email/verify', fn() => view('auth.verify-email'))->name('verification.notice');
@@ -82,13 +78,11 @@ Route::middleware('auth')->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 });
 
-
 // Forgot/Reset Password
 Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
 Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
 Route::get('reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
-
 
 // ========================
 // CLIENT ROUTES
@@ -99,13 +93,11 @@ Route::get('/search', [HomeController::class, 'search'])->name('home.search');
 Route::get('/category', [ClientCategoryController::class, 'index'])->name('category.index');
 Route::get('/category/{slug}', [ClientCategoryController::class, 'show'])->name('category.show');
 
-
 // Product
 Route::get('/products', [ProductListingController::class, 'index'])->name('client.products.index');
 Route::get('/product/{slug}', [ProductDetailController::class, 'show'])->name('product.show');
 Route::post('/product/{slug}/review', [ReviewController::class, 'store'])->middleware('auth')->name('product.review.store');
 Route::get('/product/{slug}/reviews', [ReviewController::class, 'index'])->name('product.reviews.index'); // AJAX phân trang đánh giá
-
 
 // Wishlist
 Route::middleware('auth')->group(function () {
@@ -113,95 +105,88 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
+Route::get('/test-cart', fn() => view('client.test-cart'))->name('test.cart');
 
-// CART
-Route::middleware('auth')->group(function () {
-    // CART
-    Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
-    Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
-    Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
-    Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
-    Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
-    Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
+Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
+Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
+Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 
-    // CHECKOUT
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::post('/remove-discount', [DiscountController::class, 'removeDiscount'])->name('api.remove-discount');
-});
+// Checkout
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
-// Payment
-Route::get('/payment/vnpay', [VNPayController::class, 'createPayment'])->name('vnpay.create');      // redirect user tới VNPay
-Route::get('/payment/vnpay/return', [VNPayController::class, 'vnpayReturn'])->name('vnpay.return'); // user quay lại
-Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('vnpay.ipn');
-
+    Route::get('/payment/vnpay', [VNPayController::class, 'createPayment'])->name('vnpay.create');      // redirect user tới VNPay
+    Route::get('/payment/vnpay/return', [VNPayController::class, 'vnpayReturn'])->name('vnpay.return'); // user quay lại
+    Route::post('/payment/vnpay/ipn', [VNPayController::class, 'vnpayIpn'])->name('vnpay.ipn');
 // Orders (Client)
-Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
-Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
-Route::put('/orders/{id}/update-shipping', [ClientOrderController::class, 'updateShipping'])->name('orders.update-shipping');
-Route::put('/orders/{id}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
-Route::put('/orders/{id}/confirm-received', [ClientOrderController::class, 'confirmReceived'])->middleware('auth')->name('orders.confirm-received');
-
 Route::middleware('auth')->group(function () {
-    Route::get('/orders/{order}/review/{product}', [OrderReviewController::class, 'create'])->name('orders.review.form');
-    Route::post('/orders/{order}/review/{product}', [OrderReviewController::class, 'store'])->name('orders.review.store');
+
+    Route::get('/orders', [ClientOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [ClientOrderController::class, 'show'])->name('orders.show');
+    Route::put('/orders/{id}/update-shipping', [ClientOrderController::class, 'updateShipping'])->name('orders.update-shipping');
+    Route::put('/orders/{id}/cancel', [ClientOrderController::class, 'cancel'])->name('orders.cancel');
+    Route::put('/orders/{id}/confirm-received', [ClientOrderController::class, 'confirmReceived'])
+        ->name('orders.confirm-received');
+
+    Route::get('/orders/{order}/review/{product}', [OrderReviewController::class, 'create'])
+        ->name('orders.review.form');
+
+    Route::post('/orders/{order}/review/{product}', [OrderReviewController::class, 'store'])
+        ->name('orders.review.store');
 });
 
 
 // Newsletter
-Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
-
+    Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
 // Discounts (Client)
-Route::get('/vouchers', [DiscountController::class, 'index'])->name('client.vouchers.index');
-Route::get('/my-vouchers', [DiscountController::class, 'myVouchers'])
-    ->middleware('auth')
-    ->name('client.vouchers.my');
-Route::post('/vouchers/save', [DiscountController::class, 'saveForUser'])
-    ->middleware('auth')
-    ->name('client.vouchers.save');
-
+    Route::get('/vouchers', [DiscountController::class, 'index'])->name('client.vouchers.index');
+    Route::get('/my-vouchers', [DiscountController::class, 'myVouchers'])
+        ->middleware('auth')
+        ->name('client.vouchers.my');
+    Route::post('/vouchers/save', [DiscountController::class, 'saveForUser'])
+        ->middleware('auth')
+        ->name('client.vouchers.save');
 
 // Discount API
-Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');
-Route::post('/api/apply-discount', [DiscountController::class, 'apply'])->name('api.apply-discount');
-
+    Route::post('/api/check-discount', [DiscountController::class, 'checkCode'])->name('api.check-discount');
+    Route::post('/api/apply-discount', [DiscountController::class, 'apply'])->name('api.apply-discount');
+    Route::post('/api/remove-discount', [DiscountController::class, 'remove'])->name('api.remove-discount');
 
 // Static Pages
-Route::get('/about', fn() => view('client.about'))->name('about');
-Route::get('/faq', fn() => view('client.faq'))->name('faq.index');
-Route::get('/privacy', fn() => view('client.privacy'))->name('privacy.index');
-Route::get('/tos', fn() => view('client.tos'))->name('tos.index');
-Route::get('/login-register', fn() => view('client.login-register'))->name('auth.index');
-Route::get('/order-confirmation', fn() => view('client.order-confirmation'))->name('order.confirmation');
-Route::get('/payment-methods', fn() => view('client.payment-methods'))->name('payment.methods');
-Route::get('/return-policy', fn() => view('client.return-policy'))->name('return.policy');
+    Route::get('/about', fn() => view('client.about'))->name('about');
+    Route::get('/faq', fn() => view('client.faq'))->name('faq.index');
+    Route::get('/privacy', fn() => view('client.privacy'))->name('privacy.index');
+    Route::get('/tos', fn() => view('client.tos'))->name('tos.index');
+    Route::get('/login-register', fn() => view('client.login-register'))->name('auth.index');
+    Route::get('/order-confirmation', fn() => view('client.order-confirmation'))->name('order.confirmation');
+    Route::get('/payment-methods', fn() => view('client.payment-methods'))->name('payment.methods');
+    Route::get('/return-policy', fn() => view('client.return-policy'))->name('return.policy');
 // Route::get('/search', fn() => view('client.search-results'))->name('search.results');
+    Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
+    Route::get('/support', fn() => view('client.support'))->name('support.index');
+
 Route::get('/shipping-info', fn() => view('client.shipping-info'))->name('shipping.info');
 Route::get('/support', fn() => view('client.support'))->name('support.index');
-
-
-// Blog
-Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
-Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
-
-// Contact
-Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
-
 // Chat AI
 Route::get('/chat/messages', [ChatbotController::class, 'fetchMessages']);
 Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
+// Blog
+    Route::get('/blog', [ClientBlogController::class, 'index'])->name('blog.index');
+    Route::get('/blog/{slug}', [ClientBlogController::class, 'show'])->name('blog.show');
+// Contact
+    Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
+    Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 
 // ========================
 // ADMIN ROUTES
 // ========================
-Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
+Route::prefix('admin')->middleware('auth')->group(function () {
     Route::get('/', fn() => redirect()->route('admin.statistics.index'))->name('admin.dashboard');
-
-    // Trash
-    Route::get('/trash', [TrashController::class, 'index'])->name('admin.trash.index');
 
     // Statistics
     Route::prefix('statistics')->name('admin.statistics.')->group(function () {
@@ -212,7 +197,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/export/excel', [StatisticController::class, 'exportExcel'])->name('export-excel');
         Route::get('/export/pdf', [StatisticController::class, 'exportPdf'])->name('export-pdf');
     });
-
 
     // Products
     Route::prefix('products')->group(function () {
@@ -228,8 +212,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/gallery/{gallery}/set-primary', [AdminProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
         Route::get('/export/excel', [AdminProductController::class, 'exportExcel'])->name('products.export-excel');
         Route::get('/export/pdf', [AdminProductController::class, 'exportPdf'])->name('products.export-pdf');
+        // Restore and Force Delete
+        Route::post('/{id}/restore', [AdminProductController::class, 'restore'])->name('products.restore');
+        Route::delete('/{id}/force-delete', [AdminProductController::class, 'forceDelete'])->name('products.force-delete');
     });
-
 
     // Variants
     Route::prefix('variants')->name('variants.')->group(function () {
@@ -240,7 +226,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('update');
         Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('destroy');
     });
-
 
     // Categories
     Route::prefix('categories')->name('admin.categories.')->group(function () {
@@ -253,7 +238,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/toggle/{id}', [AdminCategoryController::class, 'toggleStatus'])->name('toggle');
     });
 
-
     // Discounts
     Route::prefix('discounts')->name('admin.discounts.')->group(function () {
         Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
@@ -264,7 +248,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
         Route::delete('/{discount}', [AdminDiscountController::class, 'destroy'])->name('destroy');
     });
-
 
     // Banners
     Route::prefix('banners')->name('banner.')->group(function () {
@@ -277,7 +260,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/{banner}/toggle', [BannerController::class, 'toggleStatus'])->name('toggleStatus');
     });
 
-
     // Brands
     Route::prefix('brands')->name('brand.')->group(function () {
         Route::get('/', [BrandController::class, 'index'])->name('index');
@@ -288,146 +270,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('delete');
         Route::get('/{brand}/products', [BrandController::class, 'showProducts'])->name('products');
     });
-
-
-    // Inventories
-    Route::prefix('inventories')->name('inventories.')->group(function () {
-
-
-        // Warehouse
-        Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
-        Route::get('/warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.add');
-        Route::post('/warehouse/store', [WarehouseController::class, 'store'])->name('warehouse.store');
-        Route::get('/warehouse/{warehouse}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
-        Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
-        Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
-        Route::post('/warehouse/{id}/restore', [WarehouseController::class, 'restore'])->name('warehouse.restore');
-        Route::delete('/warehouse/{id}/force-delete', [WarehouseController::class, 'forceDelete'])->name('warehouse.force-delete');
-
-
-        // Stock
-        Route::get('/received-orders', [WarehouseProductController::class, 'index'])->name('received-orders');
-        Route::put('/received-orders/{id}', [WarehouseProductController::class, 'updateQuantity'])->name('updateQuantity');
-        Route::get('/get-variants/{product}', [WarehouseProductController::class, 'getVariants'])->name('getVariants');
-        Route::get('/stock/{product}/{variant?}', [WarehouseProductController::class, 'show'])->name('stock.show');
-
-
-        // Import
-        Route::get('/import', [WarehouseBatchController::class, 'createImport'])->name('import.create');
-        Route::post('/import', [WarehouseBatchController::class, 'storeImport'])->name('import.store');
-
-
-        // Export
-        Route::get('/export', [WarehouseBatchController::class, 'createExport'])->name('export.create');
-        Route::post('/export', [WarehouseBatchController::class, 'storeExport'])->name('export.store');
-
-
-        // Transactions
-        Route::get('/transactions', [StockTransactionController::class, 'index'])->name('transactions');
-        Route::get('/transactions/{id}/print', [StockTransactionController::class, 'printInvoice'])->name('transactions.print');
-    });
-
-
-    // Contacts
-    Route::prefix('contacts')->name('admin.contacts.')->group(function () {
-        Route::get('/', [ContactController::class, 'adminIndex'])->name('index');
-        Route::get('/{contact}', [ContactController::class, 'adminShow'])->name('show');
-        Route::post('/{contact}/update-status', [ContactController::class, 'adminUpdateStatus'])->name('update-status');
-        Route::post('/{contact}/update-notes', [ContactController::class, 'adminUpdateNotes'])->name('update-notes');
-        Route::delete('/{contact}', [ContactController::class, 'adminDestroy'])->name('destroy');
-    });
-
-
-    // Orders (Admin)
-    Route::prefix('orders')->name('admin.orders.')->group(function () {
-        Route::get('/list', [OrderController::class, 'index'])->name('list');
-        Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
-        Route::put('/update-status/{id}', [OrderController::class, 'updateStatus'])->name('update-status');
-        Route::put('/update-warehouse/{id}', [OrderController::class, 'updateWarehouse'])->name('update-warehouse');
-        Route::post('/update-shipment/{id}', [OrderController::class, 'updateShipment'])->name('update-shipment');
-        Route::get('/cart', fn() => view('admin.orders.cart'))->name('cart');
-        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
-    });
-
-
-    Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
-        Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');
-        Route::delete('/delete/{id}', [AdminNewsletterController::class, 'destroy'])->name('delete');
-    });
-    // Purchases
-    Route::prefix('purchases')->group(function () {
-        Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
-        Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
-    });
-
-
-    // Attributes
-    Route::prefix('attributes')->group(function () {
-        Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
-        Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
-        Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
-    });
-
-
-    // Invoices
-    Route::prefix('invoices')->group(function () {
-        Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
-        Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
-        Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
-    });
-
-
-    // Roles
-    Route::prefix('roles')->group(function () {
-        Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
-        Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
-        Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
-    });
-
-
-    Route::prefix('customers')->name('admin.customers.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('list');
-        Route::get('/create', [App\Http\Controllers\Admin\CustomerController::class, 'create'])->name('create');
-        Route::post('/store', [App\Http\Controllers\Admin\CustomerController::class, 'store'])->name('store');
-        Route::get('/edit/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'edit'])->name('edit');
-        Route::put('/update/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('update');
-        Route::delete('/delete/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('destroy');
-        Route::get('/export', [App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('export');
-        Route::patch('/toggle-user/{customer}',[App\Http\Controllers\Admin\CustomerController::class, 'toggleUser']
-)->name('toggleUser');
-
-
-    });
-
-
-    // Sellers
-    Route::prefix('sellers')->group(function () {
-        Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
-        Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
-        Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
-        Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
-    });
-
-
-    // Coupons
-    Route::prefix('coupons')->group(function () {
-        Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
-        Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
-    });
-
-
-    // Admin Reviews
-    Route::prefix('reviews')->name('admin.reviews.')->group(function () {
-        Route::get('/', [AdminReviewController::class, 'index'])->name('index');
-        Route::get('/create', [AdminReviewController::class, 'create'])->name('create');
-        Route::post('/', [AdminReviewController::class, 'store'])->name('store');
-        Route::get('/{review}/edit', [AdminReviewController::class, 'edit'])->name('edit');
-        Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
-        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
-        Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
-    });
-
-    // Posts
     Route::prefix('post')->group(function () {
         Route::get('/', [PostController::class, 'index'])->name('post.index');
         Route::get('/create', [PostController::class, 'create'])->name('post.create');
@@ -439,12 +281,184 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::put('/update/{post}', [PostController::class, 'update'])->name('post.update');
         Route::get('/delete/{post}', [PostController::class, 'destroy'])->name('post.delete');
     });
-});
 
+    // Inventories
+    Route::prefix('inventories')->name('inventories.')->group(function () {
+
+        Route::get('/warehouse', [WarehouseController::class, 'index'])->name('warehouse');
+        Route::get('/warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.add');
+        Route::post('/warehouse/store', [WarehouseController::class, 'store'])->name('warehouse.store');
+        Route::get('/warehouse/{warehouse}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
+        Route::put('/warehouse/{warehouse}', [WarehouseController::class, 'update'])->name('warehouse.update');
+        Route::delete('/warehouse/{warehouse}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
+
+        Route::get(
+            '/received-orders',
+            [WarehouseProductController::class, 'index']
+        )->name('received-orders');
+
+        Route::get(
+            '/stock/{product}/{variant?}',
+            [WarehouseProductController::class, 'show']
+        )->name('stock.show');
+
+        Route::get(
+            '/get-variants/{product}',
+            [WarehouseProductController::class, 'getVariants']
+        )->name('getVariants');
+
+        Route::get(
+            '/import',
+            [WarehouseBatchController::class, 'createImport']
+        )->name('import.create');
+
+        Route::post(
+            '/import',
+            [WarehouseBatchController::class, 'storeImport']
+        )->name('import.store');
+
+        Route::get(
+            '/export',
+            [WarehouseBatchController::class, 'createExport']
+        )->name('export.create');
+
+        Route::post(
+            '/export',
+            [WarehouseBatchController::class, 'storeExport']
+        )->name('export.store');
+
+        Route::get(
+            '/stock-transactions',
+            [StockTransactionController::class, 'index']
+        )->name('stock-transactions.index');
+
+        Route::get(
+            '/export/stock-transactions',
+            [InventoryExportController::class, 'stockTransactions']
+        )->name('export.stock-transactions');
+    });
+
+    // Contacts
+    Route::prefix('contacts')->name('admin.contacts.')->group(function () {
+        Route::get('/', [ContactController::class, 'adminIndex'])->name('index');
+        Route::get('/{contact}', [ContactController::class, 'adminShow'])->name('show');
+        Route::post('/{contact}/update-status', [ContactController::class, 'adminUpdateStatus'])->name('update-status');
+        Route::post('/{contact}/update-notes', [ContactController::class, 'adminUpdateNotes'])->name('update-notes');
+        Route::delete('/{contact}', [ContactController::class, 'adminDestroy'])->name('destroy');
+    });
+
+    Route::prefix('orders')->name('admin.orders.')->group(function () {
+        Route::get('/list', [App\Http\Controllers\Admin\OrderController::class, 'index'])->name('list');
+        Route::get('/show/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('show');
+        Route::put('/update-status/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('update-status');
+        Route::put('/update-warehouse/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateWarehouse'])->name('update-warehouse');
+        Route::post('/update-shipment/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateShipment'])->name('update-shipment');
+        Route::get('/cart', fn() => view('admin.orders.cart'))->name('cart');
+        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
+        Route::get('/list', [OrderController::class, 'index'])->name('list');
+        Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
+
+        Route::put('/update-status/{id}', [OrderController::class, 'updateStatus'])
+            ->name('update-status');
+
+        Route::put('/update-warehouse/{id}', [OrderController::class, 'updateWarehouse'])
+            ->name('update-warehouse');
+    });
+
+    Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
+        Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');
+        Route::delete('/delete/{id}', [AdminNewsletterController::class, 'destroy'])->name('delete');
+    });
+    // Purchases
+    Route::prefix('purchases')->group(function () {
+        Route::get('/list', fn() => view('admin.purchases.list'))->name('purchases.list');
+        Route::get('/order', fn() => view('admin.purchases.order'))->name('purchases.order');
+    });
+
+    // Attributes
+    Route::prefix('attributes')->group(function () {
+        Route::get('/list', fn() => view('admin.attributes.list'))->name('attributes.list');
+        Route::get('/edit', fn() => view('admin.attributes.edit'))->name('attributes.edit');
+        Route::get('/add', fn() => view('admin.attributes.add'))->name('attributes.add');
+    });
+
+    // Invoices
+    Route::prefix('invoices')->group(function () {
+        Route::get('/list', fn() => view('admin.invoices.list'))->name('invoices.list');
+        Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
+        Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
+    });
+
+    // Roles
+    Route::prefix('roles')->group(function () {
+        Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
+        Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
+        Route::get('/create', fn() => view('admin.roles.create'))->name('roles.create');
+    });
+
+    Route::prefix('customers')->name('admin.customers.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('list');
+        Route::get('/create', [App\Http\Controllers\Admin\CustomerController::class, 'create'])->name('create');
+        Route::post('/store', [App\Http\Controllers\Admin\CustomerController::class, 'store'])->name('store');
+        Route::get('/edit/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'edit'])->name('edit');
+        Route::put('/update/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('update');
+        Route::delete('/delete/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'destroy'])->name('destroy');
+        Route::get('/export', [App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('export');
+        Route::patch('/toggle-user/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'toggleUser']
+        )->name('toggleUser');
+
+    });
+
+    // Sellers
+    Route::prefix('sellers')->group(function () {
+        Route::get('/list', fn() => view('admin.sellers.list'))->name('sellers.list');
+        Route::get('/show', fn() => view('admin.sellers.show'))->name('sellers.show');
+        Route::get('/edit', fn() => view('admin.sellers.edit'))->name('sellers.edit');
+        Route::get('/add', fn() => view('admin.sellers.add'))->name('sellers.add');
+    });
+
+    // Coupons
+    Route::prefix('coupons')->group(function () {
+        Route::get('/list', fn() => view('admin.coupons.list'))->name('coupons.list');
+        Route::get('/add', fn() => view('admin.coupons.add'))->name('coupons.add');
+    });
+
+    // Admin Reviews
+    Route::prefix('reviews')->name('admin.reviews.')->group(function () {
+        Route::get('/', [AdminReviewController::class, 'index'])->name('index');
+        Route::get('/trashed', [AdminReviewController::class, 'trashed'])->name('trashed');
+        Route::get('/create', [AdminReviewController::class, 'create'])->name('create');
+        Route::post('/', [AdminReviewController::class, 'store'])->name('store');
+        Route::get('/{review}/edit', [AdminReviewController::class, 'edit'])->name('edit');
+        Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
+        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
+        Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
+        Route::post('/{id}/restore', [AdminReviewController::class, 'restore'])->name('restore');
+        Route::delete('/{id}/force-delete', [AdminReviewController::class, 'forceDelete'])->name('force-delete');
+    });
+
+    // Discounts
+    Route::prefix('discounts')->name('admin.discounts.')->group(function () {
+        Route::get('/', [AdminDiscountController::class, 'index'])->name('index');
+        Route::get('/create', [AdminDiscountController::class, 'create'])->name('create');
+        Route::post('/', [AdminDiscountController::class, 'store'])->name('store');
+        Route::get('/{discount}', [AdminDiscountController::class, 'show'])->name('show');
+        Route::get('/{discount}/edit', [AdminDiscountController::class, 'edit'])->name('edit');
+        Route::put('/{discount}', [AdminDiscountController::class, 'update'])->name('update');
+        Route::delete('/{discount}', [AdminDiscountController::class, 'destroy'])->name('destroy');
+    });
+
+    // Trash
+    Route::get('/trash', [TrashController::class, 'index'])->name('admin.trash.index');
+// Inventory Transactions
+   Route::get('/inventories/transactions', function () {
+    return view('admin.inventories.transactions');
+})->name('inventories.transactions');
+
+
+});
 
 // Fallback 404 - luôn đặt cuối cùng
 Route::fallback(function () {
     return response()->view('client.404', [], 404);
 });
-
-
