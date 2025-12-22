@@ -64,23 +64,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="card border-warning">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="text-muted mb-1">Sản phẩm có kho</h6>
-                                <h4 class="mb-0">{{ $productsWithStock }}/{{ $totalProducts }}</h4>
-                            </div>
-                            <div class="avatar-sm bg-warning bg-opacity-10 rounded">
-                                <iconify-icon icon="solar:check-circle-bold-duotone" class="fs-24 text-warning">
-                                </iconify-icon>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         {{-- Cảnh báo tồn kho thấp --}}
@@ -117,17 +100,7 @@
                         <input type="text" name="search" class="form-control" value="{{ request('search') }}"
                             placeholder="Tên sản phẩm...">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Kho</label>
-                        <select name="warehouse_id" class="form-select">
-                            <option value="">Tất cả kho</option>
-                            @foreach($warehouses as $w)
-                            <option value="{{ $w->id }}" {{ request('warehouse_id')==$w->id ? 'selected' : '' }}>
-                                {{ $w->warehouse_name }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
+
                     <div class="col-md-2">
                         <label class="form-label">Sản phẩm</label>
                         <select name="product_id" class="form-select">
@@ -151,7 +124,7 @@
                             <i class="bi bi-search me-1"></i> Tìm kiếm
                         </button>
                         <a href="{{ route('inventories.received-orders') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Reset
+                            <i class="bi bi-arrow-clockwise me-1"></i> Đặt lại
                         </a>
                     </div>
                 </form>
@@ -195,7 +168,8 @@
                                 <td>{{ $loop->iteration }}</td>
 
                                 <td>
-                                    <strong>{{ $inv->product->name }}</strong>
+                                    <strong>{{ $inv->product->name ?? 'Sản phẩm đã xóa' }}</strong>
+
                                 </td>
 
                                 <td>

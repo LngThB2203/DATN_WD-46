@@ -88,31 +88,6 @@
 
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong>Giá:</strong>
-                            </div>
-                            <div class="col-sm-9">
-                                <span class="fw-bold text-primary fs-5">
-                                    {{ number_format($product->price, 0, ',', '.') }} VNĐ
-                                </span>
-                                @if($product->sale_price && $product->sale_price < $product->price)
-                                    <br>
-                                    <span class="text-decoration-line-through text-muted">
-                                        {{ number_format($product->price, 0, ',', '.') }} VNĐ
-                                    </span>
-                                    <br>
-                                    <span class="text-danger fw-bold">
-                                        Sale: {{ number_format($product->sale_price, 0, ',', '.') }} VNĐ
-                                    </span>
-                                    <br>
-                                    <span class="badge bg-success">
-                                        {{ $product->discount_percentage }}% OFF
-                                    </span>
-                                    @endif
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-sm-3">
                                 <strong>Trạng thái:</strong>
                             </div>
                             <div class="col-sm-9">
@@ -176,7 +151,7 @@
                                 <th>#</th>
                                 <th>Ảnh</th>
                                 <th>SKU</th>
-                                <th>Size</th>
+                                <th>Kích cỡ</th>
                                 <th>Mùi</th>
                                 <th>Nồng độ</th>
                                 <th>Giá +/-</th>
@@ -214,10 +189,19 @@
                                 </td>
 
                                 <td>
-                                    <span class="badge bg-secondary">
-                                        {{ ucfirst($variant->gender) }}
-                                    </span>
-                                </td>
+    @php
+        $genders = [
+            'male' => 'Nam',
+            'female' => 'Nữ',
+            'unisex' => 'Unisex',
+        ];
+    @endphp
+
+    <span class="badge bg-secondary">
+        {{ $genders[$variant->gender] ?? '—' }}
+    </span>
+</td>
+
 
                                 <td class="text-end">
                                     <a href="{{ route('variants.edit', $variant) }}" class="btn btn-warning btn-sm">

@@ -101,7 +101,6 @@ class ProductController extends Controller
             'name'           => 'required|string|max:200',
             'sku'            => 'nullable|string|max:100|unique:products,sku',
             'price'          => 'required|numeric|min:0',
-            'sale_price'     => 'nullable|numeric|min:0',
             'description'    => 'nullable|string',
             'category_id'    => 'nullable|exists:categories,id',
             'brand_id'       => 'nullable|exists:brands,id',
@@ -130,7 +129,6 @@ class ProductController extends Controller
                 'name'        => $request->name,
                 'sku'         => $request->sku,
                 'price'       => $request->price,
-                'sale_price'  => $request->sale_price,
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
@@ -210,7 +208,6 @@ class ProductController extends Controller
             'name'           => 'required|string|max:200',
             'sku'            => 'nullable|string|max:100|unique:products,sku,' . $product->id,
             'price'          => 'required|numeric|min:0',
-            'sale_price'     => 'nullable|numeric|min:0',
             'description'    => 'nullable|string',
             'category_id'    => 'nullable|exists:categories,id',
             'brand_id'       => 'nullable|exists:brands,id',
@@ -240,7 +237,6 @@ class ProductController extends Controller
                 'name'        => $request->name,
                 'sku'         => $request->sku,
                 'price'       => $request->price,
-                'sale_price'  => $request->sale_price,
                 'slug'        => Str::slug($request->name),
                 'description' => $request->description,
                 'category_id' => $request->category_id,
@@ -291,7 +287,7 @@ class ProductController extends Controller
         DB::beginTransaction();
         try {
             $product = Product::withTrashed()->findOrFail($id);
-            
+
             foreach ($product->galleries as $gallery) {
                 if (Storage::disk('public')->exists($gallery->image_path)) {
                     Storage::disk('public')->delete($gallery->image_path);
