@@ -66,8 +66,10 @@ class ProductVariantController extends Controller
 
         ProductVariant::create($data);
 
-        return redirect()->route('variants.index', ['page' => $request->input('page', 1)])
-            ->with('success', 'Tạo biến thể thành công!');
+        return redirect()
+    ->route('products.show', $data['product_id'])
+    ->with('success', 'Tạo biến thể thành công!');
+
     }
 
     public function edit(ProductVariant $variant)
@@ -120,8 +122,10 @@ class ProductVariantController extends Controller
 
         $variant->update($data);
 
-        return redirect()->route('variants.index', request()->query())
-            ->with('success', 'Cập nhật biến thể thành công!');
+        return redirect()
+    ->route('products.show', $data['product_id'])
+    ->with('success', 'Sửa biến thể thành công!');
+
     }
 
     public function destroy(Request $request, ProductVariant $variant)

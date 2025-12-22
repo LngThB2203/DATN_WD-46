@@ -94,8 +94,8 @@
                         {{-- SKU --}}
                         <div class="col-lg-6 mb-3">
                             <label class="form-label">SKU <span class="text-danger">*</span></label>
-                            <input type="text" name="sku" class="form-control" 
-                                   value="{{ old('sku') }}" 
+                            <input type="text" name="sku" class="form-control"
+                                   value="{{ old('sku') }}"
                                    placeholder="VD: PF-D-50-FRU-1" required>
                             <small class="text-muted">Mã SKU duy nhất cho biến thể này</small>
                         </div>
@@ -103,8 +103,8 @@
                         {{-- Giá điều chỉnh --}}
                         <div class="col-lg-6 mb-3">
                             <label class="form-label">Giá điều chỉnh (+/-)</label>
-                            <input type="number" step="0.01" name="price_adjustment" 
-                                   class="form-control" 
+                            <input type="number" step="0.01" name="price_adjustment"
+                                   class="form-control"
                                    value="{{ old('price_adjustment', 0) }}"
                                    placeholder="0">
                             <small class="text-muted">Số tiền cộng hoặc trừ vào giá sản phẩm gốc</small>
@@ -132,7 +132,7 @@
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-circle me-1"></i> Lưu
                         </button>
-                        <a href="{{ route('variants.index') }}" class="btn btn-secondary">
+                        <a href="{{ route('products.show', $product) }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle me-1"></i> Hủy
                         </a>
                     </div>
