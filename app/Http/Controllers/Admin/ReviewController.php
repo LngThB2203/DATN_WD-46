@@ -7,6 +7,7 @@ use App\Models\Review;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ReviewController extends Controller
 {
@@ -17,98 +18,76 @@ class ReviewController extends Controller
         if ($request->filled('status')) {
             $query->where('status', (int) $request->status);
         }
-        if ($request->filled('product')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('name', 'like', '%'.$request->product.'%');
-            });
+
+        if ($request->filled('rating')) {
+            $query->where('rating', (int) $request->rating);
         }
 
-        $reviews = $query->paginate(15);
+        if ($request->filled('product_id')) {
+            $query->where('product_id', (int) $request->product_id);
+        }
 
-        return view('admin.reviews.index', compact('reviews'));
+        if ($request->filled('date_from')) {
+            $from = Carbon::parse($request->date_from)->startOfDay();
+            $query->where('created_at', '>=', $from);
+        }
+
+        if ($request->filled('date_to')) {
+            $to = Carbon::parse($request->date_to)->endOfDay();
+            $query->where('created_at', '<=', $to);
+        }
+
+        $reviews = $query->paginate(15)->withQueryString();
+        $products = Product::select('id', 'name')->orderBy('name')->get();
+
+        return view('admin.reviews.index', compact('reviews', 'products'));
     }
 
     public function create()
     {
-        $products = Product::select('id','name')->orderBy('name')->get();
-        $users = User::select('id','name')->orderBy('name')->get();
-        return view('admin.reviews.create', compact('products','users'));
+        abort(404);
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'product_id' => ['required','exists:products,id'],
-            'user_id' => ['nullable','exists:users,id'],
-            'rating' => ['required','integer','min:1','max:5'],
-            'comment' => ['nullable','string'],
-            'status' => ['required','in:0,1'],
-        ]);
-
-        Review::create($data);
-
-        return redirect()->route('admin.reviews.index')->with('success','Đã tạo đánh giá.');
+        abort(404);
     }
 
     public function edit(Review $review)
     {
-        $products = Product::select('id','name')->orderBy('name')->get();
-        $users = User::select('id','name')->orderBy('name')->get();
-        return view('admin.reviews.edit', compact('review','products','users'));
+        abort(404);
     }
 
     public function update(Request $request, Review $review)
     {
-        $data = $request->validate([
-            'product_id' => ['required','exists:products,id'],
-            'user_id' => ['nullable','exists:users,id'],
-            'rating' => ['required','integer','min:1','max:5'],
-            'comment' => ['nullable','string'],
-            'status' => ['required','in:0,1'],
-        ]);
-
-        $review->update($data);
-
-        return redirect()->route('admin.reviews.index')->with('success','Đã cập nhật đánh giá.');
+        abort(404);
     }
 
     public function destroy(Review $review)
     {
-        // Soft delete
-        $review->delete();
-        return redirect()->route('admin.reviews.index')->with('success','Đánh giá đã được xóa (có thể khôi phục).');
+        abort(404);
     }
 
     public function forceDelete($id)
     {
-        $review = Review::withTrashed()->findOrFail($id);
-        $review->forceDelete();
-        return redirect()->route('admin.reviews.trashed')->with('success','Đánh giá đã được xóa vĩnh viễn.');
+        abort(404);
     }
 
     public function restore($id)
     {
-        $review = Review::withTrashed()->findOrFail($id);
-        $review->restore();
-        return redirect()->route('admin.reviews.trashed')->with('success','Đánh giá đã được khôi phục.');
+        abort(404);
     }
 
     public function trashed(Request $request)
     {
-        $query = Review::onlyTrashed()->with(['product', 'user']);
+        abort(404);
+    }
 
-        if ($request->filled('status')) {
-            $query->where('status', (int) $request->status);
-        }
-        if ($request->filled('product')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('name', 'like', '%'.$request->product.'%');
-            });
-        }
+    public function show(Review $review)
+    {
+        $review->load(['product', 'user', 'order']);
 
-        $reviews = $query->orderBy('deleted_at', 'desc')->paginate(15);
-
-        return view('admin.reviews.trashed', compact('reviews'));
+        return view('admin.reviews.show', compact('review'));
     }
 
     public function toggleStatus(Review $review)

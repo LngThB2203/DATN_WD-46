@@ -1,45 +1,44 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controllers\Admin\InventoryExportController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductVariantController;
-use App\Http\Controllers\Client\VNPayController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\StatisticController;
+use App\Http\Controllers\Admin\StockTransactionController;
+use App\Http\Controllers\Admin\TrashController;
+use App\Http\Controllers\Admin\WarehouseBatchController;
 use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\Client\WishlistController;
+use App\Http\Controllers\Admin\WarehouseProductController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ClientBlogController;
 use App\Http\Controllers\Client\CategoryController as ClientCategoryController;
-use App\Http\Controllers\Client\OrderReviewController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Client\ProductDetailController;
-use App\Http\Controllers\Admin\InventoryExportController;
-use App\Http\Controllers\Client\ProductListingController;
-use App\Http\Controllers\Admin\StockTransactionController;
-use App\Http\Controllers\Admin\TrashController;
-use App\Http\Controllers\Admin\WarehouseProductController;
-use App\Http\Controllers\Admin\WarehouseBatchController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Client\HomeController;
 use App\Http\Controllers\Client\OrderController as ClientOrderController;
-use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\Client\OrderReviewController;
+use App\Http\Controllers\Client\ProductDetailController;
+use App\Http\Controllers\Client\ProductListingController;
+use App\Http\Controllers\Client\VNPayController;
+use App\Http\Controllers\Client\WishlistController;
 use App\Http\Controllers\ContactController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\Client\HomeController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
+use App\Http\Controllers\ReviewController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/test-form', function () {
     return '<form method="POST" action="/test-form-submit">'
@@ -327,9 +326,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     });
 
     // Newsletters
+
     Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
         Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');
+        Route::get('/send', [AdminNewsletterController::class, 'send'])->name('send');          // Hiển thị form
+        Route::post('/send', [AdminNewsletterController::class, 'sendMail'])->name('sendMail'); // Xử lý gửi
         Route::delete('/delete/{id}', [AdminNewsletterController::class, 'destroy'])->name('delete');
+        Route::get('/trashed', [AdminNewsletterController::class, 'trashed'])->name('trashed');
+        Route::patch('/restore/{id}', [AdminNewsletterController::class, 'restore'])->name('restore');
+        Route::delete('/forceDelete/{id}', [AdminNewsletterController::class, 'forceDelete'])->name('forceDelete');
     });
 
     // Purchases
@@ -388,15 +393,8 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     // Admin Reviews
     Route::prefix('reviews')->name('admin.reviews.')->group(function () {
         Route::get('/', [AdminReviewController::class, 'index'])->name('index');
-        Route::get('/trashed', [AdminReviewController::class, 'trashed'])->name('trashed');
-        Route::get('/create', [AdminReviewController::class, 'create'])->name('create');
-        Route::post('/', [AdminReviewController::class, 'store'])->name('store');
-        Route::get('/{review}/edit', [AdminReviewController::class, 'edit'])->name('edit');
-        Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
-        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
         Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
-        Route::post('/{id}/restore', [AdminReviewController::class, 'restore'])->name('restore');
-        Route::delete('/{id}/force-delete', [AdminReviewController::class, 'forceDelete'])->name('force-delete');
+        Route::get('/{review}', [AdminReviewController::class, 'show'])->name('show');
     });
 
     // Trash

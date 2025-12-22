@@ -155,6 +155,11 @@
                             <div class="text-muted small mb-1">Tổng số lượng bán &gt; 0 và &lt; 3 trong khoảng thời gian đã chọn</div>
                             <ul id="slowProducts" class="list-group list-group-flush"></ul>
                         </div>
+                        <div class="mb-3">
+                            <div class="fw-semibold mb-1 text-primary">Đánh giá cao nhất (Top 5)</div>
+                            <div class="text-muted small mb-1">Top 5 sản phẩm có điểm đánh giá trung bình cao nhất trong khoảng thời gian đã chọn</div>
+                            <ul id="topRatedProducts" class="list-group list-group-flush"></ul>
+                        </div>
                         <div>
                             <div class="fw-semibold mb-1 text-dark">Không bán được (0)</div>
                             <div class="text-muted small mb-1">Tổng số lượng bán = 0 nhưng vẫn còn tồn kho trong khoảng thời gian đã chọn</div>
@@ -380,6 +385,38 @@ async function loadProductStats(){
     renderList('lowStockProducts', data.low_stock ?? [], 'stock_qty', 'bg-danger');
     renderList('bestSellerProducts', data.best_sellers ?? [], 'total_sold', 'bg-success');
     renderList('slowProducts', data.slow_moving ?? [], 'total_sold', 'bg-warning text-dark');
+
+    const renderTopRated = (elementId, rows) => {
+        const ul = document.getElementById(elementId);
+        if (!ul) return;
+        ul.innerHTML = '';
+        rows.forEach((r, i) => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            const imageUrl = r.image_path ? (imageBaseUrl + r.image_path) : '';
+            const productUrl = productShowTemplate.replace('__ID__', r.id ?? '');
+            const avg = Number(r.avg_rating ?? 0).toFixed(2);
+            const count = parseInt(r.reviews_count ?? 0);
+
+            li.innerHTML = `
+                <span>
+                    <a href="${productUrl}" class="product-stat-link" data-image="${imageUrl}">
+                        ${i + 1}. ${r.name}
+                    </a>
+                </span>
+                <span class="badge bg-primary">${avg} ★ (${count})</span>
+            `;
+            ul.appendChild(li);
+        });
+        if (rows.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item text-muted';
+            li.textContent = 'Không có dữ liệu';
+            ul.appendChild(li);
+        }
+    };
+
+    renderTopRated('topRatedProducts', data.top_rated ?? []);
     renderList('deadStockProducts', data.dead_stock ?? [], 'stock_qty', 'bg-secondary');
 
     setupImagePreviewHover();
