@@ -175,48 +175,10 @@
         <div class="card mb-4">
             <div class="card-header">Kho xuất hàng</div>
             <div class="card-body">
-                @if($order->warehouse_id && $order->warehouse)
-                    <div class="alert alert-info mb-3">
-                        <i class="bi bi-check-circle"></i> Kho hiện tại: <strong>{{ $order->warehouse->warehouse_name }}</strong>
+                    <div class="alert alert-info mb-0">
+                    Kho:
+                    <strong>{{ $order->warehouse->warehouse_name }}</strong>
                     </div>
-                @else
-                    <div class="alert alert-warning mb-3">
-                        <i class="bi bi-exclamation-triangle"></i> Chưa được gán kho. Hệ thống sẽ tự động chọn kho có đủ hàng.
-                    </div>
-                @endif
-
-                <form method="POST" action="{{ route('admin.orders.update-warehouse', $order->id) }}" id="updateWarehouseForm">
-                    @csrf
-                    @method('PUT')
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Chọn kho xuất hàng</strong></label>
-                        <select name="warehouse_id" class="form-select">
-                            <option value="">-- Chọn kho --</option>
-                            @foreach($allWarehouses as $warehouse)
-                                @php
-                                    $warehouseInfo = collect($availableWarehouses)->firstWhere('warehouse.id', $warehouse->id);
-                                    $canFulfill = $warehouseInfo['can_fulfill'] ?? false;
-                                @endphp
-                                <option value="{{ $warehouse->id }}" 
-                                    {{ $order->warehouse_id == $warehouse->id ? 'selected' : '' }}
-                                    {{ !$canFulfill ? 'disabled' : '' }}>
-                                    {{ $warehouse->warehouse_name }}
-                                    @if($canFulfill)
-                                        <span class="text-success">✓ (Đủ hàng)</span>
-                                    @else
-                                        <span class="text-danger">✗ (Thiếu hàng)</span>
-                                    @endif
-                                </option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted d-block mt-1">
-                            <i class="bi bi-info-circle"></i> Chỉ kho có dấu ✓ mới đủ sản phẩm để xuất hàng.
-                        </small>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-save"></i> Cập nhật kho
-                    </button>
-                </form>
             </div>
         </div>
 
@@ -254,31 +216,26 @@
                     $hasAvailableStatus = !empty($availableStatuses);
                 @endphp
                 <form method="POST" action="{{ route('admin.orders.update-status', $order->id) }}" id="updateStatusForm">
-                    @csrf
-                    @method('PUT')
-                    <select name="order_status" class="form-select mb-2" required id="statusSelect" onchange="handleStatusChange(this)">
-                        @foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label)
-                            @php
-                                $isCurrent = ($order->order_status == $key || $currentStatusMapped == $key);
-                                $canUpdate = \App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key);
-                                $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
-                                $disabledByWarehouse = $requiresWarehouse && !$order->warehouse_id;
-                                $isDisabled = !$canUpdate || $disabledByWarehouse;
-                                $disableReason = '';
-                                if (!$canUpdate && !$isCurrent) {
-                                    $disableReason = ' (Không thể chuyển từ trạng thái hiện tại)';
-                                } elseif ($disabledByWarehouse) {
-                                    $disableReason = ' (Cần chọn kho)';
-                                }
-                            @endphp
-                            <option value="{{ $key }}" 
-                                {{ $isCurrent ? 'selected' : '' }}
-                                {{ $isDisabled ? 'disabled' : '' }}>
-                                {{ $label }}{{ $disableReason }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @if (!$hasAvailableStatus)
+                        @csrf
+                        @method('PUT')
+                    <select name="order_status" class="form-select mb-2" required id="statusSelect">
+                            @foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label)
+                                @if (\App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key))
+                                @php
+                                    $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
+                                    $isDisabled = $requiresWarehouse && !$order->warehouse_id;
+                                    $isCurrent = ($order->order_status == $key || $currentStatusMapped == $key);
+                                @endphp
+                                <option value="{{ $key }}" 
+                                    {{ $isCurrent ? 'selected' : '' }}
+                                    {{ $isDisabled ? 'disabled' : '' }}>
+                                        {{ $label }}
+                                    @if($isDisabled) (Cần chọn kho) @endif
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    @if (empty($availableStatuses))
                         <div class="alert alert-warning mb-2">
                             <small>Không thể chuyển trạng thái từ trạng thái hiện tại.</small>
                         </div>
@@ -286,7 +243,7 @@
                     @else
                         <button type="submit" class="btn btn-success" id="submitStatusBtn">Cập nhật trạng thái</button>
                     @endif
-                </form>
+                    </form>
                 <script>
                     function handleStatusChange(select) {
                         const selectedOption = select.options[select.selectedIndex];
