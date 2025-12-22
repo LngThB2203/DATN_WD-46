@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\InventoryExportController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
@@ -34,7 +35,6 @@ use App\Http\Controllers\Client\WishlistController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -301,7 +301,8 @@ Route::prefix('admin')->middleware('auth')->group(function () {
         Route::get('/export', [WarehouseBatchController::class, 'createExport'])->name('export.create');
         Route::post('/export', [WarehouseBatchController::class, 'storeExport'])->name('export.store');
 
-        Route::get('/stock-transactions', [StockTransactionController::class, 'index'])->name('stock-transactions.index');
+        Route::get('/transactions', [StockTransactionController::class, 'index'])
+            ->name('transactions.index');
         Route::get('/export/stock-transactions', [InventoryExportController::class, 'stockTransactions'])->name('export.stock-transactions');
     });
 
@@ -400,8 +401,10 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     // Trash
     Route::get('/trash', [TrashController::class, 'index'])->name('admin.trash.index');
 
-    // Inventory Transactions (Lịch sử nhập xuất)
-    Route::get('/inventories/transactions', [StockTransactionController::class, 'index'])->name('inventories.transactions');
+    // // Inventory Transactions
+    // Route::get('/inventories/transactions', function () {
+    //     return view('admin.inventories.transactions');
+    // })->name('inventories.transactions');
 });
 
 // Fallback 404 - luôn đặt cuối cùng

@@ -62,18 +62,6 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="form-label">Giá từ</label>
-                                <input type="number" class="form-control" name="price_min"
-                                       value="{{ request('price_min') }}" min="0">
-                            </div>
-
-                            <div class="col-md-2">
-                                <label class="form-label">Giá đến</label>
-                                <input type="number" class="form-control" name="price_max"
-                                       value="{{ request('price_max') }}" min="0">
-                            </div>
-
                             <div class="col-md-1">
                                 <label class="form-label">Sắp xếp</label>
                                 <select class="form-select" name="sort_by">
@@ -113,7 +101,6 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Tên sản phẩm</th>
-                                        <th>Giá</th>
                                         <th>Danh mục</th>
                                         <th>Thương hiệu</th>
                                         <th>Trạng thái</th>
@@ -137,14 +124,6 @@
                                                         <div class="text-muted small">SKU: {{ $product->sku ?? 'N/A' }}</div>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td>
-                                                @if($product->sale_price && $product->sale_price < $product->price)
-                                                    <span class="text-decoration-line-through text-muted">{{ number_format($product->price, 0, ',', '.') }}</span><br>
-                                                    <span class="fw-bold text-danger">{{ number_format($product->sale_price, 0, ',', '.') }} VNĐ</span>
-                                                @else
-                                                    <span class="fw-bold">{{ number_format($product->price, 0, ',', '.') }} VNĐ</span>
-                                                @endif
                                             </td>
                                             <td>{{ $product->category->category_name ?? 'N/A' }}</td>
                                             <td>{{ $product->brand ?? 'N/A' }}</td>

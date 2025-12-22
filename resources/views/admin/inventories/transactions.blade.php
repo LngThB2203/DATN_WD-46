@@ -6,20 +6,9 @@
         <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
             <h5 class="mb-0">📦 <strong>Lịch sử nhập / xuất kho</strong></h5>
         </div>
-        
+
         <div class="card-body">
             <form method="GET" class="row g-2 mb-4 p-3 bg-light rounded border">
-                <div class="col-md-3">
-                    <label class="small fw-bold">Kho hàng</label>
-                    <select name="warehouse_id" class="form-select form-select-sm">
-                        <option value="">-- Tất cả kho --</option>
-                        @foreach($warehouses as $w)
-                            <option value="{{ $w->id }}" @selected(request('warehouse_id') == $w->id)>
-                                {{ $w->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
 
                 <div class="col-md-2">
                     <label class="small fw-bold">Loại giao dịch</label>
@@ -52,7 +41,7 @@
                     <thead class="table-light">
                         <tr class="text-center small text-uppercase fw-bold">
                             <th style="width: 150px;">Thời gian</th>
-                            <th>Kho</th>
+
                             <th>Sản phẩm</th>
                             <th style="min-width: 200px;">Biến thể</th>
                             <th>Lô</th>
@@ -67,7 +56,7 @@
                         @forelse($transactions as $t)
                         <tr class="text-center">
                             <td class="small">{{ $t->created_at->format('d-m-Y H:i:s') }}</td>
-                            <td><span class="badge badge-soft-info">{{ $t->warehouse->name ?? '-' }}</span></td>
+                
                             <td class="text-start fw-bold text-primary">{{ $t->product->name ?? '-' }}</td>
                             <td class="text-start">
                                 @if($t->variant)
