@@ -3,11 +3,11 @@ namespace App\Helpers;
 
 class OrderStatusHelper
 {
-                                               // ===== CODE TRẠNG THÁI =====
+    // ===== CODE TRẠNG THÁI (Theo mô hình Shopee) =====
     const PENDING         = 'pending';         // Chờ xác nhận
     const PREPARING       = 'preparing';       // Đang chuẩn bị hàng
-    const AWAITING_PICKUP = 'awaiting_pickup'; // Chờ lấy hàng
-    const DELIVERED       = 'delivered';       // Đã giao
+    const SHIPPING        = 'shipping';        // Đang giao hàng
+    const DELIVERED       = 'delivered';       // Đã giao hàng
     const COMPLETED       = 'completed';       // Hoàn thành
     const CANCELLED       = 'cancelled';       // Đã hủy
     const REFUNDED        = 'refunded';        // Đã hoàn tiền (cũ)
@@ -18,7 +18,7 @@ class OrderStatusHelper
         return [
             self::PENDING         => 'Chờ xác nhận',
             self::PREPARING       => 'Đang chuẩn bị hàng',
-            self::AWAITING_PICKUP => 'Chờ lấy hàng',
+            self::SHIPPING        => 'Đang giao hàng',
             self::DELIVERED       => 'Đã giao hàng',
             self::COMPLETED       => 'Hoàn thành',
             self::CANCELLED       => 'Đã hủy',
@@ -39,13 +39,16 @@ class OrderStatusHelper
 
             'processing'       => self::PREPARING,
             'awaiting_payment' => self::PENDING,
-            'shipped'          => self::DELIVERED,
+            'awaiting_pickup'  => self::SHIPPING, // Chuyển sang Shipping
+            'shipped'          => self::SHIPPING,
+            'shipping'         => self::SHIPPING,
 
             self::PENDING,
             self::PREPARING,
-            self::AWAITING_PICKUP,
+            self::SHIPPING,
             self::DELIVERED,
             self::COMPLETED,
+            self::CANCELLED,
             self::REFUNDED     => $status,
 
             default            => $status,
@@ -66,18 +69,18 @@ class OrderStatusHelper
         return match (self::mapOldStatus($status)) {
             self::PENDING         => 'bg-warning text-dark',
             self::PREPARING       => 'bg-primary',
-            self::AWAITING_PICKUP => 'bg-info',
+            self::SHIPPING        => 'bg-info',
             self::DELIVERED       => 'bg-success',
             self::COMPLETED       => 'bg-success',
             self::CANCELLED       => 'bg-danger',
             self::REFUNDED        => 'bg-secondary',
-            default               => 'bg-secondary',
+            default              => 'bg-secondary',
         };
     }
 
     // ===== KIỂM TRA ĐƯỢC UPDATE KHÔNG =====
-    // Logic chuyển từng bước một: PENDING → PREPARING → AWAITING_PICKUP → DELIVERED → COMPLETED
-    // Hoặc hủy: PENDING/PREPARING/AWAITING_PICKUP → CANCELLED
+    // Logic chuyển theo mô hình Shopee: PENDING → PREPARING → SHIPPING → DELIVERED → COMPLETED
+    // Hoặc hủy: PENDING/PREPARING/SHIPPING → CANCELLED
     public static function canUpdateStatus(string $currentStatus, string $newStatus): bool
     {
         $current = self::mapOldStatus($currentStatus);
@@ -102,7 +105,7 @@ class OrderStatusHelper
             return in_array($current, [
                 self::PENDING,
                 self::PREPARING,
-                self::AWAITING_PICKUP,
+                self::SHIPPING,
             ], true);
         }
 
@@ -111,21 +114,21 @@ class OrderStatusHelper
             return $current === self::DELIVERED;
         }
 
-        // Flow chuyển từng bước một (không bỏ qua bước)
+        // Flow chuyển từng bước một (theo mô hình Shopee)
         $flow = [
-            self::PENDING         => [
-                self::PREPARING,      // Bước tiếp theo
-                self::CANCELLED,      // Hoặc hủy
-            ],
-            self::PREPARING       => [
-                self::AWAITING_PICKUP, // Bước tiếp theo
-                self::CANCELLED,       // Hoặc hủy
-            ],
-            self::AWAITING_PICKUP => [
-                self::DELIVERED,  // Bước tiếp theo
+            self::PENDING   => [
+                self::PREPARING,  // Bước tiếp theo
                 self::CANCELLED,  // Hoặc hủy
             ],
-            self::DELIVERED       => [
+            self::PREPARING => [
+                self::SHIPPING,   // Bước tiếp theo
+                self::CANCELLED,  // Hoặc hủy
+            ],
+            self::SHIPPING => [
+                self::DELIVERED,  // Bước tiếp theo
+                self::CANCELLED,  // Hoặc hủy (trước khi giao)
+            ],
+            self::DELIVERED => [
                 self::COMPLETED,  // Chỉ có thể chuyển sang COMPLETED
             ],
         ];
@@ -139,7 +142,7 @@ class OrderStatusHelper
         return in_array(self::mapOldStatus($status), [
             self::PENDING,
             self::PREPARING,
-            self::AWAITING_PICKUP,
+            self::SHIPPING,
         ], true);
     }
 }
