@@ -281,9 +281,7 @@
                                     @endif
                                 @endauth
 
-                                <div id="appliedDiscountInfo" class="mt-1 small text-success" style="{{ empty($cart['discount_code']) ? 'display:none;' : '' }}">
-                                    Đang áp dụng mã: <strong id="appliedDiscountCode">{{ $cart['discount_code'] ?? '' }}</strong>
-                                </div>
+
 
                                 <div class="mt-1 small">
                                     <a href="{{ route('client.vouchers.index') }}" class="text-decoration-underline">Xem kho voucher</a>
@@ -323,7 +321,7 @@
 
                             <button class="btn btn-primary w-100" type="button" onclick="confirmOrder(this)">
                                 Đặt hàng
-                            </button> 
+                            </button>
 
                         </div>
                     </div>
@@ -360,10 +358,10 @@
     const messageEl = document.getElementById('discountMessage');
     const savedSelect = document.getElementById('savedVoucherSelect');
 
-    const subtotalEl = document.getElementById('cartSubtotal');
-    const discountEl = document.getElementById('cartDiscount');
-    const shippingEl = document.getElementById('cartShipping');
-    const grandTotalEl = document.getElementById('cartGrandTotal');
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const discountEl = document.getElementById('checkoutDiscount');
+    const shippingEl = document.getElementById('checkoutShipping');
+    const grandTotalEl = document.getElementById('checkoutTotal');
     const appliedInfoEl = document.getElementById('appliedDiscountInfo');
     const appliedCodeEl = document.getElementById('appliedDiscountCode');
 
@@ -557,6 +555,7 @@ function parseNumberFromText(str) {
 }
 
 function confirmOrder(btn) {
+
     let timerInterval;
     let countdown = 5;
 
