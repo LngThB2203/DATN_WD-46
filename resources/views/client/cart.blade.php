@@ -131,7 +131,7 @@
                             </div>
 
                             <div class="mt-2 small text-muted">
-                                Mỗi đơn hàng được mua tối đa 10 sản phẩm. Nếu có nhu cầu mua số lượng lớn, vui lòng liên hệ.
+                                Mỗi sản phẩm được mua tối đa 10 đơn vị trong một đơn hàng. Nếu cần mua số lượng lớn hơn, vui lòng liên hệ với chúng tôi!
                             </div>
                         @endif
                     </div>
