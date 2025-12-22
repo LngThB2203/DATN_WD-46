@@ -513,6 +513,11 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
        Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
        Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
        Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
+
+       // Trashed / restore / force delete
+       Route::get('/trashed', [AdminReviewController::class, 'trashed'])->name('trashed');
+       Route::post('/trashed/{id}/restore', [AdminReviewController::class, 'restore'])->name('restore');
+       Route::delete('/trashed/{id}/force-delete', [AdminReviewController::class, 'forceDelete'])->name('force-delete');
    });
 
 
