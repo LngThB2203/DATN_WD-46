@@ -6,8 +6,30 @@ use Illuminate\Database\Eloquent\Model;
 class VariantConcentration extends Model
 {
     protected $table    = 'variants_concentrations';
-    protected $fillable = ['concentration_name'];
+    protected $fillable = ['name', 'concentration_name'];
     public $timestamps  = true;
+
+    // Accessor để map 'name' thành 'concentration_name'
+    public function getConcentrationNameAttribute()
+    {
+        return $this->attributes['concentration_name'] ?? ($this->attributes['name'] ?? null);
+    }
+
+    // Mutator để map 'concentration_name' thành 'name'
+    public function setConcentrationNameAttribute($value)
+    {
+        $this->attributes['concentration_name'] = $value;
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->attributes['concentration_name'] ?? null;
+    }
+
+    public function setNameAttribute($value)
+    {
+        $this->attributes['concentration_name'] = $value;
+    }
 
     public function variants()
     {

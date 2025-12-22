@@ -175,8 +175,45 @@ class ContactController extends Controller
      */
     public function adminDestroy(Contact $contact)
     {
+        // Soft delete
         $contact->delete();
 
-        return redirect()->route('admin.contacts.index')->with('success', 'Liên hệ đã được xóa!');
+        return redirect()->route('admin.contacts.index')->with('success', 'Liên hệ đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $contact = Contact::withTrashed()->findOrFail($id);
+        $contact->forceDelete();
+
+        return redirect()->route('admin.contacts.trashed')->with('success', 'Liên hệ đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $contact = Contact::withTrashed()->findOrFail($id);
+        $contact->restore();
+
+        return redirect()->route('admin.contacts.trashed')->with('success', 'Liên hệ đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Contact::onlyTrashed();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('subject', 'like', "%{$search}%");
+            });
+        }
+
+        $contacts = $query->orderBy('deleted_at', 'desc')->paginate(10);
+        $contacts->appends($request->only('search'));
+
+        return view('admin.contacts.trashed', compact('contacts'));
     }
 }

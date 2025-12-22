@@ -181,10 +181,19 @@ class ProductController extends Controller
     }
 
     public function show(Product $product)
-    {
-        $product->load(['category', 'galleries', 'brand']);
-        return view('admin.products.show', compact('product'));
-    }
+{
+    $product->load([
+        'category',
+        'galleries',
+        'brand',
+        'variants.size',
+        'variants.scent',
+        'variants.concentration',
+    ]);
+
+    return view('admin.products.show', compact('product'));
+}
+
 
     public function edit(Product $product)
     {
@@ -271,22 +280,58 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        // Soft delete
+        $product->delete();
+
+        return redirect()->route('products.index')->with('success', 'Sản phẩm đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
         DB::beginTransaction();
         try {
+            $product = Product::withTrashed()->findOrFail($id);
+            
             foreach ($product->galleries as $gallery) {
                 if (Storage::disk('public')->exists($gallery->image_path)) {
                     Storage::disk('public')->delete($gallery->image_path);
                 }
             }
 
-            $product->delete();
+            $product->forceDelete();
 
             DB::commit();
-            return redirect()->route('products.index')->with('success', 'Sản phẩm đã được xóa thành công!');
+            return redirect()->route('products.trashed')->with('success', 'Sản phẩm đã được xóa vĩnh viễn!');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Có lỗi xảy ra khi xóa sản phẩm: ' . $e->getMessage());
         }
+    }
+
+    public function restore($id)
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+        $product->restore();
+
+        return redirect()->route('products.trashed')->with('success', 'Sản phẩm đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Product::onlyTrashed()->with(['category', 'brand', 'galleries']);
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->orderBy('deleted_at', 'desc')->paginate(10);
+        $products->appends($request->only('search'));
+
+        return view('admin.products.trashed', compact('products'));
     }
 
     private function handleImageUpload(Product $product, array $images)
