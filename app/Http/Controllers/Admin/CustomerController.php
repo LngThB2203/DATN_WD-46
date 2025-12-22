@@ -17,6 +17,9 @@ class CustomerController extends Controller
        $search = $request->input('search');
 
     $customers = Customer::with('user')
+    ->whereHas('user', function ($q) {
+            $q->where('role', 'user');
+        })
         ->when($search, function ($query, $search) {
             $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
@@ -30,18 +33,6 @@ class CustomerController extends Controller
         return view('admin.customers.list', compact('customers', 'search'));
     }
 
-    /**
-     * Form thêm khách hàng
-     */
-    public function create()
-{
-    $users = User::whereDoesntHave('customer')->get();
-    return view('admin.customers.create', compact('users'));
-}
-
-    /**
-     * Lưu khách hàng mới
-     */
    public function store(Request $request)
 {
     $request->validate([
@@ -51,64 +42,11 @@ class CustomerController extends Controller
         'membership_level'  => 'required|in:Silver,Gold,Platinum',
     ]);
 
-    Customer::create([
-        'user_id'           => $request->user_id,
-        'address'           => $request->address,
-        'gender'            => $request->gender,
-        'membership_level'  => $request->membership_level,
-    ]);
-
     return redirect()->route('admin.customers.list')
         ->with('success', 'Thêm khách hàng thành công!');
 }
 
-    /**
-     * Form sửa khách hàng
-     */
-    public function edit($id)
-    {
-        $customer = Customer::findOrFail($id);
-        return view('admin.customers.edit', compact('customer'));
-    }
 
-    /**
-     * Cập nhật khách hàng
-     */
-   public function update(Request $request, $id)
-{
-    $customer = Customer::findOrFail($id);
-
-    $request->validate([
-        'address'           => 'nullable|string|max:255',
-        'gender'            => 'nullable|in:Nam,Nữ,Khác',
-        'membership_level'  => 'required|in:Silver,Gold,Platinum',
-    ]);
-
-    $customer->update([
-        'address'           => $request->address,
-        'gender'            => $request->gender,
-        'membership_level'  => $request->membership_level,
-    ]);
-
-    return redirect()->route('admin.customers.list')
-        ->with('success', 'Cập nhật khách hàng thành công!');
-}
-
-
-    /**
-     * Xóa khách hàng
-     */
-    public function destroy($id)
-    {
-        $customer = Customer::findOrFail($id);
-        $customer->delete();
-
-        return redirect()->route('admin.customers.list')->with('success', 'Xóa khách hàng thành công!');
-    }
-
-    /**
-     * Chuyển đổi trạng thái (bật/tắt)
-     */
     public function toggle($id)
     {
         $customer = Customer::findOrFail($id);

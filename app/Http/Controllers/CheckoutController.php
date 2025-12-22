@@ -10,6 +10,10 @@ use App\Models\OrderDetail;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderSuccessMail;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Customer;
 
 class CheckoutController extends Controller
 {
@@ -51,6 +55,11 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
+         if (!Auth::check()) {
+        return redirect()->route('login')
+            ->with('error', 'Vui lòng đăng nhập trước khi đặt hàng');
+    }
+
         $validated = $request->validate([
             'customer_name'         => 'required|string|max:150',
             'customer_email'        => 'nullable|email|max:150',
@@ -90,9 +99,16 @@ class CheckoutController extends Controller
 
         // ===== COD =====
         DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
-
+              $customer = Customer::firstOrCreate(
+        ['user_id' => Auth::id()],
+        [
+            'membership_level' => 'Silver',
+            'address' => $request->shipping_address_line ?? null,
+        ]
+    );
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
+                'customer_id' => $customer->id,
                 'order_status'          => 'pending',
                 'payment_method'        => 'cod',
                 'subtotal'              => $cart['subtotal'],
@@ -125,6 +141,12 @@ class CheckoutController extends Controller
                 'amount'         => $order->grand_total,
                 'status'         => 'pending',
             ]);
+            if (!empty($order->customer_email)) {
+    Mail::to($order->customer_email)->send(
+        new OrderSuccessMail($order)
+    );
+}
+
 
             // Xóa sản phẩm đã thanh toán trong giỏ
             $this->removePaidItemsFromCart($request, $selectedItems);
