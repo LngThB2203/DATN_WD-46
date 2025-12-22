@@ -17,7 +17,7 @@
                         <strong class="me-1">Email:</strong>
                         <span>{{ Auth::user()->email }}</span>
                         @if(Auth::user()->hasVerifiedEmail())
-                            <span class="badge bg-success ms-2">✅ Đã xác thực</span>
+                            <span class="badge bg-success ms-2">Đã xác thực</span>
                         @else
                             <form action="{{ route('verification.send') }}" method="POST" class="ms-2 d-inline">
                                 @csrf
@@ -59,7 +59,7 @@
 
                 <div style="max-height: 650px; overflow-y: auto;">
                     @php
-                    $orders = \App\Models\Order::where('user_id', auth()->id())
+                    $orders = Order::where('user_id', auth()->id())
                         ->where('order_status', 'completed')
                         ->orderBy('created_at', 'desc')
                         ->get();

@@ -11,6 +11,8 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'customer_id',
+        'warehouse_id',
         'discount_id',
         'payment_id',
         'order_status',
@@ -64,5 +66,10 @@ class Order extends Model
     public function shipment()
     {
         return $this->hasOne(Shipment::class);
+    }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -14,31 +15,10 @@ class ProductVariantController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ProductVariant::with(['product', 'size', 'scent', 'concentration']);
-
-        // Tìm kiếm theo SKU hoặc tên sản phẩm
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('sku', 'like', "%{$search}%")
-                ->orWhereHas('product', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
-        }
-
-        // Lọc theo size
-        if ($request->filled('size_id')) {
-            $query->where('size_id', $request->size_id);
-        }
-
-        // Lọc theo scent
-        if ($request->filled('scent_id')) {
-            $query->where('scent_id', $request->scent_id);
-        }
-
-        // Lọc theo concentration
-        if ($request->filled('concentration_id')) {
-            $query->where('concentration_id', $request->concentration_id);
-        }
+        $variants = ProductVariant::with(['product', 'size', 'scent', 'concentration'])
+            ->orderBy('product_id', 'desc')
+            ->paginate(15)
+            ->withQueryString();
 
         // Lọc theo gender
         if ($request->filled('gender')) {
@@ -55,16 +35,22 @@ class ProductVariantController extends Controller
         ]);
     }
 
-    public function create()
-    {
-        return view('admin.variants.create', [
-            'products'       => Product::all(),
-            'sizes'          => VariantSize::all(),
-            'scents'         => VariantScent::all(),
-            'concentrations' => VariantConcentration::all(),
-        ]);
+    public function create(Request $request)
+{
+    // BẮT BUỘC có product_id
+    if (!$request->filled('product_id')) {
+        abort(404);
     }
 
+    $product = Product::findOrFail($request->product_id);
+
+    return view('admin.variants.create', [
+        'product'        => $product,   
+        'sizes'          => VariantSize::all(),
+        'scents'         => VariantScent::all(),
+        'concentrations' => VariantConcentration::all(),
+    ]);
+}
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -78,13 +64,30 @@ class ProductVariantController extends Controller
             'gender'           => 'required|in:male,female,unisex',
         ]);
 
+        $exists = ProductVariant::where([
+            'product_id'       => $data['product_id'],
+            'size_id'          => $data['size_id'],
+            'scent_id'         => $data['scent_id'],
+            'concentration_id' => $data['concentration_id'],
+            'gender'           => $data['gender'],
+        ])->exists();
+
+        if ($exists) {
+            return back()
+                ->withErrors(['variant' => 'Biến thể này đã tồn tại'])
+                ->withInput();
+        }
+
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('variants', 'public');
         }
 
         ProductVariant::create($data);
 
-        return redirect()->route('variants.index')->with('success', 'Tạo biến thể thành công!');
+        return redirect()
+    ->route('products.show', $data['product_id'])
+    ->with('success', 'Tạo biến thể thành công!');
+
     }
 
     public function edit(ProductVariant $variant)
@@ -112,6 +115,22 @@ class ProductVariantController extends Controller
             'gender'           => 'required|in:male,female,unisex',
         ]);
 
+        $exists = ProductVariant::where([
+            'product_id'       => $data['product_id'],
+            'size_id'          => $data['size_id'],
+            'scent_id'         => $data['scent_id'],
+            'concentration_id' => $data['concentration_id'],
+            'gender'           => $data['gender'],
+        ])
+        ->where('id', '!=', $variant->id)
+        ->exists();
+
+        if ($exists) {
+            return back()
+                ->withErrors(['variant' => 'Biến thể này đã tồn tại'])
+                ->withInput();
+        }
+
         if ($request->hasFile('image')) {
             if ($variant->image && Storage::disk('public')->exists($variant->image)) {
                 Storage::disk('public')->delete($variant->image);
@@ -121,17 +140,48 @@ class ProductVariantController extends Controller
 
         $variant->update($data);
 
-        return redirect()->route('variants.index')->with('success', 'Cập nhật thành công!');
+        return redirect()
+    ->route('products.show', $data['product_id'])
+    ->with('success', 'Sửa biến thể thành công!');
+
     }
 
-    public function destroy(ProductVariant $variant)
+    public function destroy(Request $request, ProductVariant $variant)
     {
+        // Soft delete
+        $variant->delete();
+
+        return redirect()->route('variants.index')->with('success', 'Biến thể đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $variant = ProductVariant::withTrashed()->findOrFail($id);
+
         if ($variant->image && Storage::disk('public')->exists($variant->image)) {
             Storage::disk('public')->delete($variant->image);
         }
 
-        $variant->delete();
+        $variant->forceDelete();
 
-        return redirect()->route('variants.index')->with('success', 'Đã xóa biến thể!');
+        return redirect()->route('variants.trashed')->with('success', 'Biến thể đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $variant = ProductVariant::withTrashed()->findOrFail($id);
+        $variant->restore();
+
+        return redirect()->route('variants.trashed')->with('success', 'Biến thể đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = ProductVariant::onlyTrashed()->with(['product', 'size', 'scent', 'concentration']);
+
+        $variants = $query->orderBy('deleted_at', 'desc')->paginate(15);
+
+        return redirect()->route('variants.index', ['page' => $request->input('page', 1)])
+            ->with('success', 'Đã xóa biến thể!');
     }
 }

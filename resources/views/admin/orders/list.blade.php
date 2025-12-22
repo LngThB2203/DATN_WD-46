@@ -74,7 +74,7 @@
                                             <img src="{{ $imageUrl }}" alt="{{ $product->name }}" 
                                                  class="rounded me-2" 
                                                  style="width: 50px; height: 50px; object-fit: cover;"
-                                                 onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}'">
+                                                 onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}';">
                                             <div>
                                                 <div class="fw-semibold">{{ $product->name }}</div>
                                                 @if($order->details && $order->details->count() > 1)
