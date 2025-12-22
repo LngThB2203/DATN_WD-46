@@ -215,13 +215,71 @@
 
         <div class="mt-5">
             <h4 class="mb-3">Đánh giá</h4>
-            <div class="mb-3">
-                <strong>Điểm trung bình:</strong>
-                <span>{{ number_format($product->average_rating, 1) }}/5</span>
-                <span class="text-muted">({{ $product->reviews_count }} lượt)</span>
+            <style>
+                .product-review-summary {
+                    border: 1px solid rgba(0, 0, 0, 0.08);
+                    border-radius: 0.75rem;
+                    padding: 1rem;
+                    background: #fff;
+                }
+
+                .product-review-stars {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.2rem;
+                    line-height: 1;
+                }
+
+                .product-review-stars i {
+                    font-size: 1.1rem;
+                    color: #f4c430;
+                }
+
+                .product-review-stars i.is-empty {
+                    color: #d0d5dd;
+                }
+            </style>
+
+            @php
+                $avgRating = (float) ($product->average_rating ?? 0);
+                $avgRounded = round($avgRating * 2) / 2;
+                $reviewsCount = (int) ($product->reviews_count ?? 0);
+            @endphp
+
+            <div class="product-review-summary mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <div>
+                            <div class="fw-semibold" style="font-size: 1.5rem;">
+                                {{ number_format($avgRating, 1) }}<span class="text-muted" style="font-size: 1rem;">/5</span>
+                            </div>
+                            <div class="product-review-stars" aria-label="Đánh giá trung bình">
+                                @for($i = 1; $i <= 5; $i++)
+                                    @php
+                                        $icon = 'bi-star';
+                                        $emptyClass = 'is-empty';
+                                        if ($avgRounded >= $i) {
+                                            $icon = 'bi-star-fill';
+                                            $emptyClass = '';
+                                        } elseif ($avgRounded === ($i - 0.5)) {
+                                            $icon = 'bi-star-half';
+                                            $emptyClass = '';
+                                        }
+                                    @endphp
+                                    <i class="bi {{ $icon }} {{ $emptyClass }}"></i>
+                                @endfor
+                            </div>
+                        </div>
+
+                        <div class="text-muted">
+                            <div class="fw-semibold text-dark">{{ $reviewsCount }} đánh giá</div>
+                            <div class="small">Chỉ hiển thị đánh giá đã được duyệt</div>
+                        </div>
+                    </div>
+                </div>
             </div>
             @if(isset($reviews) && $reviews->count())
-            <div id="reviews-list" class="list-group mb-3">
+            <div id="reviews-list" class="d-grid gap-3 mb-3">
                 @include('client.partials.reviews', ['reviews' => $reviews])
             </div>
             <div class="d-grid mb-4">

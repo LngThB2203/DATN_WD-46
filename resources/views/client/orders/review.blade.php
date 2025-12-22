@@ -3,6 +3,54 @@
 @section('title', 'Đánh giá sản phẩm')
 
 @section('content')
+<style>
+    .order-review-star-rating {
+        display: inline-flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+        gap: 0.25rem;
+        line-height: 1;
+    }
+
+    .order-review-star-rating input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+        padding: 0;
+        pointer-events: none;
+    }
+
+    .order-review-star-rating label {
+        cursor: pointer;
+        font-size: 2rem;
+        color: #d0d5dd;
+        transition: transform 0.12s ease, color 0.12s ease;
+        user-select: none;
+    }
+
+    .order-review-star-rating label:hover {
+        transform: translateY(-1px);
+    }
+
+    .order-review-star-rating input[type="radio"]:checked ~ label,
+    .order-review-star-rating label:hover,
+    .order-review-star-rating label:hover ~ label {
+        color: #f4c430;
+    }
+
+    .order-review-star-rating.is-invalid label {
+        color: #dc3545;
+    }
+
+    .order-review-star-rating:focus-within {
+        outline: 2px solid rgba(13, 110, 253, 0.25);
+        outline-offset: 4px;
+        border-radius: 0.5rem;
+        padding: 0.25rem;
+    }
+</style>
 <section class="py-4 border-bottom">
     <div class="container-fluid container-xl">
         <nav aria-label="breadcrumb">
@@ -39,12 +87,19 @@
                             @csrf
                             <div class="mb-3">
                                 <label for="rating" class="form-label">Chấm điểm (1-5)</label>
-                                <select id="rating" name="rating" class="form-select @error('rating') is-invalid @enderror" required>
-                                    <option value="">Chọn</option>
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <option value="{{ $i }}" {{ old('rating') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                                <div class="order-review-star-rating @error('rating') is-invalid @enderror" role="radiogroup" aria-label="Chọn số sao">
+                                    @for($i = 5; $i >= 1; $i--)
+                                        <input
+                                            type="radio"
+                                            id="rating-{{ $i }}"
+                                            name="rating"
+                                            value="{{ $i }}"
+                                            {{ (string) old('rating') === (string) $i ? 'checked' : '' }}
+                                            {{ $i === 5 ? 'required' : '' }}
+                                        >
+                                        <label for="rating-{{ $i }}" title="{{ $i }} sao" aria-label="{{ $i }} sao">★</label>
                                     @endfor
-                                </select>
+                                </div>
                                 @error('rating')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
