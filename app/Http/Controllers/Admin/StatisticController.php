@@ -247,11 +247,33 @@ class StatisticController extends Controller
             ->limit(5)
             ->get();
 
+        $topRated = Product::query()
+            ->join('reviews as r', 'r.product_id', '=', 'products.id')
+            ->leftJoin('product_galleries as pg', function ($join) {
+                $join->on('pg.product_id', '=', 'products.id')
+                    ->where('pg.is_primary', true);
+            })
+            ->where('r.status', 1)
+            ->whereBetween('r.created_at', [$fromAt, $toAt])
+            ->select([
+                'products.id',
+                'products.name',
+                DB::raw('ROUND(AVG(r.rating), 2) as avg_rating'),
+                DB::raw('COUNT(r.id) as reviews_count'),
+                'pg.image_path as image_path',
+            ])
+            ->groupBy('products.id', 'products.name', 'pg.image_path')
+            ->orderByDesc('avg_rating')
+            ->orderByDesc('reviews_count')
+            ->limit(5)
+            ->get();
+
         return response()->json([
             'low_stock'    => $lowStock,
             'best_sellers' => $bestSellers,
             'slow_moving'  => $slowMoving,
             'dead_stock'   => $deadStock,
+            'top_rated'    => $topRated,
         ]);
     }
 
