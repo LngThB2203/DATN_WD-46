@@ -17,9 +17,6 @@ class CustomerController extends Controller
        $search = $request->input('search');
 
     $customers = Customer::with('user')
-    ->whereHas('user', function ($q) {
-            $q->where('role', 'user');
-        })
         ->when($search, function ($query, $search) {
             $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
@@ -33,6 +30,18 @@ class CustomerController extends Controller
         return view('admin.customers.list', compact('customers', 'search'));
     }
 
+    /**
+     * Form thêm khách hàng
+     */
+    public function create()
+{
+    $users = User::whereDoesntHave('customer')->get();
+    return view('admin.customers.create', compact('users'));
+}
+
+    /**
+     * Lưu khách hàng mới
+     */
    public function store(Request $request)
 {
     $request->validate([
@@ -42,10 +51,96 @@ class CustomerController extends Controller
         'membership_level'  => 'required|in:Silver,Gold,Platinum',
     ]);
 
+    Customer::create([
+        'user_id'           => $request->user_id,
+        'address'           => $request->address,
+        'gender'            => $request->gender,
+        'membership_level'  => $request->membership_level,
+    ]);
+
     return redirect()->route('admin.customers.list')
         ->with('success', 'Thêm khách hàng thành công!');
 }
 
+    /**
+     * Form sửa khách hàng
+     */
+    public function edit($id)
+    {
+        $customer = Customer::findOrFail($id);
+        return view('admin.customers.edit', compact('customer'));
+    }
+
+    /**
+     * Cập nhật khách hàng
+     */
+   public function update(Request $request, $id)
+{
+    $customer = Customer::findOrFail($id);
+
+    $request->validate([
+        'address'           => 'nullable|string|max:255',
+        'gender'            => 'nullable|in:Nam,Nữ,Khác',
+        'membership_level'  => 'required|in:Silver,Gold,Platinum',
+    ]);
+
+    $customer->update([
+        'address'           => $request->address,
+        'gender'            => $request->gender,
+        'membership_level'  => $request->membership_level,
+    ]);
+
+    return redirect()->route('admin.customers.list')
+        ->with('success', 'Cập nhật khách hàng thành công!');
+}
+
+
+    /**
+     * Xóa khách hàng
+     */
+    public function destroy($id)
+    {
+        // Soft delete
+        $customer = Customer::findOrFail($id);
+        $customer->delete();
+
+        return redirect()->route('admin.customers.list')->with('success', 'Khách hàng đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $customer = Customer::withTrashed()->findOrFail($id);
+        $customer->forceDelete();
+
+        return redirect()->route('admin.customers.trashed')->with('success', 'Khách hàng đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $customer = Customer::withTrashed()->findOrFail($id);
+        $customer->restore();
+
+        return redirect()->route('admin.customers.trashed')->with('success', 'Khách hàng đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Customer::onlyTrashed();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->orderBy('deleted_at', 'desc')->paginate(15);
+        $customers->appends($request->only('search'));
+
+        return view('admin.customers.trashed', compact('customers'));
+    }
 
     /**
      * Chuyển đổi trạng thái (bật/tắt)
