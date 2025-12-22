@@ -212,6 +212,8 @@
                             }
                         }
                     }
+                    // Luôn cho phép submit nếu có ít nhất 1 trạng thái có thể chuyển (kể cả cancelled)
+                    $hasAvailableStatus = !empty($availableStatuses);
                 @endphp
                 <form method="POST" action="{{ route('admin.orders.update-status', $order->id) }}" id="updateStatusForm">
                         @csrf
@@ -235,33 +237,36 @@
                         </select>
                     @if (empty($availableStatuses))
                         <div class="alert alert-warning mb-2">
-                            <small>Vui lòng chọn kho để có thể cập nhật trạng thái.</small>
+                            <small>Không thể chuyển trạng thái từ trạng thái hiện tại.</small>
                         </div>
                         <button type="button" class="btn btn-success" disabled>Cập nhật trạng thái</button>
                     @else
-                        <button type="submit" class="btn btn-success">Cập nhật trạng thái</button>
+                        <button type="submit" class="btn btn-success" id="submitStatusBtn">Cập nhật trạng thái</button>
                     @endif
                     </form>
                 <script>
-                    document.getElementById('statusSelect')?.addEventListener('change', function() {
-                        const selectedOption = this.options[this.selectedIndex];
+                    function handleStatusChange(select) {
+                        const selectedOption = select.options[select.selectedIndex];
                         if (selectedOption.disabled) {
-                            // Nếu chọn option disabled, reset về giá trị hiện tại
                             const currentValue = '{{ $order->order_status }}';
-                            this.value = currentValue;
-                            alert('Vui lòng chọn kho trước khi chuyển sang trạng thái này!');
-                            return false;
+                            select.value = currentValue;
+                            const reason = selectedOption.textContent.match(/\(([^)]+)\)/);
+                            alert(reason ? reason[1] : 'Không thể chuyển sang trạng thái này!');
                         }
-                    });
+                    }
                     
                     document.getElementById('updateStatusForm')?.addEventListener('submit', function(e) {
                         const select = document.getElementById('statusSelect');
                         const selectedOption = select.options[select.selectedIndex];
-                        if (selectedOption.disabled) {
+                        
+                        if (selectedOption && selectedOption.disabled) {
                             e.preventDefault();
-                            alert('Vui lòng chọn kho trước khi chuyển sang trạng thái này!');
+                            e.stopPropagation();
+                            const reason = selectedOption.textContent.match(/\(([^)]+)\)/);
+                            alert(reason ? reason[1] : 'Không thể chuyển sang trạng thái này!');
                             return false;
                         }
+                        
                         return true;
                     });
                 </script>

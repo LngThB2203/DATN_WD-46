@@ -65,4 +65,9 @@ class Order extends Model
     {
         return $this->hasOne(Shipment::class);
     }
+
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 }

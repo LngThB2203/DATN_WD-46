@@ -168,11 +168,17 @@ class StockService
         string $referenceType,
         ?int $referenceId = null
     ): void {
-        $currentStock = WarehouseProduct::where([
-            'warehouse_id' => $warehouseId,
-            'product_id'   => $productId,
-            'variant_id'   => $variantId,
-        ])->value('quantity') ?? 0;
+        $stockQuery = WarehouseProduct::where('warehouse_id', $warehouseId)
+            ->where('product_id', $productId);
+        
+        // Xử lý variant_id null
+        if (is_null($variantId)) {
+            $stockQuery->whereNull('variant_id');
+        } else {
+            $stockQuery->where('variant_id', $variantId);
+        }
+        
+        $currentStock = $stockQuery->value('quantity') ?? 0;
 
         if ($currentStock < $quantity) {
             throw new Exception("Kho không đủ hàng (còn {$currentStock})");

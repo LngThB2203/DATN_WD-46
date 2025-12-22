@@ -191,6 +191,8 @@ Route::post('/chat/send', [ChatbotController::class, 'sendMessage']);
     Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
     Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+});
+
 // ========================
 // ADMIN ROUTES
 // ========================
@@ -354,6 +356,13 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     });
 
     Route::prefix('orders')->name('admin.orders.')->group(function () {
+        Route::get('/list', [App\Http\Controllers\Admin\OrderController::class, 'index'])->name('list');
+        Route::get('/show/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('show');
+        Route::put('/update-status/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('update-status');
+        Route::put('/update-warehouse/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateWarehouse'])->name('update-warehouse');
+        Route::post('/update-shipment/{id}', [App\Http\Controllers\Admin\OrderController::class, 'updateShipment'])->name('update-shipment');
+        Route::get('/cart', fn() => view('admin.orders.cart'))->name('cart');
+        Route::get('/checkout', fn() => view('admin.orders.checkout'))->name('checkout');
         Route::get('/list', [OrderController::class, 'index'])->name('list');
         Route::get('/show/{id}', [OrderController::class, 'show'])->name('show');
 

@@ -261,7 +261,7 @@
                                 <span id="cartGrandTotal">{{ number_format($cart['grand_total'] ?? 0) }} đ</span>
                             </div>
 
-                            <button class="btn btn-primary w-100" type="button" onclick="confirmOrder('{{ $item['name'] }}','{{ number_format($item['price']) }} đ', this)">
+                            <button class="btn btn-primary w-100" type="button" onclick="confirmOrder(this)">
                                 Đặt hàng
                             </button>
 
@@ -411,13 +411,21 @@
     }
 })();
 
-function confirmOrder(name, price, btn) {
+function confirmOrder(btn) {
+    // Lấy giá và số lượng sản phẩm từ DOM (đã được cập nhật động)
+    const grandTotalEl = document.getElementById('cartGrandTotal');
+    const totalPrice = grandTotalEl ? grandTotalEl.textContent.trim() : '0 đ';
+    
+    // Đếm số lượng sản phẩm từ danh sách items
+    const itemCount = document.querySelectorAll('.cart-item-row').length || {{ count($cart['items'] ?? []) }};
+    const productCount = itemCount + ' sản phẩm';
+    
     let timerInterval;
     let countdown = 5;
 
     Swal.fire({
         title: 'Xác nhận đơn hàng',
-        html: `Bạn chắc chắn muốn đặt sản phẩm này?<br>Tên: <b>${name}</b><br>Giá: <b>${price}</b>`,
+        html: `Bạn chắc chắn muốn đặt đơn hàng này?<br>Sản phẩm: <b>${productCount}</b><br>Tổng tiền: <b>${totalPrice}</b>`,
         icon: 'question',
         showCancelButton: true, 
         confirmButtonText: `OK (${countdown})`,

@@ -86,7 +86,8 @@
                                                                 <br><div class="mt-1">
                                                                     <small class="text-muted">
                                                                         @php
-                                                                            $variantParts = explode(' • ', $item['variant_name']);
+                                                                            $variantName = is_array($item['variant_name']) ? implode(' • ', $item['variant_name']) : $item['variant_name'];
+                                                                            $variantParts = explode(' • ', $variantName);
                                                                         @endphp
                                                                         @foreach($variantParts as $part)
                                                                             <span class="badge bg-secondary me-1">{{ $part }}</span>
