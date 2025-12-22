@@ -23,7 +23,7 @@ class ProductDetailController extends Controller
 
         // Ưu tiên tính tồn kho theo biến thể
         $variantStock = $product->variants->sum(function ($variant) {
-            return (int) $variant->stock;
+            return (int) $variant->total_stock;
         });
 
         if ($variantStock > 0) {
@@ -56,7 +56,7 @@ class ProductDetailController extends Controller
                 'scent'         => $v->scent?->scent_name,
                 'concentration' => $v->concentration?->concentration_name,
                 'price'         => $v->price ?? ($product->price + ($v->price_adjustment ?? 0)),
-                'stock'         => (int) $v->stock,
+                'stock'         => (int) $v->total_stock,
                 'image'         => $v->image
                     ? asset('storage/' . $v->image)
                     : null,
