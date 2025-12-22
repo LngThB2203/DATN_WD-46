@@ -146,9 +146,18 @@ class OrderController extends Controller
             'details.variant.concentration',
             'warehouse',
         ])->findOrFail($id);
-        if (! $order->warehouse_id) {
-            $this->autoAssignWarehouse($order);
-            $order->refresh();
+
+        // Kiểm tra xem đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
+
+        // Tự động gán kho nếu chưa có và có kho đủ hàng
+        if (! $order->warehouse_id && $order->details->isNotEmpty()) {
+            try {
+                $this->autoAssignWarehouse($order);
+                $order->refresh();
+            } catch (\Exception $e) {
+                // Nếu không có kho nào đủ hàng, vẫn cho phép xem đơn hàng
+            }
         }
 
         // Lấy danh sách kho có đủ sản phẩm (để admin có thể đổi kho nếu cần)
@@ -167,7 +176,7 @@ class OrderController extends Controller
             'order_status' => 'required|string',
         ]);
         
-        $newStatus = $request->input('order_status');
+        $newStatus = OrderStatusHelper::mapOldStatus((string) $request->input('order_status'));
         $currentStatus = OrderStatusHelper::mapOldStatus($order->order_status);
 
         // Kiểm tra trạng thái có thể cập nhật
@@ -242,6 +251,11 @@ class OrderController extends Controller
 
             // Cập nhật trạng thái khác
             $order->order_status = $newStatus;
+
+            if ($newStatus === OrderStatusHelper::COMPLETED && ! $order->completed_at) {
+                $order->completed_at = now();
+            }
+
             $order->save();
 
             DB::commit();
