@@ -10,6 +10,10 @@ use App\Models\OrderDetail;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderSuccessMail;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Customer;
 
 class CheckoutController extends Controller
 {
@@ -70,18 +74,17 @@ class CheckoutController extends Controller
 
     public function store(Request $request)
     {
-        $user = $request->user();
-        
+         $user = $request->user();
+
         // Nếu đã đăng nhập, bắt buộc lấy tên và email từ tài khoản
         if ($user) {
-            $validated = $request->validate([
-                'customer_phone'        => 'required|string|max:20',
-                'shipping_address_line' => 'required|string|max:255',
-                'customer_note'         => 'nullable|string|max:1000',
-                'payment_method'        => 'required|in:cod,online',
-            ]);
-            
-            // Lấy tên và email từ tài khoản
+        $validated = $request->validate([
+            'customer_phone'        => 'required|string|max:20',
+            'shipping_address_line' => 'required|string|max:255',
+            'customer_note'         => 'nullable|string|max:1000',
+            'payment_method'        => 'required|in:cod,online',
+        ]);
+         // Lấy tên và email từ tài khoản
             $validated['customer_name'] = $user->name;
             $validated['customer_email'] = $user->email;
         } else {
@@ -94,6 +97,7 @@ class CheckoutController extends Controller
                 'payment_method'        => 'required|in:cod,online',
             ]);
         }
+
 
         $selectedItems = array_filter(array_map('intval',
             is_string($request->input('selected_items'))
@@ -125,10 +129,17 @@ class CheckoutController extends Controller
 
         // ===== COD =====
         DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
-
+              $customer = Customer::firstOrCreate(
+        ['user_id' => Auth::id()],
+        [
+            'membership_level' => 'Silver',
+            'address' => $request->shipping_address_line ?? null,
+        ]
+    );
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
-                'discount_id'           => $cart['discount_id'] ?? null,
+        'customer_id'           => $customer->id,
+        'discount_id'           => $cart['discount_id'] ?? null,
                 'order_status'          => 'pending',
                 'payment_method'        => 'cod',
                 'subtotal'              => $cart['subtotal'],
@@ -161,12 +172,16 @@ class CheckoutController extends Controller
                 'amount'         => $order->grand_total,
                 'status'         => 'pending',
             ]);
-
-            // Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
+            // Gửi email xác nhận đơn hàng
+                  if (!empty($order->customer_email)) {
+    Mail::to($order->customer_email)->send(
+        new OrderSuccessMail($order)
+    );
+}
+// Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
             if ($order->discount_id) {
                 $order->discount?->incrementUsage();
             }
-
             // Xóa sản phẩm đã thanh toán trong giỏ
             $this->removePaidItemsFromCart($request, $selectedItems);
         });

@@ -6,7 +6,6 @@
 <div class="page-content">
     <div class="container-xxl">
 
-        {{-- Thanh tìm kiếm --}}
         <form method="GET" action="{{ route('admin.customers.list') }}" class="mb-3 d-flex gap-2">
             <input type="text" name="search" value="{{ request('search') }}" class="form-control w-auto" placeholder="Tìm kiếm khách hàng...">
             <button class="btn btn-primary">Tìm</button>
@@ -15,9 +14,6 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0">Danh sách khách hàng</h4>
-                <a href="{{ route('admin.customers.create') }}" class="btn btn-sm btn-primary">
-                    + Thêm khách hàng
-                </a>
                 <a href="{{ route('admin.customers.export') }}" class="btn btn-sm btn-success">
                     + Xuất danh sách khách hàng
                 </a>
@@ -69,28 +65,7 @@
             </button>
         @endif
     </form>
-
-    {{-- SỬA --}}
-    <a href="{{ route('admin.customers.edit', $customer->id) }}"
-       class="btn btn-sm btn-warning">
-        Sửa
-    </a>
-
-    {{-- XÓA --}}
-    <form action="{{ route('admin.customers.destroy', $customer->id) }}"
-          method="POST"
-          style="display:inline-block">
-        @csrf
-        @method('DELETE')
-        <button class="btn btn-sm btn-danger"
-                onclick="return confirm('Xóa khách hàng?')">
-            Xóa
-        </button>
-    </form>
 </td>
-
-        </form>
-    </td>
 </tr>
 @endforeach
 
