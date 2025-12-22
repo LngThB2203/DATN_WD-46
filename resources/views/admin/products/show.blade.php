@@ -163,9 +163,10 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h4 class="card-title mb-0">Danh sách biến thể</h4>
         <a href="{{ route('variants.create', ['product_id' => $product->id]) }}"
-           class="btn btn-success btn-sm">
-            <i class="bx bx-plus"></i> Thêm biến thể
-        </a>
+   class="btn btn-success btn-sm">
+    <i class="bx bx-plus"></i> Thêm biến thể
+</a>
+
     </div>
 
     <div class="card-body p-0">

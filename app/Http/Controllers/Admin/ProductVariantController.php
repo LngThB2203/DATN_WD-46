@@ -23,16 +23,22 @@ class ProductVariantController extends Controller
         return view('admin.variants.index', compact('variants'));
     }
 
-    public function create()
-    {
-        return view('admin.variants.create', [
-            'products'       => Product::all(),
-            'sizes'          => VariantSize::all(),
-            'scents'         => VariantScent::all(),
-            'concentrations' => VariantConcentration::all(),
-        ]);
+    public function create(Request $request)
+{
+    // BẮT BUỘC có product_id
+    if (!$request->filled('product_id')) {
+        abort(404);
     }
 
+    $product = Product::findOrFail($request->product_id);
+
+    return view('admin.variants.create', [
+        'product'        => $product,   
+        'sizes'          => VariantSize::all(),
+        'scents'         => VariantScent::all(),
+        'concentrations' => VariantConcentration::all(),
+    ]);
+}
     public function store(Request $request)
     {
         $data = $request->validate([
