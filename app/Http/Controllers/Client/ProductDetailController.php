@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Wishlist;
+use Illuminate\Support\Facades\Auth;
 
 class ProductDetailController extends Controller
 {
@@ -83,8 +84,8 @@ class ProductDetailController extends Controller
 
         // Wishlist
         $isFavorite = false;
-        if (auth()->check()) {
-            $isFavorite = Wishlist::where('user_id', auth()->id())
+        if (Auth::check()) {
+            $isFavorite = Wishlist::where('user_id', Auth::id())
                 ->where('product_id', $product->id)
                 ->exists();
         }

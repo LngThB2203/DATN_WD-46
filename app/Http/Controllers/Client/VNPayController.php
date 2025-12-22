@@ -1,14 +1,15 @@
 <?php
-
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OrderSuccessMail;
+use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Payment;
-use App\Models\Discount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class VNPayController extends Controller
 {
@@ -23,7 +24,10 @@ class VNPayController extends Controller
 
         $hashData = '';
         foreach ($data as $k => $v) {
-            if ($hashData !== '') $hashData .= '&';
+            if ($hashData !== '') {
+                $hashData .= '&';
+            }
+
             $hashData .= urlencode($k) . '=' . urlencode($v);
         }
 
@@ -40,7 +44,7 @@ class VNPayController extends Controller
         }
 
         $pending = session('pending_order');
-        if (!$pending) {
+        if (! $pending) {
             return redirect()->route('cart.index')
                 ->with('error', 'Phiên thanh toán đã hết hạn');
         }
@@ -71,7 +75,9 @@ class VNPayController extends Controller
             $lastOrderId = $order->id;
 
             foreach ($pending['cart']['items'] as $item) {
-                if (!in_array($item['cart_item_id'], $pending['selectedItems'])) continue;
+                if (! in_array($item['cart_item_id'], $pending['selectedItems'])) {
+                    continue;
+                }
 
                 OrderDetail::create([
                     'order_id'   => $order->id,
@@ -92,8 +98,11 @@ class VNPayController extends Controller
                 'paid_at'          => now(),
             ]);
 
-
-
+            if (! empty($order->customer_email)) {
+                Mail::to($order->customer_email)->send(
+                    new OrderSuccessMail($order)
+                );
+            }
             // Xóa sản phẩm đã thanh toán khỏi giỏ
             $cartId = session('cart_id');
             if ($cartId) {
