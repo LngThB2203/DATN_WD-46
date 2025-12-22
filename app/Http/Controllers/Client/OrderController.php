@@ -57,7 +57,7 @@ class OrderController extends Controller
         }
 
         $order = $query->with('payment')->findOrFail($id);
-        
+
         // Kiểm tra xem đơn hàng đã thanh toán chưa
         $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
         $mappedStatus = OrderStatusHelper::mapOldStatus($order->order_status);
@@ -73,12 +73,29 @@ class OrderController extends Controller
 
         // Kiểm tra đơn hàng đã thanh toán chưa
         $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
-        if ($isPaid) {
-            return redirect()->back()->with('error', 'Đơn hàng đã thanh toán, không thể cập nhật thông tin giao hàng.');
+        
+        // Kiểm tra quyền truy cập
+        if ($request->user()) {
+            if ($order->user_id != $request->user()->id) {
+                abort(403, 'Bạn không có quyền cập nhật đơn hàng này.');
+            }
+        } else {
+            // Nếu không đăng nhập, kiểm tra email/phone
+            $email = $request->input('email') ?? $request->session()->get('last_order_email');
+            $phone = $request->input('phone') ?? $request->session()->get('last_order_phone');
+            
+            if ($email && $order->customer_email !== $email) {
+                abort(403, 'Bạn không có quyền cập nhật đơn hàng này.');
+            } elseif ($phone && $order->customer_phone !== $phone) {
+                abort(403, 'Bạn không có quyền cập nhật đơn hàng này.');
+            }
         }
 
+        // Kiểm tra xem đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
         $mappedStatus = OrderStatusHelper::mapOldStatus($order->order_status);
-        if ($mappedStatus !== OrderStatusHelper::PENDING) {
+        
+        if ($mappedStatus !== OrderStatusHelper::PENDING || $isPaid) {
             return redirect()->back()->with('error', 'Đơn hàng không thể cập nhật.');
         }
 
@@ -91,7 +108,7 @@ class OrderController extends Controller
                 'shipping_address_line' => 'required|string|max:500',
                 'customer_note'         => 'nullable|string|max:1000',
             ]);
-            
+
             $validated['customer_name'] = $user->name;
             $validated['customer_email'] = $user->email;
         } else {

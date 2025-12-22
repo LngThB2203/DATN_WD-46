@@ -3,7 +3,6 @@
 @section('title', 'Giỏ hàng')
 
 @section('content')
-<!-- Nếu navbar của bạn là fixed-top, thêm spacer hoặc padding-top -->
 <section class="py-4 border-bottom" style="padding-top: 100px;">
     <div class="container-fluid container-xl">
         <nav aria-label="breadcrumb">
@@ -18,16 +17,16 @@
 <section class="py-5">
     <div class="container-fluid container-xl">
         @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+        <div class="alert alert-success alert-dismissible fade show">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
         @endif
         @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+        <div class="alert alert-danger alert-dismissible fade show">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
         @endif
 
         <div class="row g-4">
@@ -36,19 +35,19 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 fw-semibold">Sản phẩm trong giỏ</h5>
                         @if(!empty($cart['items']))
-                            <form method="POST" action="{{ route('cart.clear') }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa tất cả</button>
-                            </form>
+                        <form method="POST" action="{{ route('cart.clear') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa tất cả</button>
+                        </form>
                         @endif
                     </div>
                     <div class="card-body">
                         @if(empty($cart['items']))
-                            <div class="text-center py-5">
-                                <i class="bi bi-cart-x" style="font-size: 4rem; color: #ccc;"></i>
-                                <p class="text-muted mt-3 mb-4">Giỏ hàng của bạn đang trống</p>
-                                <a href="{{ route('home') }}" class="btn btn-primary">Tiếp tục mua sắm</a>
-                            </div>
+                        <div class="text-center py-5">
+                            <i class="bi bi-cart-x" style="font-size: 4rem; color: #ccc;"></i>
+                            <p class="text-muted mt-3 mb-4">Giỏ hàng của bạn đang trống</p>
+                            <a href="{{ route('home') }}" class="btn btn-primary">Tiếp tục mua sắm</a>
+                        </div>
                         @else
                             <div class="table-responsive">
                                 <table class="table">
@@ -138,35 +137,39 @@
                 <div class="card">
                     <div class="card-header fw-semibold">Tóm tắt đơn hàng</div>
                     <div class="card-body" id="cartSummary"
-                         data-shipping-fee="{{ (int)($cart['shipping_fee'] ?? 30000) }}"
-                         data-discount-total="{{ (int)($cart['discount_total'] ?? 0) }}">
+                        data-shipping-fee="{{ (int)($cart['shipping_fee'] ?? 30000) }}"
+                        data-discount-total="{{ (int)($cart['discount_total'] ?? 0) }}">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Tạm tính</span>
-                            <span id="selectedSubtotal">{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                            <span id="selectedSubtotal">{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }}
+                                VNĐ</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Phí vận chuyển</span>
-                            <span id="selectedShipping">{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                            <span id="selectedShipping">{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }}
+                                VNĐ</span>
                         </div>
                         @if(($cart['discount_total'] ?? 0) > 0)
-                            <div class="d-flex justify-content-between mb-2 text-success">
-                                <span>Giảm giá</span>
-                                <span>-{{ number_format($cart['discount_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
-                            </div>
+                        <div class="d-flex justify-content-between mb-2 text-success">
+                            <span>Giảm giá</span>
+                            <span>-{{ number_format($cart['discount_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                        </div>
                         @endif
                         <hr>
                         <div class="d-flex justify-content-between fw-semibold mb-3">
                             <span>Tổng cộng</span>
-                            <span class="text-primary fs-5" id="selectedTotal">{{ number_format($cart['grand_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                            <span class="text-primary fs-5" id="selectedTotal">{{ number_format($cart['grand_total'] ??
+                                0, 0, ',', '.') }} VNĐ</span>
                         </div>
 
                         @if(!empty($cart['items']))
-                            <form method="GET" action="{{ route('checkout.index') }}" id="checkoutForm">
-                                <input type="hidden" name="selected_items" id="selectedItemsInput" value="">
-                                <button type="submit" class="btn btn-primary w-100" id="checkoutBtn">Tiến hành thanh toán</button>
-                            </form>
+                        <form method="GET" action="{{ route('checkout.index') }}" id="checkoutForm">
+                            <input type="hidden" name="selected_items" id="selectedItemsInput" value="">
+                            <button type="submit" class="btn btn-primary w-100" id="checkoutBtn">Tiến hành thanh
+                                toán</button>
+                        </form>
                         @else
-                            <button class="btn btn-primary w-100" disabled>Tiến hành thanh toán</button>
+                        <button class="btn btn-primary w-100" disabled>Tiến hành thanh toán</button>
                         @endif
                     </div>
                 </div>
@@ -178,7 +181,7 @@
 
 @section('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
     const shippingFee = parseInt(document.getElementById('cartSummary')?.dataset.shippingFee) || 30000;
     const discountTotal = parseInt(document.getElementById('cartSummary')?.dataset.discountTotal) || 0;
 
@@ -221,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const newValue = Math.min(currentValue + 1, maxValue);
             if (newValue !== currentValue) {
                 input.value = newValue;
-                input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             }
         });
     });
@@ -237,18 +240,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const newValue = Math.max(currentValue - 1, minValue);
             if (newValue !== currentValue) {
                 input.value = newValue;
-                input.dispatchEvent(new Event('change', { bubbles: true, cancelable: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             }
         });
     });
 
-    // Quantity input change (AJAX)
+    // Quantity input AJAX update
     document.querySelectorAll('.quantity-input').forEach(input => {
         let updateTimeout;
         input.addEventListener('change', function(e) {
             e.stopPropagation();
-            const row = this.closest('.cart-item-row');
             const form = this.closest('.cart-update-form');
+            const row = this.closest('.cart-item-row');
             if (!form) return;
             if (row) row.dataset.quantity = this.value;
             calculateSelectedTotal();
@@ -270,18 +273,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                 })
-                .then(response => response.json())
+                .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         if (window.updateCartBadge && data.cart_count !== undefined) window.updateCartBadge(data.cart_count);
                         if (row) {
                             const price = parseFloat(row.dataset.price) || 0;
                             const quantity = parseInt(input.value) || 1;
-                            const cells = row.querySelectorAll('td');
-                            if (cells.length >= 5) {
-                                const subtotalCell = cells[4].querySelector('strong');
-                                if (subtotalCell) subtotalCell.textContent = (price * quantity).toLocaleString('vi-VN') + ' VNĐ';
-                            }
+                            const subtotalCell = row.querySelector('td:nth-child(5) strong');
+                            if (subtotalCell) subtotalCell.textContent = (price * quantity).toLocaleString('vi-VN') + ' VNĐ';
                         }
                         calculateSelectedTotal();
                     } else {
@@ -298,31 +298,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }, 300);
         });
-
         input.addEventListener('blur', calculateSelectedTotal);
     });
 
-    // Remove & clear cart AJAX
+    // Remove & clear AJAX
     ['remove', 'clear'].forEach(type => {
         document.querySelectorAll(`form[action*="cart.${type}"]`).forEach(form => {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 if (!confirm(type === 'clear' ? 'Bạn có chắc muốn xóa toàn bộ giỏ hàng?' : 'Bạn có chắc muốn xóa sản phẩm này?')) return;
-
                 const formData = new FormData(form);
-                fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                })
-                .then(response => response.json())
+                fetch(form.action, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         if (window.updateCartBadge && data.cart_count !== undefined) window.updateCartBadge(data.cart_count);
                         window.location.reload();
-                    } else if (window.showNotification) {
-                        window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
-                    }
+                    } else if (window.showNotification) window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
                 })
                 .catch(() => form.submit());
             });

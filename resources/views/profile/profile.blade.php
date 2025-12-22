@@ -59,7 +59,7 @@
 
                 <div style="max-height: 650px; overflow-y: auto;">
                     @php
-                    $orders = \App\Models\Order::where('user_id', auth()->id())
+                    $orders = Order::where('user_id', auth()->id())
                         ->where('order_status', 'completed')
                         ->orderBy('created_at', 'desc')
                         ->get();

@@ -59,25 +59,10 @@
                                                 <div>
                                                     <strong>{{ $detail->product->name ?? 'Sản phẩm đã bị xóa' }}</strong>
                                                     @if($detail->variant)
-                                                        <div class="small text-muted mt-1">
-                                                            @if($detail->variant->size)
-                                                                <div><strong>Kích thước:</strong> {{ $detail->variant->size->size_name ?? $detail->variant->size->name ?? 'N/A' }}</div>
-                                                            @endif
-                                                            @if($detail->variant->scent)
-                                                                <div><strong>Hương:</strong> {{ $detail->variant->scent->scent_name ?? $detail->variant->scent->name ?? 'N/A' }}</div>
-                                                            @endif
-                                                            @if($detail->variant->concentration)
-                                                                <div><strong>Nồng độ:</strong> {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? 'N/A' }}</div>
-                                                            @endif
-                                                            @if($detail->variant->gender)
-                                                                <div><strong>Giới tính:</strong> 
-                                                                    @if($detail->variant->gender === 'male') Nam
-                                                                    @elseif($detail->variant->gender === 'female') Nữ
-                                                                    @elseif($detail->variant->gender === 'unisex') Unisex
-                                                                    @else {{ $detail->variant->gender }}
-                                                                    @endif
-                                                                </div>
-                                                            @endif
+                                                        <div class="small text-muted">
+                                                            @if($detail->variant->size) Kích thước: {{ $detail->variant->size->size_name ?? $detail->variant->size->name ?? '' }} @endif
+                                                            @if($detail->variant->scent) | Mùi: {{ $detail->variant->scent->scent_name ?? $detail->variant->scent->name ?? '' }} @endif
+                                                            @if($detail->variant->concentration) | Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? '' }} @endif
                                                         </div>
                                                     @else
                                                         <div class="small text-muted mt-1">Không có biến thể</div>
@@ -120,14 +105,9 @@
 
                 {{-- Thông tin giao hàng --}}
                 <div class="card mt-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Thông tin giao hàng</h5>
-                        @if($isPaid)
-                            <span class="badge bg-success">Đã thanh toán</span>
-                        @endif
-                    </div>
+                    <div class="card-header"><h5>Thông tin giao hàng</h5></div>
                     <div class="card-body">
-                        @if($canUpdateShipping)
+                        @if(isset($canUpdateShipping) && $canUpdateShipping)
                             {{-- Form cập nhật thông tin --}}
                             <form method="POST" action="{{ route('orders.update-shipping', $order->id) }}">
                                 @csrf
@@ -180,7 +160,7 @@
                         @else
                             {{-- Chỉ hiển thị thông tin (đã thanh toán hoặc không cho phép chỉnh sửa) --}}
                             <div class="mb-3">
-                                @if($isPaid)
+                                @if(isset($isPaid) && $isPaid)
                                     <div class="alert alert-info">
                                         <small><i class="bi bi-info-circle"></i> Đơn hàng đã thanh toán, không thể thay đổi thông tin giao hàng.</small>
                                     </div>
@@ -198,7 +178,7 @@
                                     {{ $order->shipping_province }}
                                 </p>
                             @endif
-                            @if($order->customer_note)<p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>@endif
+                        @if($order->customer_note)<p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>@endif
                         @endif
 
                         <hr>
