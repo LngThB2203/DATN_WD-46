@@ -10,6 +10,8 @@ use App\Models\OrderDetail;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Customer;
 
 class CheckoutController extends Controller
 {
@@ -140,6 +142,13 @@ class CheckoutController extends Controller
 
         // ===== COD =====
         DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
+            $customer = Customer::firstOrCreate(
+        ['user_id' => Auth::id()],
+        [
+            'membership_level' => 'Silver',
+            'address' => $request->shipping_address_line ?? null,
+        ]
+    );
 
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,

@@ -382,7 +382,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     Route::prefix('customers')->name('admin.customers.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\CustomerController::class, 'index'])->name('list');
-        Route::get('/create', [App\Http\Controllers\Admin\CustomerController::class, 'create'])->name('create');
         Route::post('/store', [App\Http\Controllers\Admin\CustomerController::class, 'store'])->name('store');
         Route::get('/edit/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'edit'])->name('edit');
         Route::put('/update/{customer}', [App\Http\Controllers\Admin\CustomerController::class, 'update'])->name('update');

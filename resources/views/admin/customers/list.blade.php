@@ -15,9 +15,6 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="card-title mb-0">Danh sách khách hàng</h4>
-                <a href="{{ route('admin.customers.create') }}" class="btn btn-sm btn-primary">
-                    + Thêm khách hàng
-                </a>
                 <a href="{{ route('admin.customers.export') }}" class="btn btn-sm btn-success">
                     + Xuất danh sách khách hàng
                 </a>
