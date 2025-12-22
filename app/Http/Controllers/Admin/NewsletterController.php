@@ -1,10 +1,10 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class NewsletterController extends Controller
 {
@@ -55,5 +55,27 @@ class NewsletterController extends Controller
             ->paginate(10);
 
         return view('admin.newsletters.trashed', compact('newsletters', 'search'));
+    }
+    // Hiển thị form gửi newsletter
+    public function send()
+    {
+        return view('admin.newsletters.send');
+    }
+
+    // Xử lý gửi newsletter
+    public function sendMail(Request $request)
+    {
+        $emails  = Newsletter::pluck('email')->toArray();
+        $subject = $request->input('subject', 'Thông báo từ cửa hàng nước hoa');
+        $message = $request->input('message', 'Nội dung mặc định');
+
+        foreach ($emails as $email) {
+            Mail::raw($message, function ($mail) use ($email, $subject) {
+                $mail->to($email)
+                    ->subject($subject);
+            });
+        }
+
+        return redirect()->route('admin.newsletters.list')->with('success', 'Newsletter đã được gửi thành công!');
     }
 }

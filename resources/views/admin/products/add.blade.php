@@ -150,42 +150,7 @@
                         </div>
                     </div>
 
-                    {{-- Giá bán --}}
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="card-title">Giá sản phẩm</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                {{-- Giá gốc --}}
-                                <div class="col-lg-6">
-                                    <div class="mb-3">
-                                        <label for="price" class="form-label">Giá gốc (VNĐ) <span
-                                                class="text-danger">*</span></label>
-                                        <input type="number" id="price" name="price"
-                                            class="form-control @error('price') is-invalid @enderror" placeholder="0"
-                                            value="{{ old('price') }}" required step="0.01" min="0">
-                                        @error('price')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                {{-- Giá khuyến mãi --}}
-                                <div class="col-lg-6">
-                                    <div class="mb-3">
-                                        <label for="sale_price" class="form-label">Giá khuyến mãi (VNĐ)</label>
-                                        <input type="number" id="sale_price" name="sale_price"
-                                            class="form-control @error('sale_price') is-invalid @enderror"
-                                            placeholder="0" value="{{ old('sale_price') }}" step="0.01" min="0">
-                                        @error('sale_price')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     {{-- Quản lý tồn kho --}}
                     <div class="card">

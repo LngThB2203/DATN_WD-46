@@ -13,7 +13,9 @@ class StockTransactionController extends Controller
         $query = StockTransaction::with([
             'warehouse',
             'product',
-            'variant',
+            'variant.size',
+            'variant.scent',
+            'variant.concentration',
         ])->orderByDesc('created_at');
 
         // filter kho
@@ -38,7 +40,7 @@ class StockTransactionController extends Controller
         $transactions = $query->paginate(20)->withQueryString();
         $warehouses   = Warehouse::all();
 
-        return view('admin.inventories.stock-transactions', compact(
+        return view('admin.inventories.transactions', compact(
             'transactions',
             'warehouses'
         ));

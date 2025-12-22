@@ -123,54 +123,40 @@ class StockService
     }
 
     // Hủy đơn hàng (trả kho)
-    public function cancelOrder($order): void
-    {
-        DB::transaction(function () use ($order) {
-            foreach ($order->details as $detail) {
-                $restoreQty = $detail->quantity;
+    // Hủy đơn hàng (trả kho)
+public function cancelOrder($order): void
+{
+    DB::transaction(function () use ($order) {
+        foreach ($order->details as $detail) {
+            $restoreQty = $detail->quantity;
 
-                // Sync tồn kho tổng (WarehouseProduct)
-                $wp = WarehouseProduct::lockForUpdate()->firstOrCreate(
-                    [
-                        'warehouse_id' => $order->warehouse_id,
-                        'product_id'   => $detail->product_id,
-                        'variant_id'   => $detail->variant_id,
-                    ],
-                    ['quantity' => 0]
-                );
-                $before = $wp->quantity;
-                $after  = $before + $restoreQty;
-                $wp->update(['quantity' => $after]);
+            // Cập nhật tồn kho tổng (WarehouseProduct)
+            $wp = WarehouseProduct::lockForUpdate()->firstOrCreate(
+                [
+                    'warehouse_id' => $order->warehouse_id,
+                    'product_id'   => $detail->product_id,
+                    'variant_id'   => $detail->variant_id,
+                ],
+                ['quantity' => 0]
+            );
 
-                // Nếu có giao dịch xuất kho trước đó, cộng lại batch
-                $baseExportsQuery = StockTransaction::where('reference_type', 'order')
-                    ->where('reference_id', $order->id)
-                    ->where('product_id', $detail->product_id)
-                    ->where('variant_id', $detail->variant_id);
+            $before = $wp->quantity;
+            $after  = $before + $restoreQty;
+            $wp->update(['quantity' => $after]);
 
-                try {
-                    $exportsQuery = clone $baseExportsQuery;
-                    if (Schema::hasColumn('stock_transactions', 'type')) {
-                        $exportsQuery->where('type', 'export');
-                    } else {
-                        $exportsQuery->where('quantity', '<', 0);
-                    }
+            // Lấy các giao dịch xuất trước đó theo đơn
+            $exports = StockTransaction::where('reference_type', 'order')
+                ->where('reference_id', $order->id)
+                ->where('product_id', $detail->product_id)
+                ->where('variant_id', $detail->variant_id)
+                ->where('type', 'export')
+                ->get();
 
-                    $exports = $exportsQuery->get();
-                } catch (QueryException $e) {
-                    if (str_contains($e->getMessage(), "Unknown column 'type'")) {
-                        $exports = (clone $baseExportsQuery)->where('quantity', '<', 0)->get();
-                    } else {
-                        throw $e;
-                    }
-                }
+            foreach ($exports as $log) {
+                $batch = WarehouseBatch::lockForUpdate()->find($log->batch_id);
 
-                foreach ($exports as $log) {
-                    $batch = WarehouseBatch::lockForUpdate()->find($log->batch_id);
-                    if (! $batch) {
-                        continue;
-                    }
-
+                // Nếu batch tồn tại, cộng trả số lượng
+                if ($batch) {
                     $batchBefore = $batch->quantity;
                     $batchAfter  = $batchBefore + abs($log->quantity);
                     $batch->update(['quantity' => $batchAfter]);
@@ -189,31 +175,17 @@ class StockService
                         'reference_id'    => $order->id,
                     ]);
                 }
-
-                // Ghi log tổng cho đơn hủy
-                $this->createStockTransaction([
-                    'warehouse_id'    => $order->warehouse_id,
-                    'product_id'      => $detail->product_id,
-                    'variant_id'      => $detail->variant_id,
-                    'batch_id'        => null,
-                    'batch_code'      => null,
-                    'type'            => 'import',
-                    'quantity'        => $restoreQty,
-                    'before_quantity' => $before,
-                    'after_quantity'  => $after,
-                    'reference_type'  => 'order_cancel',
-                    'reference_id'    => $order->id,
-                ]);
             }
+        }
 
-            // Cập nhật trạng thái đơn
-            $order->update([
-                'order_status' => OrderStatusHelper::CANCELLED,
-                'cancelled_at' => now(),
-                'completed_at' => null,
-            ]);
-        });
-    }
+        // Cập nhật trạng thái đơn
+        $order->update([
+            'order_status' => OrderStatusHelper::CANCELLED,
+            'cancelled_at' => now(),
+            'completed_at' => null,
+        ]);
+    });
+}
 
     public function isOrderExported(int $orderId): bool
     {
@@ -248,14 +220,14 @@ class StockService
     ): void {
         $stockQuery = WarehouseProduct::where('warehouse_id', $warehouseId)
             ->where('product_id', $productId);
-        
+
         // Xử lý variant_id null
         if (is_null($variantId)) {
             $stockQuery->whereNull('variant_id');
         } else {
             $stockQuery->where('variant_id', $variantId);
         }
-        
+
         $currentStock = $stockQuery->value('quantity') ?? 0;
 
         if ($currentStock < $quantity) {

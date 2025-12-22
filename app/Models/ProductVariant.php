@@ -47,7 +47,11 @@ class ProductVariant extends Model
 
     public function getTotalStockAttribute()
     {
-        return $this->warehouseStock->sum('quantity');
+        // Nếu đã load relation thì dùng, nếu không thì query lại
+        if ($this->relationLoaded('warehouseStock')) {
+            return $this->warehouseStock->sum('quantity');
+        }
+        return $this->warehouseStock()->sum('quantity');
     }
 
     public function getStockAttribute()
