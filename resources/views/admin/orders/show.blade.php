@@ -119,11 +119,7 @@
                                             @endif
                                         </div>
                                     @else
-<<<<<<< Updated upstream
-                                        <span class="text-muted">—</span>
-=======
                                         <span class="text-muted small">Không có biến thể</span>
->>>>>>> Stashed changes
                                     @endif
                                 </td>
                                 <td>{{ number_format($item->price, 0, ',', '.') }} đ</td>

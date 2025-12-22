@@ -135,10 +135,6 @@
                                 
                                 <div class="mb-3">
                                     <label class="form-label"><strong>Họ tên</strong> <span class="text-danger">*</span></label>
-<<<<<<< Updated upstream
-                                    <input type="text" name="customer_name" class="form-control" 
-                                           value="{{ old('customer_name', $order->customer_name) }}" required>
-=======
                                     @if(auth()->check())
                                         <input type="text" name="customer_name" class="form-control" 
                                                value="{{ old('customer_name', auth()->user()->name) }}" readonly disabled>
@@ -148,15 +144,10 @@
                                         <input type="text" name="customer_name" class="form-control" 
                                                value="{{ old('customer_name', $order->customer_name) }}" required>
                                     @endif
->>>>>>> Stashed changes
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label class="form-label"><strong>Email</strong></label>
-<<<<<<< Updated upstream
-                                    <input type="email" name="customer_email" class="form-control" 
-                                           value="{{ old('customer_email', $order->customer_email) }}">
-=======
                                     @if(auth()->check())
                                         <input type="email" name="customer_email" class="form-control" 
                                                value="{{ old('customer_email', auth()->user()->email) }}" readonly disabled>
@@ -166,7 +157,6 @@
                                         <input type="email" name="customer_email" class="form-control" 
                                                value="{{ old('customer_email', $order->customer_email) }}">
                                     @endif
->>>>>>> Stashed changes
                                 </div>
                                 
                                 <div class="mb-3">
@@ -177,11 +167,7 @@
                                 
                                 <div class="mb-3">
                                     <label class="form-label"><strong>Địa chỉ</strong> <span class="text-danger">*</span></label>
-<<<<<<< Updated upstream
-                                    <textarea name="shipping_address" class="form-control" rows="3" required>{{ old('shipping_address', $order->shipping_address_line ?? $order->shipping_address) }}</textarea>
-=======
                                     <textarea name="shipping_address_line" class="form-control" rows="3" required>{{ old('shipping_address_line', $order->shipping_address_line ?? $order->shipping_address ?? '') }}</textarea>
->>>>>>> Stashed changes
                                 </div>
                                 
                                 <div class="mb-3">

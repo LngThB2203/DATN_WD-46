@@ -84,12 +84,19 @@
                                                         <div>
                                                             <strong>{{ $item['name'] ?? 'Sản phẩm' }}</strong>
                                                             @if(!empty($item['variant_name']))
-                                                                <br><small class="text-primary fw-semibold">
-                                                                    <i class="bi bi-tag-fill"></i> Biến thể: {{ $item['variant_name'] }}
-                                                                </small>
+                                                                <br><div class="mt-1">
+                                                                    <small class="text-muted">
+                                                                        @php
+                                                                            $variantParts = explode(' • ', $item['variant_name']);
+                                                                        @endphp
+                                                                        @foreach($variantParts as $part)
+                                                                            <span class="badge bg-secondary me-1">{{ $part }}</span>
+                                                                        @endforeach
+                                                                    </small>
+                                                                </div>
                                                             @elseif(isset($item['variant_id']) && $item['variant_id'])
-                                                                <br><small class="text-primary fw-semibold">
-                                                                    <i class="bi bi-tag-fill"></i> Biến thể #{{ $item['variant_id'] }}
+                                                                <br><small class="text-muted">
+                                                                    <i class="bi bi-tag"></i> Biến thể #{{ $item['variant_id'] }}
                                                                 </small>
                                                             @endif
                                                         </div>
