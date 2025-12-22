@@ -31,17 +31,36 @@ class OrderController extends Controller
     // Tự động gán kho nếu chưa có
     protected function autoAssignWarehouse(Order $order): void
     {
+        // Đảm bảo details đã được load
+        if (!$order->relationLoaded('details')) {
+            $order->load('details');
+        }
+
+        if ($order->details->isEmpty()) {
+            throw new \Exception('Đơn hàng không có sản phẩm nào');
+        }
+
         $warehouses = Warehouse::orderBy('id')->get();
+
+        if ($warehouses->isEmpty()) {
+            throw new \Exception('Không có kho nào trong hệ thống');
+        }
 
         foreach ($warehouses as $warehouse) {
             $canFulfill = true;
 
             foreach ($order->details as $item) {
-                $stock = WarehouseProduct::where([
-                    'warehouse_id' => $warehouse->id,
-                    'product_id'   => $item->product_id,
-                    'variant_id'   => $item->variant_id,
-                ])->value('quantity') ?? 0;
+                $stockQuery = WarehouseProduct::where('warehouse_id', $warehouse->id)
+                    ->where('product_id', $item->product_id);
+                
+                // Xử lý variant_id null
+                if (is_null($item->variant_id)) {
+                    $stockQuery->whereNull('variant_id');
+                } else {
+                    $stockQuery->where('variant_id', $item->variant_id);
+                }
+                
+                $stock = $stockQuery->value('quantity') ?? 0;
 
                 if ($stock < $item->quantity) {
                     $canFulfill = false;
@@ -50,14 +69,66 @@ class OrderController extends Controller
             }
 
             if ($canFulfill) {
-                $order->update([
-                    'warehouse_id' => $warehouse->id,
-                ]);
+                $order->warehouse_id = $warehouse->id;
+                $order->save();
                 return;
             }
         }
 
         throw new \Exception('Không có kho nào đủ hàng cho đơn này');
+    }
+
+    // Lấy danh sách kho có đủ sản phẩm cho đơn hàng
+    protected function getAvailableWarehouses(Order $order): array
+    {
+        $availableWarehouses = [];
+        
+        // Đảm bảo details đã được load
+        if (!$order->relationLoaded('details')) {
+            $order->load('details');
+        }
+        
+        if ($order->details->isEmpty()) {
+            return $availableWarehouses;
+        }
+
+        $warehouses = Warehouse::orderBy('warehouse_name')->get();
+
+        foreach ($warehouses as $warehouse) {
+            $canFulfill = true;
+            $missingItems = [];
+
+            foreach ($order->details as $item) {
+                $stockQuery = WarehouseProduct::where('warehouse_id', $warehouse->id)
+                    ->where('product_id', $item->product_id);
+                
+                // Xử lý variant_id null
+                if (is_null($item->variant_id)) {
+                    $stockQuery->whereNull('variant_id');
+                } else {
+                    $stockQuery->where('variant_id', $item->variant_id);
+                }
+                
+                $stock = $stockQuery->value('quantity') ?? 0;
+
+                if ($stock < $item->quantity) {
+                    $canFulfill = false;
+                    $missingItems[] = [
+                        'product' => $item->product->name ?? 'N/A',
+                        'required' => $item->quantity,
+                        'available' => $stock,
+                    ];
+                }
+            }
+
+            $availableWarehouses[] = [
+                'warehouse' => $warehouse,
+                'can_fulfill' => $canFulfill,
+                'missing_items' => $missingItems,
+            ];
+        }
+
+        return $availableWarehouses;
     }
 
     // Chi tiết đơn hàng
@@ -69,6 +140,7 @@ class OrderController extends Controller
             'payment',
             'shipment',
             'details.product.galleries',
+            'details.product',
             'details.variant.size',
             'details.variant.scent',
             'details.variant.concentration',
@@ -78,27 +150,61 @@ class OrderController extends Controller
         // Kiểm tra xem đơn hàng đã thanh toán chưa
         $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
 
-        if (! $order->warehouse_id) {
-            $this->autoAssignWarehouse($order);
-            $order->refresh();
+        // Tự động gán kho nếu chưa có và có kho đủ hàng
+        if (! $order->warehouse_id && $order->details->isNotEmpty()) {
+            try {
+                $this->autoAssignWarehouse($order);
+                // Reload lại order từ database với tất cả relationships
+                $order = Order::with([
+                    'user',
+                    'discount',
+                    'payment',
+                    'shipment',
+                    'details.product.galleries',
+                    'details.product',
+                    'details.variant.size',
+                    'details.variant.scent',
+                    'details.variant.concentration',
+                    'warehouse',
+                ])->findOrFail($id);
+            } catch (\Exception $e) {
+                // Nếu không có kho nào đủ hàng, vẫn cho phép xem đơn hàng
+                // Admin vẫn có thể chuyển trạng thái hoặc chọn kho thủ công
+            }
         }
 
-        return view('admin.orders.show', compact('order', 'isPaid'));
+        // Lấy danh sách kho có đủ sản phẩm (để admin có thể đổi kho nếu cần)
+        $availableWarehouses = $this->getAvailableWarehouses($order);
+        $allWarehouses = Warehouse::orderBy('warehouse_name')->get();
+
+        return view('admin.orders.show', compact('order', 'isPaid', 'availableWarehouses', 'allWarehouses'));
     }
 
     // Cập nhật trạng thái đơn hàng
     public function updateStatus(Request $request, $id, StockService $stockService)
     {
-        $order     = Order::with('details')->findOrFail($id);
+        $order = Order::with('details')->findOrFail($id);
+        
+        $request->validate([
+            'order_status' => 'required|string',
+        ]);
+        
         $newStatus = $request->input('order_status');
-
-        if (! $newStatus) {
-            return back()->withErrors('Trạng thái đơn hàng không hợp lệ');
-        }
 
         // Bắt buộc chọn kho trước khi PREPARING
         if ($newStatus === OrderStatusHelper::PREPARING && ! $order->warehouse_id) {
-            return back()->withErrors('Vui lòng chọn kho trước khi chuẩn bị hàng');
+            // Tự động thử gán kho trước khi báo lỗi
+            try {
+                // Đảm bảo details đã được load
+                if (!$order->relationLoaded('details')) {
+                    $order->load('details');
+                }
+                $this->autoAssignWarehouse($order);
+                // Reload lại order từ database để lấy warehouse_id mới
+                $order = Order::with('details')->findOrFail($id);
+            } catch (\Exception $e) {
+                return back()->withErrors('Vui lòng chọn kho trước khi chuẩn bị hàng. ' . $e->getMessage());
+            }
         }
 
         // Kiểm tra trạng thái có thể cập nhật
@@ -114,14 +220,14 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Trừ kho khi PENDING → PREPARING
+            // Trừ kho khi chuyển từ PENDING sang PREPARING (bước đầu tiên)
             $currentStatus = OrderStatusHelper::mapOldStatus($order->order_status);
-            if (
-                ($order->order_status === OrderStatusHelper::PENDING || $currentStatus === OrderStatusHelper::PENDING) &&
-                $newStatus === OrderStatusHelper::PREPARING
-            ) {
+            if ($currentStatus === OrderStatusHelper::PENDING && 
+                $newStatus === OrderStatusHelper::PREPARING &&
+                !$stockService->isOrderExported($order->id)) {
                 try {
                     $stockService->exportByOrder($order);
+                    $order->refresh();
                 } catch (\Exception $e) {
                     DB::rollBack();
                     return back()->withErrors($e->getMessage());
@@ -133,7 +239,7 @@ class OrderController extends Controller
                 try {
                     $stockService->cancelOrder($order);
                     DB::commit();
-                    return back()->with('success', 'Hủy đơn hàng và hoàn kho thành công');
+                    return redirect()->route('admin.orders.show', $order->id)->with('success', 'Hủy đơn hàng và hoàn kho thành công');
                 } catch (\Exception $e) {
                     DB::rollBack();
                     return back()->withErrors('Không thể hủy đơn hàng: ' . $e->getMessage());
@@ -141,13 +247,71 @@ class OrderController extends Controller
             }
 
             // Cập nhật trạng thái khác
-            $order->update(['order_status' => $newStatus]);
+            $order->order_status = $newStatus;
+            $order->save();
 
             DB::commit();
-            return back()->with('success', 'Cập nhật trạng thái thành công');
+            
+            return redirect()->route('admin.orders.show', $order->id)->with('success', 'Cập nhật trạng thái thành công');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors('Có lỗi xảy ra khi cập nhật trạng thái: ' . $e->getMessage());
         }
+    }
+
+    // Cập nhật kho xuất hàng
+    public function updateWarehouse(Request $request, $id)
+    {
+        $request->validate([
+            'warehouse_id' => 'required|exists:warehouse,id',
+        ]);
+
+        $order = Order::with('details')->findOrFail($id);
+
+        // Kiểm tra kho có đủ sản phẩm không
+        $warehouseId = $request->input('warehouse_id');
+        $canFulfill = true;
+        $missingItems = [];
+
+        // Đảm bảo details đã được load
+        if (!$order->relationLoaded('details')) {
+            $order->load('details');
+        }
+
+        foreach ($order->details as $item) {
+            $stockQuery = WarehouseProduct::where('warehouse_id', $warehouseId)
+                ->where('product_id', $item->product_id);
+            
+            // Xử lý variant_id null
+            if (is_null($item->variant_id)) {
+                $stockQuery->whereNull('variant_id');
+            } else {
+                $stockQuery->where('variant_id', $item->variant_id);
+            }
+            
+            $stock = $stockQuery->value('quantity') ?? 0;
+
+            if ($stock < $item->quantity) {
+                $canFulfill = false;
+                $missingItems[] = [
+                    'product' => $item->product->name ?? 'N/A',
+                    'required' => $item->quantity,
+                    'available' => $stock,
+                ];
+            }
+        }
+
+        if (!$canFulfill) {
+            $message = 'Kho không đủ hàng. Sản phẩm thiếu: ';
+            foreach ($missingItems as $missing) {
+                $message .= $missing['product'] . ' (cần: ' . $missing['required'] . ', có: ' . $missing['available'] . '); ';
+            }
+            return back()->withErrors($message);
+        }
+
+        $order->update(['warehouse_id' => $warehouseId]);
+        $order->refresh();
+
+        return redirect()->route('admin.orders.show', $order->id)->with('success', 'Đã cập nhật kho xuất hàng thành công. Bây giờ bạn có thể chuyển trạng thái đơn hàng.');
     }
 }

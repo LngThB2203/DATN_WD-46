@@ -76,33 +76,57 @@ class OrderStatusHelper
     }
 
     // ===== KIỂM TRA ĐƯỢC UPDATE KHÔNG =====
+    // Logic chuyển từng bước một: PENDING → PREPARING → AWAITING_PICKUP → DELIVERED → COMPLETED
+    // Hoặc hủy: PENDING/PREPARING/AWAITING_PICKUP → CANCELLED
     public static function canUpdateStatus(string $currentStatus, string $newStatus): bool
     {
         $current = self::mapOldStatus($currentStatus);
         $new     = self::mapOldStatus($newStatus);
 
-        // ĐÃ KẾT THÚC → CẤM ĐỔI
+        // Trạng thái giống nhau thì không cần chuyển
+        if ($current === $new) {
+            return false;
+        }
+
+        // ĐÃ KẾT THÚC → CẤM ĐỔI (CANCELLED và COMPLETED không thể đổi)
         if (in_array($current, [
             self::CANCELLED,
             self::COMPLETED,
-            self::DELIVERED,
             self::REFUNDED,
         ], true)) {
             return false;
         }
 
+        // Có thể hủy ở các trạng thái trước khi DELIVERED
+        if ($new === self::CANCELLED) {
+            return in_array($current, [
+                self::PENDING,
+                self::PREPARING,
+                self::AWAITING_PICKUP,
+            ], true);
+        }
+
+        // Chỉ có thể chuyển sang COMPLETED từ DELIVERED
+        if ($new === self::COMPLETED) {
+            return $current === self::DELIVERED;
+        }
+
+        // Flow chuyển từng bước một (không bỏ qua bước)
         $flow = [
             self::PENDING         => [
-                self::PREPARING,
-                self::CANCELLED,
+                self::PREPARING,      // Bước tiếp theo
+                self::CANCELLED,      // Hoặc hủy
             ],
             self::PREPARING       => [
-                self::AWAITING_PICKUP,
-                self::CANCELLED,
+                self::AWAITING_PICKUP, // Bước tiếp theo
+                self::CANCELLED,       // Hoặc hủy
             ],
             self::AWAITING_PICKUP => [
-                self::DELIVERED,
-                self::CANCELLED,
+                self::DELIVERED,  // Bước tiếp theo
+                self::CANCELLED,  // Hoặc hủy
+            ],
+            self::DELIVERED       => [
+                self::COMPLETED,  // Chỉ có thể chuyển sang COMPLETED
             ],
         ];
 

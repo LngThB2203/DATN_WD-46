@@ -28,28 +28,12 @@
 
         {{-- Thông tin khách hàng --}}
         <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Thông tin khách hàng</span>
-                @if($isPaid)
-                    <span class="badge bg-success">Đã thanh toán</span>
-                @endif
-            </div>
+            <div class="card-header">Thông tin khách hàng</div>
             <div class="card-body">
                 <p><strong>Tên:</strong> {{ $order->user->name ?? $order->customer_name }}</p>
                 <p><strong>Email:</strong> {{ $order->user->email ?? $order->customer_email }}</p>
                 <p><strong>SĐT:</strong> {{ $order->customer_phone }}</p>
-                <p><strong>Địa chỉ:</strong> {{ $order->shipping_address_line ?? $order->shipping_address }}</p>
-                @if($order->shipping_province || $order->shipping_district || $order->shipping_ward)
-                    <p><strong>Địa chỉ đầy đủ:</strong> 
-                        {{ $order->shipping_address_line }},
-                        {{ $order->shipping_ward }},
-                        {{ $order->shipping_district }},
-                        {{ $order->shipping_province }}
-                    </p>
-                @endif
-                @if($order->customer_note)
-                    <p><strong>Ghi chú:</strong> {{ $order->customer_note }}</p>
-                @endif
+                <p><strong>Địa chỉ:</strong> {{ $order->shipping_address }}</p>
             </div>
         </div>
 
@@ -71,74 +55,70 @@
                         </thead>
                         <tbody>
                             @forelse ($order->details as $item)
-                            @php
-                            $product = $item->product;
-                            $primaryImage = $product ? ($product->galleries->where('is_primary', true)->first() ??
-                            $product->galleries->first()) : null;
-                            $imageUrl = $primaryImage
-                            ? asset('storage/' . $primaryImage->image_path)
-                            : asset('assets/client/img/product/product-1.webp');
-                            $isDeleted = $product && $product->trashed();
-                            @endphp
-                            <tr>
-                                <td>
-                                    <img src="{{ $imageUrl }}" class="rounded border"
-                                        style="width:60px;height:60px;object-fit:cover"
-                                        onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}';">
-                                </td>
-                                <td>
-                                    @if($product)
-                                        {{ $product->name }}
-                                        @if($isDeleted)
-                                            <span class="badge bg-warning text-dark ms-1">Đã xóa</span>
+                                    @php
+                                    $product = $item->product;
+                                    $primaryImage = $product ? ($product->galleries->where('is_primary', true)->first() ??
+                                    $product->galleries->first()) : null;
+                                    $imageUrl = $primaryImage
+                                        ? asset('storage/' . $primaryImage->image_path)
+                                        : asset('assets/client/img/product/product-1.webp');
+                                    $isDeleted = $product && $product->trashed();
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <img src="{{ $imageUrl }}" class="rounded border"
+                                            style="width:60px;height:60px;object-fit:cover"
+                                            onerror="this.src='{{ asset('assets/client/img/product/product-1.webp') }}';">
+                                    </td>
+                                    <td>
+                                        @if($product)
+                                            {{ $product->name }}
+                                            @if($isDeleted)
+                                                <span class="badge bg-warning text-dark ms-1">Đã xóa</span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">Sản phẩm đã bị xóa</span>
                                         @endif
-                                    @else
-                                        <span class="text-muted">Sản phẩm đã bị xóa</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($item->variant)
-                                        <div class="small">
-                                            @if($item->variant->size)
-                                                <div><strong>Kích thước:</strong> {{ $item->variant->size->size_name ?? $item->variant->size->name ?? 'N/A' }}</div>
-                                            @endif
-                                            @if($item->variant->scent)
-                                                <div><strong>Hương:</strong> {{ $item->variant->scent->scent_name ?? $item->variant->scent->name ?? 'N/A' }}</div>
-                                            @endif
-                                            @if($item->variant->concentration)
-                                                <div><strong>Nồng độ:</strong> {{ $item->variant->concentration->concentration_name ?? $item->variant->concentration->name ?? 'N/A' }}</div>
-                                            @endif
-                                            @if($item->variant->gender)
-                                                <div><strong>Giới tính:</strong> 
-                                                    @if($item->variant->gender === 'male') Nam
-                                                    @elseif($item->variant->gender === 'female') Nữ
-                                                    @elseif($item->variant->gender === 'unisex') Unisex
-                                                    @else {{ $item->variant->gender }}
-                                                    @endif
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @else
-<<<<<<< Updated upstream
-                                        <span class="text-muted">—</span>
-=======
-                                        <span class="text-muted small">Không có biến thể</span>
->>>>>>> Stashed changes
-                                    @endif
-                                </td>
-                                <td>{{ number_format($item->price, 0, ',', '.') }} đ</td>
-                                <td>{{ $item->quantity }}</td>
+                                    </td>
+                                    <td>
+                                        @if($item->variant)
+                                            <div class="small">
+                                                @if($item->variant->size)
+                                                    <div><strong>Kích thước:</strong> {{ $item->variant->size->size_name ?? $item->variant->size->name ?? 'N/A' }}</div>
+                                                @endif
+                                                @if($item->variant->scent)
+                                                    <div><strong>Hương:</strong> {{ $item->variant->scent->scent_name ?? $item->variant->scent->name ?? 'N/A' }}</div>
+                                                @endif
+                                                @if($item->variant->concentration)
+                                                    <div><strong>Nồng độ:</strong> {{ $item->variant->concentration->concentration_name ?? $item->variant->concentration->name ?? 'N/A' }}</div>
+                                                @endif
+                                                @if($item->variant->gender)
+                                                    <div><strong>Giới tính:</strong> 
+                                                        @if($item->variant->gender === 'male') Nam
+                                                        @elseif($item->variant->gender === 'female') Nữ
+                                                        @elseif($item->variant->gender === 'unisex') Unisex
+                                                        @else {{ $item->variant->gender }}
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="text-muted small">Không có biến thể</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ number_format($item->price, 0, ',', '.') }} đ</td>
+                                    <td>{{ $item->quantity }}</td>
                                 <td>
                                     <strong>
                                         {{ number_format($item->subtotal ?? ($item->price * $item->quantity), 0, ',',
                                         '.') }} đ
                                     </strong>
                                 </td>
-                            </tr>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">Không có sản phẩm nào.</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Không có sản phẩm nào.</td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -195,26 +175,64 @@
         <div class="card mb-4">
             <div class="card-header">Kho xuất hàng</div>
             <div class="card-body">
-                <div class="alert alert-info mb-0">
-                    Kho:
-                    <strong>{{ $order->warehouse->warehouse_name }}</strong>
-                </div>
+                @if($order->warehouse_id && $order->warehouse)
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-check-circle"></i> Kho hiện tại: <strong>{{ $order->warehouse->warehouse_name }}</strong>
+                    </div>
+                @else
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-triangle"></i> Chưa được gán kho. Hệ thống sẽ tự động chọn kho có đủ hàng.
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('admin.orders.update-warehouse', $order->id) }}" id="updateWarehouseForm">
+                    @csrf
+                    @method('PUT')
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Chọn kho xuất hàng</strong></label>
+                        <select name="warehouse_id" class="form-select">
+                            <option value="">-- Chọn kho --</option>
+                            @foreach($allWarehouses as $warehouse)
+                                @php
+                                    $warehouseInfo = collect($availableWarehouses)->firstWhere('warehouse.id', $warehouse->id);
+                                    $canFulfill = $warehouseInfo['can_fulfill'] ?? false;
+                                @endphp
+                                <option value="{{ $warehouse->id }}" 
+                                    {{ $order->warehouse_id == $warehouse->id ? 'selected' : '' }}
+                                    {{ !$canFulfill ? 'disabled' : '' }}>
+                                    {{ $warehouse->warehouse_name }}
+                                    @if($canFulfill)
+                                        <span class="text-success">✓ (Đủ hàng)</span>
+                                    @else
+                                        <span class="text-danger">✗ (Thiếu hàng)</span>
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted d-block mt-1">
+                            <i class="bi bi-info-circle"></i> Chỉ kho có dấu ✓ mới đủ sản phẩm để xuất hàng.
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-save"></i> Cập nhật kho
+                    </button>
+                </form>
             </div>
         </div>
 
         {{-- Trạng thái --}}
-        @php
-            $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
-            $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
+            @php
+                $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+                $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
             // Các trạng thái yêu cầu phải có warehouse
             $statusesRequiringWarehouse = [\App\Helpers\OrderStatusHelper::PREPARING, \App\Helpers\OrderStatusHelper::AWAITING_PICKUP, \App\Helpers\OrderStatusHelper::DELIVERED, \App\Helpers\OrderStatusHelper::COMPLETED];
-        @endphp
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Trạng thái đơn hàng</span>
-                <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
-            </div>
-            <div class="card-body">
+            @endphp
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Trạng thái đơn hàng</span>
+                    <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
+                </div>
+                <div class="card-body">
                 @if (!$order->warehouse_id)
                     <div class="alert alert-warning mb-3">
                         <small><i class="bi bi-exclamation-triangle"></i> Vui lòng chọn kho xuất hàng trước khi cập nhật trạng thái sang "Đang chuẩn bị hàng" hoặc các trạng thái tiếp theo.</small>
@@ -232,56 +250,66 @@
                             }
                         }
                     }
+                    // Luôn cho phép submit nếu có ít nhất 1 trạng thái có thể chuyển (kể cả cancelled)
+                    $hasAvailableStatus = !empty($availableStatuses);
                 @endphp
                 <form method="POST" action="{{ route('admin.orders.update-status', $order->id) }}" id="updateStatusForm">
                     @csrf
                     @method('PUT')
-                    <select name="order_status" class="form-select mb-2" required id="statusSelect">
+                    <select name="order_status" class="form-select mb-2" required id="statusSelect" onchange="handleStatusChange(this)">
                         @foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label)
-                            @if (\App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key))
-                                @php
-                                    $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
-                                    $isDisabled = $requiresWarehouse && !$order->warehouse_id;
-                                    $isCurrent = ($order->order_status == $key || $currentStatusMapped == $key);
-                                @endphp
-                                <option value="{{ $key }}" 
-                                    {{ $isCurrent ? 'selected' : '' }}
-                                    {{ $isDisabled ? 'disabled' : '' }}>
-                                    {{ $label }}
-                                    @if($isDisabled) (Cần chọn kho) @endif
-                                </option>
-                            @endif
+                            @php
+                                $isCurrent = ($order->order_status == $key || $currentStatusMapped == $key);
+                                $canUpdate = \App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key);
+                                $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
+                                $disabledByWarehouse = $requiresWarehouse && !$order->warehouse_id;
+                                $isDisabled = !$canUpdate || $disabledByWarehouse;
+                                $disableReason = '';
+                                if (!$canUpdate && !$isCurrent) {
+                                    $disableReason = ' (Không thể chuyển từ trạng thái hiện tại)';
+                                } elseif ($disabledByWarehouse) {
+                                    $disableReason = ' (Cần chọn kho)';
+                                }
+                            @endphp
+                            <option value="{{ $key }}" 
+                                {{ $isCurrent ? 'selected' : '' }}
+                                {{ $isDisabled ? 'disabled' : '' }}>
+                                {{ $label }}{{ $disableReason }}
+                            </option>
                         @endforeach
                     </select>
-                    @if (empty($availableStatuses))
+                    @if (!$hasAvailableStatus)
                         <div class="alert alert-warning mb-2">
-                            <small>Vui lòng chọn kho để có thể cập nhật trạng thái.</small>
+                            <small>Không thể chuyển trạng thái từ trạng thái hiện tại.</small>
                         </div>
                         <button type="button" class="btn btn-success" disabled>Cập nhật trạng thái</button>
                     @else
-                        <button type="submit" class="btn btn-success">Cập nhật trạng thái</button>
+                        <button type="submit" class="btn btn-success" id="submitStatusBtn">Cập nhật trạng thái</button>
                     @endif
                 </form>
                 <script>
-                    document.getElementById('statusSelect')?.addEventListener('change', function() {
-                        const selectedOption = this.options[this.selectedIndex];
+                    function handleStatusChange(select) {
+                        const selectedOption = select.options[select.selectedIndex];
                         if (selectedOption.disabled) {
-                            // Nếu chọn option disabled, reset về giá trị hiện tại
                             const currentValue = '{{ $order->order_status }}';
-                            this.value = currentValue;
-                            alert('Vui lòng chọn kho trước khi chuyển sang trạng thái này!');
-                            return false;
+                            select.value = currentValue;
+                            const reason = selectedOption.textContent.match(/\(([^)]+)\)/);
+                            alert(reason ? reason[1] : 'Không thể chuyển sang trạng thái này!');
                         }
-                    });
+                    }
                     
                     document.getElementById('updateStatusForm')?.addEventListener('submit', function(e) {
                         const select = document.getElementById('statusSelect');
                         const selectedOption = select.options[select.selectedIndex];
-                        if (selectedOption.disabled) {
+                        
+                        if (selectedOption && selectedOption.disabled) {
                             e.preventDefault();
-                            alert('Vui lòng chọn kho trước khi chuyển sang trạng thái này!');
+                            e.stopPropagation();
+                            const reason = selectedOption.textContent.match(/\(([^)]+)\)/);
+                            alert(reason ? reason[1] : 'Không thể chuyển sang trạng thái này!');
                             return false;
                         }
+                        
                         return true;
                     });
                 </script>
