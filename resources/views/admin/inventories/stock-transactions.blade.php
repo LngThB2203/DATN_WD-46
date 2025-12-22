@@ -1,82 +1,122 @@
 @extends('admin.layouts.admin')
 
 @section('content')
-<div class="container-fluid">
-
-    <h4 class="mb-4">Lịch sử nhập / xuất kho</h4>
-
-    <form method="GET" class="row g-2 mb-3">
-        <div class="col-md-3">
-            <select name="warehouse_id" class="form-control">
-                <option value="">-- Tất cả kho --</option>
-                @foreach($warehouses as $w)
-                    <option value="{{ $w->id }}" @selected(request('warehouse_id') == $w->id)>
-                        {{ $w->name }}
-                    </option>
-                @endforeach
-            </select>
+<div class="page-content">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">📦 <strong>Lịch sử nhập / xuất kho</strong></h5>
         </div>
+        
+        <div class="card-body">
+            <form method="GET" class="row g-2 mb-4 p-3 bg-light rounded border">
+                <div class="col-md-3">
+                    <label class="small fw-bold">Kho hàng</label>
+                    <select name="warehouse_id" class="form-select form-select-sm">
+                        <option value="">-- Tất cả kho --</option>
+                        @foreach($warehouses as $w)
+                            <option value="{{ $w->id }}" @selected(request('warehouse_id') == $w->id)>
+                                {{ $w->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-        <div class="col-md-2">
-            <select name="type" class="form-control">
-                <option value="">-- Tất cả loại --</option>
-                <option value="import">Nhập kho</option>
-                <option value="export">Xuất kho</option>
-            </select>
+                <div class="col-md-2">
+                    <label class="small fw-bold">Loại giao dịch</label>
+                    <select name="type" class="form-select form-select-sm">
+                        <option value="">-- Tất cả loại --</option>
+                        <option value="import" @selected(request('type') == 'import')>Nhập kho</option>
+                        <option value="export" @selected(request('type') == 'export')>Xuất kho</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="small fw-bold">Từ ngày</label>
+                    <input type="date" name="from" class="form-control form-control-sm" value="{{ request('from') }}">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="small fw-bold">Đến ngày</label>
+                    <input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}">
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary btn-sm w-100 shadow-sm">
+                        <i class="bi bi-filter"></i> Lọc dữ liệu
+                    </button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle shadow-sm">
+                    <thead class="table-light">
+                        <tr class="text-center small text-uppercase fw-bold">
+                            <th style="width: 150px;">Thời gian</th>
+                            <th>Kho</th>
+                            <th>Sản phẩm</th>
+                            <th>Biến thể</th>
+                            <th>Lô</th>
+                            <th style="width: 100px;">Loại</th>
+                            <th>Số lượng</th>
+                            <th class="text-muted">Tồn trước</th>
+                            <th class="fw-bold">Tồn sau</th>
+                            <th>Tham chiếu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($transactions as $t)
+                        <tr class="text-center">
+                            <td class="small">{{ $t->created_at->format('d-m-Y H:i:s') }}</td>
+                            <td><span class="badge badge-soft-info">{{ $t->warehouse->name ?? '-' }}</span></td>
+                            <td class="text-start fw-bold text-primary">{{ $t->product->name ?? '-' }}</td>
+                            <td><code class="small">{{ $t->variant->sku ?? '-' }}</code></td>
+                            <td><span class="text-muted small">{{ $t->batch_code ?? '-' }}</span></td>
+                            <td>
+                                @if($t->type === 'import')
+                                    <span class="badge bg-success-subtle text-success border border-success px-2">Nhập</span>
+                                @else
+                                    <span class="badge bg-danger-subtle text-danger border border-danger px-2">Xuất</span>
+                                @endif
+                            </td>
+                            <td class="fw-bold {{ $t->quantity > 0 ? 'text-success' : 'text-danger' }}">
+                                {{ $t->quantity > 0 ? '+' : '' }}{{ $t->quantity }}
+                            </td>
+                            <td class="text-muted">{{ $t->before_quantity }}</td>
+                            <td class="fw-bold text-dark bg-light">{{ $t->after_quantity }}</td>
+                            <td>
+                                <span class="badge bg-secondary small text-uppercase">
+                                    {{ $t->reference_type }} #{{ $t->reference_id }}
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">Không có lịch sử giao dịch nào.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-center">
+                {{ $transactions->links() }}
+            </div>
         </div>
-
-        <div class="col-md-2">
-            <input type="date" name="from" class="form-control" value="{{ request('from') }}">
-        </div>
-
-        <div class="col-md-2">
-            <input type="date" name="to" class="form-control" value="{{ request('to') }}">
-        </div>
-
-        <div class="col-md-2">
-            <button class="btn btn-primary w-100">Lọc</button>
-        </div>
-    </form>
-
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Thời gian</th>
-                <th>Kho</th>
-                <th>Sản phẩm</th>
-                <th>Biến thể</th>
-                <th>Lô</th>
-                <th>Loại</th>
-                <th>Số lượng</th>
-                <th>Tồn trước</th>
-                <th>Tồn sau</th>
-                <th>Tham chiếu</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($transactions as $t)
-            <tr>
-                <td>{{ $t->created_at }}</td>
-                <td>{{ $t->warehouse->name ?? '-' }}</td>
-                <td>{{ $t->product->name ?? '-' }}</td>
-                <td>{{ $t->variant->sku ?? '-' }}</td>
-                <td>{{ $t->batch_code }}</td>
-                <td>
-                    @if($t->type === 'import')
-                        <span class="badge bg-success">Nhập</span>
-                    @else
-                        <span class="badge bg-danger">Xuất</span>
-                    @endif
-                </td>
-                <td>{{ $t->quantity }}</td>
-                <td>{{ $t->before_quantity }}</td>
-                <td>{{ $t->after_quantity }}</td>
-                <td>{{ $t->reference_type }} #{{ $t->reference_id }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    {{ $transactions->links() }}
+    </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    /* Custom badge styles để trông hiện đại hơn */
+    .badge-soft-info {
+        background-color: #e1f5fe;
+        color: #0288d1;
+    }
+    .table thead th {
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    .page-content { padding: 20px; }
+</style>
+@endpush
