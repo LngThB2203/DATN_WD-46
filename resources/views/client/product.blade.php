@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function () {
        });
    }
 
-   if (increaseBtn && quantityInput) {
+       if (increaseBtn && quantityInput) {
        increaseBtn.addEventListener('click', function () {
            const currentValue = parseInt(quantityInput.value) || 1;
            const max = parseInt(quantityInput.getAttribute('max')) || (hasVariants ? 100 : defaultTotalStock);

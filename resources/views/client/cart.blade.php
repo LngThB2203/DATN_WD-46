@@ -49,91 +49,85 @@
                             <a href="{{ route('home') }}" class="btn btn-primary">Tiếp tục mua sắm</a>
                         </div>
                         @else
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th width="40">
-                                            <input type="checkbox" id="selectAllHeader" class="form-check-input">
-                                        </th>
-                                        <th>Sản phẩm</th>
-                                        <th>Giá</th>
-                                        <th>SL</th>
-                                        <th>Thành tiền</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($cart['items'] as $index => $item)
-                                    <tr class="cart-item-row" data-index="{{ $index }}"
-                                        data-price="{{ $item['price'] ?? 0 }}">
-                                        <td>
-                                            <input type="checkbox" name="selected_items[]"
-                                                value="{{ $item['cart_item_id'] }}"
-                                                class="form-check-input item-checkbox" checked>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-3">
-                                                @if($item['image'])
-                                                <img src="{{ asset('storage/' . $item['image']) }}"
-                                                    alt="{{ $item['name'] }}" class="rounded"
-                                                    style="width: 80px; height: 80px; object-fit: cover;">
-                                                @else
-                                                <img src="{{ asset('assets/client/img/product/product-1.webp') }}"
-                                                    alt="{{ $item['name'] }}" class="rounded"
-                                                    style="width: 80px; height: 80px; object-fit: cover;">
-                                                @endif
-                                                <div>
-                                                    <strong>{{ $item['name'] }}</strong>
-                                                    @if(!empty($item['variant_name']) &&
-                                                    is_array($item['variant_name']))
-                                                    <br>
-                                                    @foreach($item['variant_name'] as $key => $value)
-                                                    <small class="text-primary d-block">
-                                                        <i class="bi bi-tag-fill"></i> {{ $key }}: {{ $value }}
-                                                    </small>
-                                                    @endforeach
-                                                    @endif
-
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>{{ number_format($item['price'] ?? 0, 0, ',', '.') }} VNĐ</td>
-                                        <td>
-                                            <form method="POST" action="{{ route('cart.update') }}"
-                                                class="d-inline cart-update-form">
-                                                @csrf
-                                                <input type="hidden" name="cart_item_id"
-                                                    value="{{ $item['cart_item_id'] }}">
-                                                <div class="d-flex gap-2 align-items-center">
-                                                    <button type="button"
-                                                        class="btn btn-sm btn-outline-secondary quantity-decrease">-</button>
-                                                    <input type="number" name="quantity"
-                                                        class="form-control form-control-sm text-center quantity-input"
-                                                        value="{{ $item['quantity'] ?? 1 }}" min="1" max="100"
-                                                        style="width: 70px;">
-                                                    <button type="button"
-                                                        class="btn btn-sm btn-outline-secondary quantity-increase">+</button>
-                                                </div>
-                                            </form>
-                                        </td>
-                                        <td><strong>{{ number_format(($item['quantity'] ?? 1) * ($item['price'] ?? 0),
-                                                0, ',', '.') }} VNĐ</strong></td>
-                                        <td>
-                                            <form method="POST" action="{{ route('cart.remove') }}" class="d-inline">
-                                                @csrf
-                                                <input type="hidden" name="cart_item_id"
-                                                    value="{{ $item['cart_item_id'] }}">
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th width="40">
+                                                <input type="checkbox" id="selectAllHeader" class="form-check-input">
+                                            </th>
+                                            <th>Sản phẩm</th>
+                                            <th>Giá</th>
+                                            <th>Số lượng</th>
+                                            <th>Thành tiền</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($cart['items'] as $index => $item)
+                                            <tr class="cart-item-row" data-index="{{ $index }}" data-price="{{ $item['price'] ?? 0 }}">
+                                                <td>
+                                                    <input type="checkbox"
+                                                           name="selected_items[]"
+                                                           value="{{ $item['cart_item_id'] }}"
+                                                           class="form-check-input item-checkbox"
+                                                           checked>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        @if($item['image'] ?? null)
+                                                            <img src="{{ asset('storage/' . $item['image']) }}" alt="{{ $item['name'] }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                                        @else
+                                                            <img src="{{ asset('assets/client/img/product/product-1.webp') }}" alt="{{ $item['name'] }}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                                        @endif
+                                                        <div>
+                                                            <strong>{{ $item['name'] ?? 'Sản phẩm' }}</strong>
+                                                            @if(!empty($item['variant_name']))
+                                                                <br><div class="mt-1">
+                                                                    <small class="text-muted">
+                                                                        @php
+                                                                            $variantParts = explode(' • ', $item['variant_name']);
+                                                                        @endphp
+                                                                        @foreach($variantParts as $part)
+                                                                            <span class="badge bg-secondary me-1">{{ $part }}</span>
+                                                                        @endforeach
+                                                                    </small>
+                                                                </div>
+                                                            @elseif(isset($item['variant_id']) && $item['variant_id'])
+                                                                <br><small class="text-muted">
+                                                                    <i class="bi bi-tag"></i> Biến thể #{{ $item['variant_id'] }}
+                                                                </small>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ number_format($item['price'] ?? 0, 0, ',', '.') }} VNĐ</td>
+                                                <td>
+                                                    <form method="POST" action="{{ route('cart.update') }}" class="d-inline cart-update-form">
+                                                        @csrf
+                                                        <input type="hidden" name="cart_item_id" value="{{ $item['cart_item_id'] }}">
+                                                        <div class="d-flex gap-2 align-items-center">
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary quantity-decrease">-</button>
+                                                            <input type="number" name="quantity" class="form-control form-control-sm text-center quantity-input" value="{{ $item['quantity'] ?? 1 }}" min="1" max="100" style="width: 70px;">
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary quantity-increase">+</button>
+                                                        </div>
+                                                    </form>
+                                                </td>
+                                                <td><strong>{{ number_format(($item['quantity'] ?? 1) * ($item['price'] ?? 0), 0, ',', '.') }} VNĐ</strong></td>
+                                                <td>
+                                                    <form method="POST" action="{{ route('cart.remove') }}" class="d-inline">
+                                                        @csrf
+                                                        <input type="hidden" name="cart_item_id" value="{{ $item['cart_item_id'] }}">
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Xóa">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         @endif
                     </div>
                 </div>

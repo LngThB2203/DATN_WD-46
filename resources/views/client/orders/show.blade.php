@@ -64,6 +64,8 @@
                                                             @if($detail->variant->scent) | Mùi: {{ $detail->variant->scent->scent_name ?? $detail->variant->scent->name ?? '' }} @endif
                                                             @if($detail->variant->concentration) | Nồng độ: {{ $detail->variant->concentration->concentration_name ?? $detail->variant->concentration->name ?? '' }} @endif
                                                         </div>
+                                                    @else
+                                                        <div class="small text-muted mt-1">Không có biến thể</div>
                                                     @endif
                                                     @php
                                                         $canReview = false;
