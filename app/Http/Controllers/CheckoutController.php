@@ -91,16 +91,28 @@ class CheckoutController extends Controller
     }
          $user = $request->user();
 
-        // Validation cho cả user đăng nhập và chưa đăng nhập
-        // Cho phép chỉnh sửa tên và email ngay cả khi đã đăng nhập
-        $validated = $request->validate([
-            'customer_name'         => 'required|string|max:150',
-            'customer_email'        => 'required|email|max:150',
-            'customer_phone'        => 'required|string|max:20',
-            'shipping_address_line' => 'required|string|max:255',
-            'customer_note'         => 'nullable|string|max:1000',
-            'payment_method'        => 'required|in:cod,online',
-        ]);
+        // Nếu đã đăng nhập, bắt buộc lấy tên và email từ tài khoản
+        if ($user) {
+            $validated = $request->validate([
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:255',
+                'customer_note'         => 'nullable|string|max:1000',
+                'payment_method'        => 'required|in:cod,online',
+            ]);
+
+            // Lấy tên và email từ tài khoản
+            $validated['customer_name'] = $user->name;
+            $validated['customer_email'] = $user->email;
+        } else {
+            $validated = $request->validate([
+                'customer_name'         => 'required|string|max:150',
+                'customer_email'        => 'required|email|max:150',
+                'customer_phone'        => 'required|string|max:20',
+                'shipping_address_line' => 'required|string|max:255',
+                'customer_note'         => 'nullable|string|max:1000',
+                'payment_method'        => 'required|in:cod,online',
+            ]);
+        }
 
         $selectedItems = array_filter(array_map('intval',
             is_string($request->input('selected_items'))

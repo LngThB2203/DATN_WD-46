@@ -204,14 +204,8 @@
                         <hr>
 
                         {{-- Nút hủy đơn --}}
-                        @php
-                            $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
-                            $canCancel = in_array($mappedStatus, [
-                                \App\Helpers\OrderStatusHelper::PENDING, 
-                                \App\Helpers\OrderStatusHelper::PREPARING
-                            ]);
-                        @endphp
-                        @if($canCancel)
+                        {{-- Theo Shopee: Khách hàng chỉ có thể hủy ở trạng thái "Chờ xác nhận" (PENDING) --}}
+                        @if(\App\Helpers\OrderStatusHelper::canCancel($order->order_status))
                         <button type="button" class="btn btn-danger mt-3 w-100" id="cancelOrderBtn">Hủy đơn hàng</button>
 
                         <!-- Cancel reason modal -->
@@ -266,7 +260,7 @@
                                   <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
                                 </div>
                               </div>
-                            </form>
+                        </form>
                           </div>
                         </div>
 

@@ -5,21 +5,21 @@ class OrderStatusHelper
 {
     // ===== CODE TRẠNG THÁI (Theo mô hình Shopee) =====
     const PENDING         = 'pending';         // Chờ xác nhận
-    const PREPARING       = 'preparing';       // Chờ lấy hàng (người bán đã xác nhận, đang chuẩn bị)
-    const SHIPPING        = 'shipping';        // Đang giao (đã giao cho đơn vị vận chuyển)
-    const DELIVERED       = 'delivered';       // Đã giao (khách đã nhận được hàng)
-    const COMPLETED       = 'completed';       // Hoàn thành (khách đã xác nhận nhận hàng)
+    const PREPARING       = 'preparing';       // Đang chuẩn bị hàng
+    const SHIPPING        = 'shipping';        // Đang giao hàng
+    const DELIVERED       = 'delivered';       // Đã giao hàng
+    const COMPLETED       = 'completed';       // Hoàn thành
     const CANCELLED       = 'cancelled';       // Đã hủy
     const REFUNDED        = 'refunded';        // Đã hoàn tiền (cũ)
 
-    // ===== STATUS HIỂN THỊ TRONG DROPDOWN (Theo chuẩn Shopee) =====
+    // ===== STATUS HIỂN THỊ TRONG DROPDOWN (Theo tên gọi của Shopee) =====
     public static function getStatuses(): array
     {
         return [
             self::PENDING         => 'Chờ xác nhận',
-            self::PREPARING       => 'Chờ lấy hàng',
-            self::SHIPPING        => 'Đang giao',
-            self::DELIVERED       => 'Đã giao',
+            self::PREPARING       => 'Đang chuẩn bị hàng',
+            self::SHIPPING        => 'Đang giao hàng',
+            self::DELIVERED       => 'Đã giao hàng',
             self::COMPLETED       => 'Hoàn thành',
             self::CANCELLED       => 'Đã hủy',
         ];
@@ -28,7 +28,10 @@ class OrderStatusHelper
     // ===== MAP TRẠNG THÁI CŨ =====
     public static function mapOldStatus(string $status): string
     {
-        return match (mb_strtolower(trim($status))) {
+        $normalized = mb_strtolower(trim($status));
+        
+        return match ($normalized) {
+            // Hủy đơn
             'cancel',
             'canceled',
             'cancelled',
@@ -37,21 +40,21 @@ class OrderStatusHelper
             'da huy',
             'huy'              => self::CANCELLED,
 
+            // Trạng thái cũ
             'processing'       => self::PREPARING,
             'awaiting_payment' => self::PENDING,
-            'awaiting_pickup'  => self::SHIPPING, // Chuyển sang Shipping
+            'awaiting_pickup'  => self::SHIPPING,
             'shipped'          => self::SHIPPING,
+
+            // Trạng thái chuẩn (so sánh lowercase)
+            'pending'          => self::PENDING,
+            'preparing'        => self::PREPARING,
             'shipping'         => self::SHIPPING,
+            'delivered'        => self::DELIVERED,
+            'completed'        => self::COMPLETED,
+            'refunded'         => self::REFUNDED,
 
-            self::PENDING,
-            self::PREPARING,
-            self::SHIPPING,
-            self::DELIVERED,
-            self::COMPLETED,
-            self::CANCELLED,
-            self::REFUNDED     => $status,
-
-            default            => $status,
+            default            => $status, // Giữ nguyên nếu không match
         };
     }
 
@@ -79,14 +82,8 @@ class OrderStatusHelper
     }
 
     // ===== KIỂM TRA ĐƯỢC UPDATE KHÔNG =====
-    // Logic chuyển theo mô hình Shopee:
-    // PENDING (Chờ xác nhận) 
-    //   → PREPARING (Chờ lấy hàng) - Người bán xác nhận, chuẩn bị hàng
-    //   → SHIPPING (Đang giao) - Đã giao cho đơn vị vận chuyển
-    //   → DELIVERED (Đã giao) - Khách đã nhận được hàng
-    //   → COMPLETED (Hoàn thành) - Khách xác nhận đã nhận hàng
-    // Có thể hủy: CHỈ PENDING và PREPARING → CANCELLED
-    // KHÔNG thể hủy: SHIPPING, DELIVERED, COMPLETED (đã giao cho đơn vị vận chuyển)
+    // Logic chuyển theo mô hình Shopee: PENDING → PREPARING → SHIPPING → DELIVERED → COMPLETED
+    // Hoặc hủy: PENDING/PREPARING/SHIPPING → CANCELLED
     public static function canUpdateStatus(string $currentStatus, string $newStatus): bool
     {
         $current = self::mapOldStatus($currentStatus);
@@ -98,7 +95,6 @@ class OrderStatusHelper
         }
 
         // ĐÃ KẾT THÚC → CẤM ĐỔI (CANCELLED và COMPLETED không thể đổi)
-        // DELIVERED có thể chuyển sang COMPLETED, nhưng COMPLETED không thể quay lại
         if (in_array($current, [
             self::CANCELLED,
             self::COMPLETED,
@@ -107,54 +103,62 @@ class OrderStatusHelper
             return false;
         }
 
-        // Có thể hủy CHỈ ở PENDING và PREPARING (theo Shopee)
-        // KHÔNG thể hủy khi đã giao cho đơn vị vận chuyển (SHIPPING, DELIVERED, COMPLETED)
-        // Khi đã SHIPPING → chỉ có thể chuyển sang DELIVERED, không thể hủy
+        // HỦY ĐƠN HÀNG (theo chuẩn TMDT: Shopee, Tiki, Lazada)
+        // Chỉ có thể hủy ở: PENDING (Chờ xác nhận)
+        // KHÔNG thể hủy khi: PREPARING (Đang chuẩn bị hàng - đã bắt đầu xử lý), SHIPPING, DELIVERED, COMPLETED
+        // Lý do: Khi đã PREPARING, hệ thống đã bắt đầu xử lý hàng (trừ kho), không thể hủy nữa
         if ($new === self::CANCELLED) {
-            return in_array($current, [
-                self::PENDING,   // Chờ xác nhận - có thể hủy
-                self::PREPARING, // Chờ lấy hàng - có thể hủy (trước khi giao cho đơn vị vận chuyển)
-                // SHIPPING không thể hủy vì đã giao cho đơn vị vận chuyển
-            ], true);
+            return $current === self::PENDING; // Chỉ cho phép hủy khi còn ở trạng thái chờ xác nhận
         }
 
-        // Chỉ có thể chuyển sang COMPLETED từ DELIVERED (khách xác nhận đã nhận hàng)
+        // Chỉ có thể chuyển sang COMPLETED từ DELIVERED
         if ($new === self::COMPLETED) {
             return $current === self::DELIVERED;
         }
 
         // Flow chuyển từng bước một (theo mô hình Shopee)
-        // Có thể bỏ qua bước nhưng không thể quay lại
         $flow = [
             self::PENDING   => [
-                self::PREPARING,  // Bước tiếp theo: Xác nhận đơn hàng
+                self::PREPARING,  // Bước tiếp theo
                 self::CANCELLED,  // Hoặc hủy
             ],
             self::PREPARING => [
-                self::SHIPPING,   // Bước tiếp theo: Giao cho đơn vị vận chuyển
-                self::CANCELLED,  // Hoặc hủy (trước khi giao cho đơn vị vận chuyển)
+                self::SHIPPING,   // Bước tiếp theo: giao cho đơn vị vận chuyển
+                // KHÔNG cho phép hủy khi đã PREPARING - đã bắt đầu xử lý hàng
             ],
             self::SHIPPING => [
-                self::DELIVERED,  // CHỈ có thể chuyển sang DELIVERED
-                // KHÔNG thể hủy khi đã giao cho đơn vị vận chuyển (theo Shopee)
+                self::DELIVERED,  // Chỉ có thể chuyển sang DELIVERED (không thể hủy nữa)
+                // KHÔNG cho phép hủy khi SHIPPING - hàng đã được bàn giao cho đơn vị vận chuyển
             ],
             self::DELIVERED => [
-                self::COMPLETED,  // Chỉ có thể chuyển sang COMPLETED (khách xác nhận)
+                self::COMPLETED,  // Chỉ có thể chuyển sang COMPLETED
             ],
         ];
 
         return in_array($new, $flow[$current] ?? [], true);
     }
 
-    // ===== KIỂM TRA ĐƯỢC HỦY KHÔNG =====
-    // Theo Shopee: Chỉ có thể hủy khi PENDING hoặc PREPARING
-    // KHÔNG thể hủy khi đã SHIPPING (đã giao cho đơn vị vận chuyển)
+    // ===== KIỂM TRA ĐƯỢC HỦY KHÔNG (Cho khách hàng) =====
+    // Theo Shopee: Khách hàng chỉ có thể tự hủy ở trạng thái "Chờ xác nhận" (PENDING)
+    // Khi đã "Đang chuẩn bị hàng" (PREPARING) hoặc "Đang giao" (SHIPPING), khách phải liên hệ shop để hủy
     public static function canCancel(string $status): bool
     {
-        return in_array(self::mapOldStatus($status), [
-            self::PENDING,   // Chờ xác nhận - có thể hủy
-            self::PREPARING, // Chờ lấy hàng - có thể hủy
-            // SHIPPING không thể hủy vì đã giao cho đơn vị vận chuyển
-        ], true);
+        $mappedStatus = self::mapOldStatus($status);
+        
+        // Khách hàng chỉ có thể hủy ở: PENDING
+        // KHÔNG cho phép hủy khi: PREPARING, SHIPPING, DELIVERED, COMPLETED, CANCELLED, REFUNDED
+        return $mappedStatus === self::PENDING;
+    }
+    
+    // ===== KIỂM TRA ADMIN CÓ THỂ HỦY KHÔNG =====
+    // Theo chuẩn TMDT: Admin chỉ có thể hủy ở trạng thái "Chờ xác nhận" (PENDING)
+    // KHÔNG được hủy khi đã "Đang chuẩn bị hàng" (PREPARING) - vì đã bắt đầu xử lý hàng
+    public static function canAdminCancel(string $status): bool
+    {
+        $mappedStatus = self::mapOldStatus($status);
+        
+        // Admin chỉ có thể hủy ở: PENDING (Chờ xác nhận)
+        // KHÔNG cho phép hủy khi: PREPARING (đã bắt đầu xử lý), SHIPPING, DELIVERED, COMPLETED, CANCELLED, REFUNDED
+        return $mappedStatus === self::PENDING;
     }
 }

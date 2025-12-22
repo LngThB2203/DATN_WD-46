@@ -45,55 +45,63 @@
 
             <div class="row g-4">
                 <div class="col-lg-7">
-            {{-- CUSTOMER INFO --}}
+                    {{-- CUSTOMER INFO --}}
                     <div class="card mb-3">
                         <div class="card-header fw-semibold py-2">Thông tin người nhận</div>
                         <div class="card-body py-2">
                             <div class="row g-2">
                                 <div class="col-12">
                                     <label class="form-label small mb-1">Họ tên <span class="text-danger">*</span></label>
-                                    <input type="text" name="customer_name" class="form-control form-control-sm @error('customer_name') is-invalid @enderror"
-                                        value="{{ old('customer_name', $defaultCustomer['customer_name'] ?? '') }}" 
-                                        placeholder="Nhập họ tên người nhận" required>
                                     @if($isLoggedIn)
-                                        <small class="text-muted small"><i class="bi bi-info-circle"></i> Đã điền sẵn từ tài khoản, bạn có thể chỉnh sửa</small>
+                                        <input type="text" class="form-control form-control-sm bg-light"
+                                            value="{{ $defaultCustomer['customer_name'] }}" readonly disabled
+                                            title="Thông tin này được lấy từ tài khoản của bạn">
+                                        <small class="text-muted small"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
+                                        <input type="hidden" name="customer_name" value="{{ $defaultCustomer['customer_name'] }}">
+                                    @else
+                                        <input type="text" name="customer_name" class="form-control form-control-sm @error('customer_name') is-invalid @enderror"
+                                            value="{{ old('customer_name', $defaultCustomer['customer_name'] ?? '') }}" required>
+                                        @error('customer_name')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                     @endif
-                                    @error('customer_name')
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small mb-1">Email <span class="text-danger">*</span></label>
+                                    @if($isLoggedIn)
+                                        <input type="email" class="form-control form-control-sm bg-light"
+                                            value="{{ $defaultCustomer['customer_email'] }}" readonly disabled
+                                            title="Thông tin này được lấy từ tài khoản của bạn">
+                                        <small class="text-muted small"><i class="bi bi-lock"></i> Thông tin từ tài khoản</small>
+                                        <input type="hidden" name="customer_email" value="{{ $defaultCustomer['customer_email'] }}">
+                                    @else
+                                        <input type="email" name="customer_email" class="form-control form-control-sm @error('customer_email') is-invalid @enderror"
+                                            value="{{ old('customer_email', $defaultCustomer['customer_email'] ?? '') }}" required>
+                                        @error('customer_email')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    @endif
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small mb-1">Số điện thoại <span class="text-danger">*</span></label>
+                                    <input type="text" name="customer_phone" class="form-control form-control-sm @error('customer_phone') is-invalid @enderror"
+                                        value="{{ old('customer_phone', $defaultCustomer['customer_phone'] ?? '') }}"
+                                        placeholder="Nhập số điện thoại" required>
+                                    @error('customer_phone')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label small mb-1">Email <span class="text-danger">*</span></label>
-                                    <input type="email" name="customer_email" class="form-control form-control-sm @error('customer_email') is-invalid @enderror"
-                                        value="{{ old('customer_email', $defaultCustomer['customer_email'] ?? '') }}" 
-                                        placeholder="Nhập email người nhận" required>
-                                    @if($isLoggedIn)
-                                        <small class="text-muted small"><i class="bi bi-info-circle"></i> Đã điền sẵn từ tài khoản, bạn có thể chỉnh sửa</small>
-                                    @endif
-                                    @error('customer_email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                        <div class="col-12">
-                                    <label class="form-label small mb-1">Số điện thoại <span class="text-danger">*</span></label>
-                                    <input type="text" name="customer_phone" class="form-control form-control-sm @error('customer_phone') is-invalid @enderror"
-                                value="{{ old('customer_phone', $defaultCustomer['customer_phone'] ?? '') }}"
-                                placeholder="Nhập số điện thoại" required>
-                            @error('customer_phone')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="col-12">
                                     <label class="form-label small mb-1">Địa chỉ <span class="text-danger">*</span></label>
                                     <textarea name="shipping_address_line" class="form-control form-control-sm @error('shipping_address_line') is-invalid @enderror"
                                         rows="2" placeholder="Nhập địa chỉ giao hàng" required>{{ old('shipping_address_line', $defaultCustomer['shipping_address_line'] ?? '') }}</textarea>
-                            @error('shipping_address_line')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                                    @error('shipping_address_line')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
                     {{-- CUSTOMER NOTE --}}
                     <div class="card mb-3">
@@ -227,9 +235,9 @@
                                                     <div class="d-flex justify-content-between align-items-center mt-2">
                                                         <div class="small text-muted">
                                                             Số lượng: <strong>x{{ $item['quantity'] ?? 1 }}</strong>
-                                            </div>
+                                                        </div>
                                                         <div class="text-end fw-semibold small">
-                                                {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }} đ
+                                                            {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }} đ
                                                         </div>
                                                     </div>
                                                 </div>
@@ -313,7 +321,7 @@
 
                             <button class="btn btn-primary w-100" type="button" onclick="confirmOrder(this)">
                                 Đặt hàng
-                            </button> 
+                            </button>
 
                         </div>
                     </div>
@@ -547,6 +555,7 @@ function parseNumberFromText(str) {
 }
 
 function confirmOrder(btn) {
+
     let timerInterval;
     let countdown = 5;
 
@@ -555,158 +564,70 @@ function confirmOrder(btn) {
         return;
     }
 
-    // Lấy thông tin từ form
-    const form = btn.closest('form');
-    const customerName = form.querySelector('input[name="customer_name"]')?.value || 
-                        form.querySelector('input[name="customer_name"]')?.textContent || 
-                        'Chưa nhập';
-    const customerEmail = form.querySelector('input[name="customer_email"]')?.value || 
-                         form.querySelector('input[name="customer_email"]')?.textContent || 
-                         'Chưa nhập';
-    const customerPhone = form.querySelector('input[name="customer_phone"]')?.value || 
-                         'Chưa nhập';
-    const shippingAddress = form.querySelector('textarea[name="shipping_address_line"]')?.value || 
-                           form.querySelector('input[name="shipping_address_line"]')?.value || 
-                           'Chưa nhập';
-    const customerNote = form.querySelector('textarea[name="customer_note"]')?.value || '';
-    const paymentMethod = form.querySelector('input[name="payment_method"]:checked')?.value === 'cod' 
-                         ? 'Thanh toán khi nhận hàng (COD)' 
-                         : 'Thanh toán online (VNPay/MoMo)';
-
-    // Build HTML content
-    let contentHtml = '<div style="text-align:left; max-height:70vh; overflow-y:auto;">';
-    
-    // Thông tin người nhận
-    contentHtml += '<div style="background:#f8f9fa; padding:12px; border-radius:6px; margin-bottom:16px;">';
-    contentHtml += '<h6 style="margin:0 0 8px 0; color:#0056b3; font-weight:600;">📋 Thông tin người nhận</h6>';
-    contentHtml += `<div style="margin-bottom:4px;"><strong>Họ tên:</strong> ${customerName}</div>`;
-    contentHtml += `<div style="margin-bottom:4px;"><strong>Email:</strong> ${customerEmail}</div>`;
-    contentHtml += `<div style="margin-bottom:4px;"><strong>Số điện thoại:</strong> ${customerPhone}</div>`;
-    contentHtml += `<div style="margin-bottom:4px;"><strong>Địa chỉ giao hàng:</strong> ${shippingAddress}</div>`;
-    if (customerNote) {
-        contentHtml += `<div style="margin-bottom:4px;"><strong>Ghi chú:</strong> <em class="text-muted">${customerNote}</em></div>`;
-    }
-    contentHtml += `<div style="margin-top:8px;"><strong>Phương thức thanh toán:</strong> <span class="badge bg-info">${paymentMethod}</span></div>`;
-    contentHtml += '</div>';
-
-    // Sản phẩm
-    contentHtml += '<h6 style="margin:0 0 12px 0; color:#0056b3; font-weight:600;">🛍️ Sản phẩm đã chọn</h6>';
-    contentHtml += '<table style="width:100%; border-collapse:collapse; margin-bottom:16px;">';
-    contentHtml += '<thead><tr style="background:#e9ecef;">';
-    contentHtml += '<th style="text-align:left; padding:8px; font-size:12px; width:60px;">Hình ảnh</th>';
-    contentHtml += '<th style="text-align:left; padding:8px; font-size:12px;">Sản phẩm</th>';
-    contentHtml += '<th style="text-align:right; padding:8px; font-size:12px;">Đơn giá</th>';
-    contentHtml += '<th style="text-align:center; padding:8px; font-size:12px;">SL</th>';
-    contentHtml += '<th style="text-align:right; padding:8px; font-size:12px;">Thành tiền</th>';
-    contentHtml += '</tr></thead><tbody>';
+    // Build table HTML for items
+    let itemsHtml = '<div style="text-align:left;">';
+    itemsHtml += '<table style="width:100%; border-collapse:collapse;">';
+    itemsHtml += '<thead><tr><th style="text-align:left; padding:6px 8px">Sản phẩm</th><th style="text-align:right; padding:6px 8px">Đơn giá</th><th style="text-align:right; padding:6px 8px">Số lượng</th><th style="text-align:right; padding:6px 8px">Thành tiền</th></tr></thead><tbody>';
 
     cartItems.forEach(item => {
         const name = item.name || 'Sản phẩm';
         const qty = Number(item.quantity || 1);
         const subtotal = Number(item.subtotal ?? (item.price * qty) ?? 0);
         const unit = Number(item.price ?? (qty ? subtotal/qty : 0));
-        const variantName = item.variant_name || '';
-        const imageUrl = item.image ? `{{ asset('storage/') }}/${item.image}` : '{{ asset('assets/client/img/product/default.jpg') }}';
-        
-        contentHtml += '<tr style="border-bottom:1px solid #dee2e6;">';
-        // Hình ảnh
-        contentHtml += '<td style="padding:8px; vertical-align:top;">';
-        contentHtml += `<img src="${imageUrl}" alt="${name}" style="width:50px; height:50px; object-fit:cover; border-radius:4px; border:1px solid #dee2e6;" onerror="this.onerror=null; this.src='{{ asset('assets/client/img/product/default.jpg') }}';">`;
-        contentHtml += '</td>';
-        // Thông tin sản phẩm
-        contentHtml += '<td style="padding:8px; vertical-align:top;">';
-        contentHtml += `<div style="font-weight:600; margin-bottom:4px;">${name}</div>`;
-        if (variantName) {
-            const variantParts = variantName.split(' • ');
-            variantParts.forEach(part => {
-                if (part.includes('Kích thước:')) {
-                    contentHtml += `<span style="background:#6c757d; color:white; padding:2px 6px; border-radius:3px; font-size:10px; margin-right:4px; display:inline-block; margin-bottom:2px;">${part}</span>`;
-                } else if (part.includes('Mùi hương:')) {
-                    contentHtml += `<span style="background:#0dcaf0; color:white; padding:2px 6px; border-radius:3px; font-size:10px; margin-right:4px; display:inline-block; margin-bottom:2px;">${part}</span>`;
-                } else if (part.includes('Nồng độ:')) {
-                    contentHtml += `<span style="background:#ffc107; color:black; padding:2px 6px; border-radius:3px; font-size:10px; margin-right:4px; display:inline-block; margin-bottom:2px;">${part}</span>`;
-                } else {
-                    contentHtml += `<span style="background:#f8f9fa; color:black; padding:2px 6px; border-radius:3px; font-size:10px; margin-right:4px; display:inline-block; margin-bottom:2px;">${part}</span>`;
-                }
-            });
-        }
-        contentHtml += '</td>';
-        contentHtml += `<td style="padding:8px; vertical-align:top; text-align:right; font-size:12px;">${formatVND(unit)}</td>`;
-        contentHtml += `<td style="padding:8px; vertical-align:top; text-align:center; font-size:12px;"><span style="background:#0d6efd; color:white; padding:2px 8px; border-radius:12px;">${qty}</span></td>`;
-        contentHtml += `<td style="padding:8px; vertical-align:top; text-align:right; font-weight:600; font-size:12px; color:#0056b3;">${formatVND(subtotal)}</td>`;
-        contentHtml += '</tr>';
+        itemsHtml += `<tr><td style="padding:6px 8px; vertical-align:top">${name}</td><td style="padding:6px 8px; vertical-align:top; text-align:right">${formatVND(unit)}</td><td style="padding:6px 8px; vertical-align:top; text-align:right">${qty}</td><td style="padding:6px 8px; vertical-align:top; text-align:right">${formatVND(subtotal)}</td></tr>`;
     });
 
-    contentHtml += '</tbody></table>';
+    itemsHtml += `</tbody></table>`;
 
-    // Read latest values from DOM
+    // Read latest values from DOM (allow dynamic updates)
     const subtotalText = document.getElementById('checkoutSubtotal')?.textContent || '';
     const discountText = document.getElementById('checkoutDiscount')?.textContent || '';
     const shippingText = document.getElementById('checkoutShipping')?.textContent || '';
     const totalText = document.getElementById('checkoutTotal')?.textContent || '';
 
     const currentSubtotal = parseNumberFromText(subtotalText);
-    const currentDiscount = parseNumberFromText(discountText);
+    const currentDiscount = parseNumberFromText(discountText); // discount shown with leading '-', parse digits only
     const currentShipping = parseNumberFromText(shippingText);
     const currentTotal = parseNumberFromText(totalText);
 
-    // Tổng tiền
-    contentHtml += '<div style="background:#f8f9fa; padding:12px; border-radius:6px; margin-top:12px;">';
-    contentHtml += '<h6 style="margin:0 0 8px 0; color:#0056b3; font-weight:600;">💰 Tổng tiền đơn hàng</h6>';
-    contentHtml += '<div style="display:flex; justify-content:space-between; margin-bottom:4px;">';
-    contentHtml += '<span>Tạm tính:</span>';
-    contentHtml += `<span><strong>${formatVND(currentSubtotal)}</strong></span>`;
-    contentHtml += '</div>';
-    
+    // Summary (subtotal, discount if any, shipping, total)
+    itemsHtml += `<div style="margin-top:12px; text-align:right">`;
+    itemsHtml += `<div>Tạm tính: ${formatVND(currentSubtotal)}</div>`;
     if (currentDiscount > 0) {
+        // find code if available in data attribute
         const discountEl = document.getElementById('checkoutDiscount');
         const code = discountEl?.dataset?.code || '';
-        contentHtml += '<div style="display:flex; justify-content:space-between; margin-bottom:4px;">';
-        contentHtml += `<span>Giảm giá${code ? ' (Mã: <strong>' + code + '</strong>)' : ''}:</span>`;
-        contentHtml += `<span style="color:#dc3545;"><strong>-${formatVND(currentDiscount)}</strong></span>`;
-        contentHtml += '</div>';
+        if (code) {
+            itemsHtml += `<div>Giảm giá (Mã: <strong>${code}</strong>): -${formatVND(currentDiscount)}</div>`;
+        } else {
+            itemsHtml += `<div>Giảm giá: -${formatVND(currentDiscount)}</div>`;
+        }
     }
-    
-    contentHtml += '<div style="display:flex; justify-content:space-between; margin-bottom:4px;">';
-    contentHtml += '<span>Phí vận chuyển:</span>';
-    contentHtml += `<span><strong>${formatVND(currentShipping)}</strong></span>`;
-    contentHtml += '</div>';
-    
-    contentHtml += '<hr style="margin:8px 0;">';
-    contentHtml += '<div style="display:flex; justify-content:space-between; font-size:18px; font-weight:700; color:#0056b3;">';
-    contentHtml += '<span>Tổng cộng:</span>';
-    contentHtml += `<span>${formatVND(currentTotal)}</span>`;
-    contentHtml += '</div>';
-    contentHtml += '</div>';
-    
-    contentHtml += '</div>';
+    itemsHtml += `<div>Phí vận chuyển: ${formatVND(currentShipping)}</div>`;
+    itemsHtml += `<hr><div class="fw-semibold">Tổng: <b>${formatVND(currentTotal)}</b></div>`;
+    itemsHtml += `</div>`;
+    itemsHtml += '</div>';
 
     Swal.fire({
         title: 'Xác nhận đơn hàng',
-        html: `Bạn chắc chắn muốn đặt đơn hàng này?<br><br>${contentHtml}`,
+        html: `Bạn chắc chắn muốn đặt các sản phẩm sau?<br>${itemsHtml}`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: `Xác nhận (${countdown})`,
+        confirmButtonText: `OK (${countdown})`,
         cancelButtonText: 'Hủy',
-        confirmButtonColor: '#0056b3',
-        width: 750,
+        width: 680,
         didOpen: () => {
             const confirmBtn = Swal.getConfirmButton();
             confirmBtn.disabled = true;
             timerInterval = setInterval(() => {
                 countdown--;
-                confirmBtn.innerText = `Xác nhận (${countdown})`;
+                confirmBtn.innerText = `OK (${countdown})`;
                 if(countdown <= 0){
                     clearInterval(timerInterval);
                     confirmBtn.disabled = false;
-                    confirmBtn.innerText = 'Xác nhận';
+                    confirmBtn.innerText = 'OK';
                 }
             }, 1000);
-        },
-        willClose: () => {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
         }
     }).then((result) => {
         if (result.isConfirmed) {

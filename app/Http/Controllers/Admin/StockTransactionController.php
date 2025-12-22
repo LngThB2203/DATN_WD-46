@@ -13,9 +13,7 @@ class StockTransactionController extends Controller
         $query = StockTransaction::with([
             'warehouse',
             'product',
-            'variant.size',
-            'variant.scent',
-            'variant.concentration',
+            'variant',
         ])->orderByDesc('created_at');
 
         // filter kho

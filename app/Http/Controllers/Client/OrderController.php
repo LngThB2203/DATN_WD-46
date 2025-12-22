@@ -142,9 +142,11 @@ class OrderController extends Controller
         // Map trạng thái cũ sang mới để check
         $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
         
-        // Chỉ cho hủy ở trạng thái PENDING hoặc PREPARING
-        if (!in_array($mappedStatus, [\App\Helpers\OrderStatusHelper::PENDING, \App\Helpers\OrderStatusHelper::PREPARING])) {
-            return redirect()->back()->with('error', 'Đơn hàng không thể hủy ở trạng thái hiện tại.');
+        // Theo Shopee: Khách hàng chỉ có thể tự hủy ở trạng thái "Chờ xác nhận" (PENDING)
+        // Khi đã "Chờ lấy hàng" (PREPARING) hoặc "Đang giao" (SHIPPING), vui lòng liên hệ shop
+        if (!\App\Helpers\OrderStatusHelper::canCancel($order->order_status)) {
+            $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
+            return redirect()->back()->with('error', "Đơn hàng đang ở trạng thái \"{$statusName}\". Bạn không thể tự hủy đơn hàng. Vui lòng liên hệ cửa hàng để được hỗ trợ.");
         }
 
         $request->validate([

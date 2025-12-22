@@ -8,23 +8,9 @@
         if (session('order')) {
             $order = session('order');
         } elseif (session('last_order_id')) {
-            $order = \App\Models\Order::with([
-                'details.product.galleries',
-                'details.variant.size',
-                'details.variant.scent',
-                'details.variant.concentration',
-                'discount',
-                'payment'
-            ])->find(session('last_order_id'));
+            $order = \App\Models\Order::with(['details.product', 'details.variant'])->find(session('last_order_id'));
         } elseif (auth()->check()) {
-            $order = \App\Models\Order::with([
-                'details.product.galleries',
-                'details.variant.size',
-                'details.variant.scent',
-                'details.variant.concentration',
-                'discount',
-                'payment'
-            ])
+            $order = \App\Models\Order::with(['details.product', 'details.variant'])
                         ->where('user_id', auth()->id())
                         ->latest()
                         ->first();
@@ -64,82 +50,32 @@
                 </div>
 
                 <div class="card-body">
-                    {{-- Thông tin khách hàng và đơn hàng --}}
                     <div class="row mb-4">
-                        <div class="col-md-6 border-end pe-md-4">
-                            <h6 class="text-primary fw-bold mb-3">
-                                <i class="bi bi-person-circle"></i> Thông tin người nhận
-                            </h6>
-                            <div class="mb-2">
-                                <strong>Họ tên:</strong> 
-                                <span class="text-dark">{{ $order->customer_name }}</span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Email:</strong> 
-                                <span class="text-dark">{{ $order->customer_email }}</span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Số điện thoại:</strong> 
-                                <span class="text-dark">{{ $order->customer_phone }}</span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Địa chỉ giao hàng:</strong>
-                                <div class="text-dark mt-1">{{ $order->shipping_address_line ?? $order->shipping_address ?? 'Chưa cập nhật' }}</div>
-                            </div>
-                            @if($order->customer_note)
-                            <div class="mb-2">
-                                <strong>Ghi chú:</strong>
-                                <div class="text-muted small mt-1">{{ $order->customer_note }}</div>
-                            </div>
-                            @endif
+                        <div class="col-md-6 border-end">
+                            <h6 class="text-primary fw-bold mb-3">Thông tin giao hàng</h6>
+                            <div class="mb-2"><strong>Họ tên:</strong> {{ $order->customer_name }}</div>
+                            <div class="mb-2"><strong>Số điện thoại:</strong> {{ $order->customer_phone }}</div>
+                            <div class="mb-2"><strong>Địa chỉ:</strong> {{ $order->shipping_address_line ?? $order->shipping_address }}</div>
                         </div>
 
                         <div class="col-md-6 ps-md-4">
-                            <h6 class="text-primary fw-bold mb-3">
-                                <i class="bi bi-receipt"></i> Thông tin đơn hàng
-                            </h6>
+                            <h6 class="text-primary fw-bold mb-3">Chi tiết đơn hàng</h6>
+                            <div class="mb-2"><strong>Mã đơn hàng:</strong> #{{ $order->order_code ?? $order->id }}</div>
+                            <div class="mb-2"><strong>Ngày đặt:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</div>
                             <div class="mb-2">
-                                <strong>Mã đơn hàng:</strong> 
-                                <span class="badge bg-primary">#{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Ngày đặt:</strong> 
-                                <span class="text-dark">{{ $order->created_at->format('d/m/Y H:i') }}</span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Trạng thái:</strong> 
-                                @php
-                                    $statusName = \App\Helpers\OrderStatusHelper::getStatusName($order->order_status);
-                                    $statusClass = \App\Helpers\OrderStatusHelper::getStatusBadgeClass($order->order_status);
-                                @endphp
-                                <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Phương thức thanh toán:</strong> 
+                                <strong>Thanh toán:</strong> 
                                 <span class="badge bg-info text-dark">
-                                    {{ $order->payment_method === 'cod' ? 'Thanh toán khi nhận hàng (COD)' : 'Thanh toán online (VNPay/MoMo)' }}
+                                    {{ $order->payment_method === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online' }}
                                 </span>
                             </div>
-                            @if($order->discount)
-                            <div class="mb-2">
-                                <strong>Mã giảm giá:</strong> 
-                                <span class="badge bg-success">{{ $order->discount->code }}</span>
-                                @if($order->discount_total > 0)
-                                    <span class="text-danger">(-{{ number_format($order->discount_total, 0, ',', '.') }} đ)</span>
-                                @endif
-                            </div>
-                            @endif
                         </div>
                     </div>
 
-                    <h6 class="fw-bold mb-3">
-                        <i class="bi bi-box-seam"></i> Sản phẩm đã đặt
-                    </h6>
+                    <h6 class="fw-bold mb-3">Sản phẩm đã đặt</h6>
                     <div class="table-responsive">
-                        <table class="table align-middle table-bordered">
+                        <table class="table align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 50px;">Hình ảnh</th>
                                     <th>Sản phẩm</th>
                                     <th class="text-end">Đơn giá</th>
                                     <th class="text-center">Số lượng</th>
@@ -147,103 +83,49 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {{-- Kiểm tra quan hệ details hoặc items tùy theo Model của bạn --}}
                                 @php $details = $order->details ?? $order->items; @endphp
                                 @foreach($details as $d)
-                                    @php
-                                        $product = $d->product;
-                                        $variant = $d->variant;
-                                        $primaryImage = $product->galleries->where('is_primary', true)->first() 
-                                                         ?? $product->galleries->first();
-                                    @endphp
                                     <tr>
                                         <td>
-                                            @if($primaryImage)
-                                                <img src="{{ asset('storage/' . $primaryImage->image_path) }}" 
-                                                     alt="{{ $product->name ?? 'Sản phẩm' }}"
-                                                     class="img-thumbnail"
-                                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                                     onerror="this.onerror=null; this.src='{{ asset('assets/client/img/product/default.jpg') }}';">
-                                            @else
-                                                <img src="{{ asset('assets/client/img/product/default.jpg') }}" 
-                                                     alt="{{ $product->name ?? 'Sản phẩm' }}"
-                                                     class="img-thumbnail"
-                                                     style="width: 60px; height: 60px; object-fit: cover;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="fw-bold text-dark">{{ $d->product->name ?? 'Sản phẩm' }}</div>
+                                            </div>
+                                            @if($d->variant)
+                                                <small class="text-muted d-block">
+                                                    Phân loại: {{ $d->variant->size->size_name ?? '' }} {{ $d->variant->scent->scent_name ?? '' }}
+                                                </small>
                                             @endif
                                         </td>
-                                        <td>
-                                            <div class="fw-bold text-dark">{{ $product->name ?? 'Sản phẩm' }}</div>
-                                            @if($variant)
-                                                <div class="small mt-1">
-                                                    @if($variant->size)
-                                                        <span class="badge bg-secondary me-1" style="font-size: 0.75rem;">
-                                                            <i class="bi bi-rulers"></i> Kích thước: {{ $variant->size->size_name }}
-                                                        </span>
-                                                    @endif
-                                                    @if($variant->scent)
-                                                        <span class="badge bg-info me-1" style="font-size: 0.75rem;">
-                                                            <i class="bi bi-flower1"></i> Mùi hương: {{ $variant->scent->scent_name }}
-                                                        </span>
-                                                    @endif
-                                                    @if($variant->concentration)
-                                                        <span class="badge bg-warning text-dark me-1" style="font-size: 0.75rem;">
-                                                            <i class="bi bi-droplet"></i> Nồng độ: {{ $variant->concentration->concentration_name }}
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            @else
-                                                <small class="text-muted d-block mt-1">Không có biến thể</small>
-                                            @endif
-                                        </td>
-                                        <td class="text-end">
-                                            <span class="fw-semibold">{{ number_format($d->price, 0, ',', '.') }} đ</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-primary">{{ $d->quantity }}</span>
-                                        </td>
-                                        <td class="text-end">
-                                            <span class="fw-bold text-primary">{{ number_format($d->subtotal ?? ($d->price * $d->quantity), 0, ',', '.') }} đ</span>
-                                        </td>
+                                        <td class="text-end">{{ number_format($d->price, 0, ',', '.') }} đ</td>
+                                        <td class="text-center">{{ $d->quantity }}</td>
+                                        <td class="text-end fw-bold">{{ number_format($d->subtotal ?? ($d->price * $d->quantity), 0, ',', '.') }} đ</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
 
-                    {{-- Tổng tiền đơn hàng --}}
-                    <div class="row justify-content-end mt-4">
+                    <div class="row justify-content-end mt-3">
                         <div class="col-md-5">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6 class="fw-bold mb-3">Tổng tiền đơn hàng</h6>
-                                    <table class="table table-sm table-borderless mb-0">
-                                        <tr>
-                                            <td>Tạm tính:</td>
-                                            <td class="text-end">{{ number_format($order->subtotal ?? 0, 0, ',', '.') }} đ</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Phí vận chuyển:</td>
-                                            <td class="text-end">{{ number_format($order->shipping_cost ?? $order->shipping_fee ?? 0, 0, ',', '.') }} đ</td>
-                                        </tr>
-                                        @if($order->discount_total > 0)
-                                        <tr>
-                                            <td>
-                                                Giảm giá:
-                                                @if($order->discount)
-                                                    <span class="badge bg-success ms-1">{{ $order->discount->code }}</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-end text-danger fw-bold">-{{ number_format($order->discount_total, 0, ',', '.') }} đ</td>
-                                        </tr>
-                                        @endif
-                                        <tr class="border-top pt-2">
-                                            <td class="fw-bold fs-5">Tổng cộng:</td>
-                                            <td class="text-end fw-bold fs-5 text-primary">
-                                                {{ number_format($order->grand_total ?? $order->total_amount, 0, ',', '.') }} đ
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
+                            <table class="table table-sm table-borderless">
+                                @if($order->discount_total > 0)
+                                <tr>
+                                    <td>Giảm giá:</td>
+                                    <td class="text-end text-danger">-{{ number_format($order->discount_total, 0, ',', '.') }} đ</td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <td>Phí vận chuyển:</td>
+                                    <td class="text-end">{{ number_format($order->shipping_cost ?? $order->shipping_fee ?? 0, 0, ',', '.') }} đ</td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td class="fw-bold fs-5">Tổng cộng:</td>
+                                    <td class="text-end fw-bold fs-5 text-primary">
+                                        {{ number_format($order->grand_total ?? $order->total_amount, 0, ',', '.') }} đ
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                 </div>

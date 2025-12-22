@@ -265,13 +265,13 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Trạng thái đơn hàng</span>
-                <span class="badge {{ $statusClass }} fs-6">{{ $statusName }}</span>
+                    <span class="badge {{ $statusClass }} fs-6">{{ $statusName }}</span>
             </div>
             <div class="card-body">
                 @if (!$order->warehouse_id && $currentStatusMapped === \App\Helpers\OrderStatusHelper::PENDING)
-                    <div class="alert alert-warning mb-3">
-                        <i class="bi bi-exclamation-triangle"></i> 
-                        <strong>Lưu ý:</strong> Vui lòng chọn kho xuất hàng trước khi chuyển sang "Chờ lấy hàng" hoặc các trạng thái tiếp theo.
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Lưu ý:</strong> Hệ thống sẽ tự động chọn kho khi chuyển sang "Chờ lấy hàng". Bạn cũng có thể chọn kho trước ở phần "Kho xuất hàng" bên trên.
                     </div>
                 @endif
 
@@ -280,11 +280,7 @@
                     $availableStatuses = [];
                     foreach (\App\Helpers\OrderStatusHelper::getStatuses() as $key => $label) {
                         if (\App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key)) {
-                            $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
-                            $isDisabled = $requiresWarehouse && !$order->warehouse_id;
-                            if (!$isDisabled) {
-                                $availableStatuses[$key] = $label;
-                            }
+                            $availableStatuses[$key] = $label;
                         }
                     }
                 @endphp
@@ -301,16 +297,15 @@
                                 @php
                                     $canUpdate = \App\Helpers\OrderStatusHelper::canUpdateStatus($order->order_status, $key);
                                     $requiresWarehouse = in_array($key, $statusesRequiringWarehouse);
-                                    $isDisabled = $requiresWarehouse && !$order->warehouse_id;
+                                    // Không disable PREPARING khi chưa có warehouse vì hệ thống sẽ tự động gán
+                                    $isDisabled = false;
                                     $isCurrent = ($order->order_status == $key || $currentStatusMapped == $key);
                                 @endphp
                                 @if ($canUpdate)
                                     <option value="{{ $key }}" 
                                         {{ $isCurrent ? 'selected' : '' }}
-                                        {{ $isDisabled ? 'disabled' : '' }}
                                         data-requires-warehouse="{{ $requiresWarehouse ? '1' : '0' }}">
                                         {{ $label }}
-                                        @if($isDisabled) (Cần chọn kho trước) @endif
                                         @if($isCurrent) - Hiện tại @endif
                                     </option>
                                 @endif
@@ -335,12 +330,10 @@
                         const selectedOption = select.options[select.selectedIndex];
                         const submitBtn = document.getElementById('submitStatusBtn');
                         
-                        if (selectedOption.disabled) {
-                            select.value = '';
-                            alert('Vui lòng chọn kho xuất hàng trước khi chuyển sang trạng thái này!');
-                            if (submitBtn) submitBtn.disabled = true;
-                        } else if (selectedOption.value) {
+                        if (selectedOption && selectedOption.value) {
                             if (submitBtn) submitBtn.disabled = false;
+                        } else {
+                            if (submitBtn) submitBtn.disabled = true;
                         }
                     }
                     
@@ -354,14 +347,9 @@
                             return false;
                         }
                         
-                        if (selectedOption.disabled) {
-                            e.preventDefault();
-                            alert('Không thể chuyển sang trạng thái này! Vui lòng chọn kho trước.');
-                            return false;
-                        }
-                        
                         // Xác nhận trước khi submit
-                        const confirmMsg = `Bạn có chắc muốn chuyển đơn hàng sang trạng thái "${selectedOption.textContent.replace(/\s*-\s*Hiện tại|\s*\([^)]+\)/g, '').trim()}"?`;
+                        const statusLabel = selectedOption.textContent.replace(/\s*-\s*Hiện tại/g, '').trim();
+                        const confirmMsg = `Bạn có chắc muốn chuyển đơn hàng sang trạng thái "${statusLabel}"?`;
                         if (!confirm(confirmMsg)) {
                             e.preventDefault();
                             return false;
