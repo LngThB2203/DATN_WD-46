@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Customer;
+use App\Mail\OrderSuccessMail;
+use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
@@ -163,13 +165,7 @@ class CheckoutController extends Controller
 
         // ===== COD =====
         DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
-            $customer = Customer::firstOrCreate(
-        ['user_id' => Auth::id()],
-        [
-            'membership_level' => 'Silver',
-            'address' => $request->shipping_address_line ?? null,
-        ]
-    );
+         $customer = Customer::where('user_id', auth()->id())->first();
 
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
@@ -206,6 +202,12 @@ class CheckoutController extends Controller
                 'amount'         => $order->grand_total,
                 'status'         => 'pending',
             ]);
+            // Gửi email xác nhận đơn hàng
+            if (!empty($order->customer_email)) {
+    Mail::to($order->customer_email)->send(
+        new OrderSuccessMail($order)
+    );
+}
 
             // Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
             if ($order->discount_id) {
