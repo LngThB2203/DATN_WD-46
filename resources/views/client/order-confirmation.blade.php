@@ -35,7 +35,7 @@
         @if(isset($order))
             {{-- Green Checkmark --}}
             <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center" 
+                <div class="d-inline-flex align-items-center justify-content-center"
                      style="width:80px;height:80px;background:#28a745;border-radius:50%;color:white;font-size:50px;font-weight:bold;">
                     ✓
                 </div>
@@ -63,7 +63,7 @@
                             <div class="mb-2"><strong>Mã đơn hàng:</strong> #{{ $order->order_code ?? $order->id }}</div>
                             <div class="mb-2"><strong>Ngày đặt:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</div>
                             <div class="mb-2">
-                                <strong>Thanh toán:</strong> 
+                                <strong>Thanh toán:</strong>
                                 <span class="badge bg-info text-dark">
                                     {{ $order->payment_method === 'cod' ? 'Thanh toán khi nhận hàng' : 'Thanh toán online' }}
                                 </span>
@@ -93,7 +93,7 @@
                                             </div>
                                             @if($d->variant)
                                                 <small class="text-muted d-block">
-                                                    Phân loại: {{ $d->variant->size->size_name ?? '' }} {{ $d->variant->scent->scent_name ?? '' }}
+                                                    Phân loại: {{ $d->variant->size->size_name ?? '' }} | {{ $d->variant->scent->scent_name ?? '' }} | {{ $d->variant->concentration->concentration_name ?? '' }}
                                                 </small>
                                             @endif
                                         </td>
