@@ -108,7 +108,6 @@
 
 @push('styles')
 <style>
-    /* Custom badge styles để trông hiện đại hơn */
     .badge-soft-info {
         background-color: #e1f5fe;
         color: #0288d1;

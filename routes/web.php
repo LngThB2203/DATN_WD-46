@@ -148,6 +148,7 @@ Route::middleware('auth')->group(function () {
    // CHECKOUT
    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+   Route::post('/remove-discount', [DiscountController::class, 'removeDiscount'])->name('api.remove-discount');
 });
 
 
