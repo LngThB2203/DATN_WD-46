@@ -421,12 +421,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     // Admin Reviews
     Route::prefix('reviews')->name('admin.reviews.')->group(function () {
         Route::get('/', [AdminReviewController::class, 'index'])->name('index');
+        Route::get('/trashed', [AdminReviewController::class, 'trashed'])->name('trashed');
         Route::get('/create', [AdminReviewController::class, 'create'])->name('create');
         Route::post('/', [AdminReviewController::class, 'store'])->name('store');
         Route::get('/{review}/edit', [AdminReviewController::class, 'edit'])->name('edit');
         Route::put('/{review}', [AdminReviewController::class, 'update'])->name('update');
         Route::delete('/{review}', [AdminReviewController::class, 'destroy'])->name('destroy');
         Route::post('/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('toggle');
+        Route::post('/{id}/restore', [AdminReviewController::class, 'restore'])->name('restore');
+        Route::delete('/{id}/force-delete', [AdminReviewController::class, 'forceDelete'])->name('force-delete');
     });
 
     // Discounts
