@@ -21,14 +21,26 @@ class ProductDetailController extends Controller
             'warehouseProducts',
         ])->where('slug', $slug)->firstOrFail();
 
-        // Ưu tiên tính tồn kho theo biến thể
-        $variantStock = $product->variants->sum(function ($variant) {
-            return (int) $variant->stock;
-        });
+        // Tính tồn kho: ưu tiên tính theo biến thể từ warehouse
+        $variantStock = 0;
+        foreach ($product->variants as $variant) {
+            // Load warehouseStock relation nếu chưa load
+            if (!$variant->relationLoaded('warehouseStock')) {
+                $variant->load('warehouseStock');
+            }
+            // Tính tổng stock từ warehouse cho variant này
+            $variantStock += (int) $variant->warehouseStock->sum('quantity');
+        }
 
-        if ($variantStock > 0) {
+        // Nếu có variant và có stock từ variant thì dùng, nếu không thì tính từ warehouseProducts
+        if ($product->variants->count() > 0 && $variantStock > 0) {
             $totalStock = $variantStock;
+        } elseif ($product->variants->count() > 0 && $variantStock == 0) {
+            // Nếu có variant nhưng stock = 0, kiểm tra lại xem có warehouseProducts không
+            $warehouseStock = (int) $product->warehouseProducts->sum('quantity');
+            $totalStock = $warehouseStock;
         } else {
+            // Không có variant, tính từ warehouseProducts
             $totalStock = (int) $product->warehouseProducts->sum('quantity');
         }
 
@@ -50,13 +62,21 @@ class ProductDetailController extends Controller
         $galleries = $product->galleries;
 
         $variantMatrix = $product->variants->map(function ($v) use ($product) {
+            // Đảm bảo warehouseStock đã được load
+            if (!$v->relationLoaded('warehouseStock')) {
+                $v->load('warehouseStock');
+            }
+            
+            // Tính stock từ warehouse cho variant này
+            $variantStock = (int) $v->warehouseStock->sum('quantity');
+            
             return [
                 'id'            => $v->id,
                 'size'          => $v->size?->size_name,
                 'scent'         => $v->scent?->scent_name,
                 'concentration' => $v->concentration?->concentration_name,
                 'price'         => $v->price ?? ($product->price + ($v->price_adjustment ?? 0)),
-                'stock'         => (int) $v->stock,
+                'stock'         => $variantStock,
                 'image'         => $v->image
                     ? asset('storage/' . $v->image)
                     : null,

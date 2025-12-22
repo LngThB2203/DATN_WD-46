@@ -15,7 +15,15 @@ class OrderSuccessMail extends Mailable
 
     public function __construct(Order $order)
     {
-        $this->order = $order;
+        // Load đầy đủ relations để hiển thị trong email
+        $this->order = $order->load([
+            'details.product.galleries',
+            'details.variant.size',
+            'details.variant.scent',
+            'details.variant.concentration',
+            'discount',
+            'payment'
+        ]);
     }
 
     public function build()
