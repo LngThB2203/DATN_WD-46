@@ -54,4 +54,47 @@ class WarehouseBatchController extends Controller
 
         return back()->with('success', 'Nhập kho thành công');
     }
+
+    // Form xuất kho
+    public function createExport()
+    {
+        return view('admin.inventories.export', [
+            'warehouses' => Warehouse::orderBy('warehouse_name')->get(),
+            'products'   => Product::orderBy('name')->get(),
+        ]);
+    }
+
+    // Xử lý xuất kho thủ công
+    public function storeExport(Request $request, StockService $stockService)
+    {
+        $request->validate([
+            'warehouse_id' => 'required|exists:warehouse,id',
+            'product_id'   => 'required|exists:products,id',
+            'variant_id'   => 'nullable|exists:product_variants,id',
+            'quantity'     => 'required|integer|min:1',
+            'note'         => 'nullable|string|max:500',
+        ]);
+
+        if (WarehouseLockHelper::isWarehouseLocked($request->warehouse_id)) {
+            return back()->withErrors(
+                'Kho đang có đơn hàng xử lý, không thể xuất kho thủ công'
+            );
+        }
+
+        try {
+            $stockService->export(
+                $request->warehouse_id,
+                $request->product_id,
+                $request->variant_id,
+                $request->quantity,
+                'manual_export',
+                null,
+                $request->note
+            );
+
+            return back()->with('success', 'Xuất kho thành công');
+        } catch (\Exception $e) {
+            return back()->withErrors('Lỗi: ' . $e->getMessage());
+        }
+    }
 }
