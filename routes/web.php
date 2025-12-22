@@ -65,7 +65,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 
 // Account & Email Verification
 Route::middleware('auth')->group(function () {
-    Route::get('/account', [AccountController::class, 'show'])->name('account.show');
+Route::get('/account', [AccountController::class, 'show'])->name('account.show');
     Route::get('/account/edit', [AccountController::class, 'edit'])->name('account.edit');
     Route::post('/account/update', [AccountController::class, 'update'])->name('account.update');
 
@@ -120,7 +120,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/cart', [App\Http\Controllers\CartController::class, 'index'])->name('cart.index');
     Route::get('/cart/count', [App\Http\Controllers\CartController::class, 'getCount'])->name('cart.count');
     Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
-    Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+Route::post('/cart/update', [App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
     Route::post('/cart/remove', [App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
     Route::post('/cart/clear', [App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
 
@@ -224,7 +224,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
         Route::put('/{product}', [AdminProductController::class, 'update'])->name('products.update');
         Route::delete('/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
-        Route::delete('/gallery/{gallery}', [AdminProductController::class, 'deleteImage'])->name('products.delete-image');
+Route::delete('/gallery/{gallery}', [AdminProductController::class, 'deleteImage'])->name('products.delete-image');
         Route::post('/gallery/{gallery}/set-primary', [AdminProductController::class, 'setPrimaryImage'])->name('products.set-primary-image');
         Route::get('/export/excel', [AdminProductController::class, 'exportExcel'])->name('products.export-excel');
         Route::get('/export/pdf', [AdminProductController::class, 'exportPdf'])->name('products.export-pdf');
@@ -271,7 +271,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [BannerController::class, 'index'])->name('index');
         Route::get('/create', [BannerController::class, 'create'])->name('create');
         Route::post('/store', [BannerController::class, 'store'])->name('store');
-        Route::get('/{banner}/edit', [BannerController::class, 'edit'])->name('edit');
+Route::get('/{banner}/edit', [BannerController::class, 'edit'])->name('edit');
         Route::put('/{banner}', [BannerController::class, 'update'])->name('update');
         Route::delete('/{banner}', [BannerController::class, 'destroy'])->name('delete');
         Route::post('/{banner}/toggle', [BannerController::class, 'toggleStatus'])->name('toggleStatus');
@@ -319,7 +319,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
         // Export
         Route::get('/export', [WarehouseBatchController::class, 'createExport'])->name('export.create');
-        Route::post('/export', [WarehouseBatchController::class, 'storeExport'])->name('export.store');
+Route::post('/export', [WarehouseBatchController::class, 'storeExport'])->name('export.store');
 
 
         // Transactions
@@ -375,9 +375,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/show', fn() => view('admin.invoices.show'))->name('invoices.show');
         Route::get('/create', fn() => view('admin.invoices.create'))->name('invoices.create');
     });
-
-
-    // Roles
+// Roles
     Route::prefix('roles')->group(function () {
         Route::get('/list', fn() => view('admin.roles.list'))->name('roles.list');
         Route::get('/edit', fn() => view('admin.roles.edit'))->name('roles.edit');
@@ -419,6 +417,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     // Admin Reviews
     Route::prefix('reviews')->name('admin.reviews.')->group(function () {
         Route::get('/', [AdminReviewController::class, 'index'])->name('index');
+        Route::get('/trashed', [AdminReviewController::class, 'trashed'])->name('trashed');
         Route::get('/create', [AdminReviewController::class, 'create'])->name('create');
         Route::post('/', [AdminReviewController::class, 'store'])->name('store');
         Route::get('/{review}/edit', [AdminReviewController::class, 'edit'])->name('edit');
@@ -430,7 +429,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     // Posts
     Route::prefix('post')->group(function () {
         Route::get('/', [PostController::class, 'index'])->name('post.index');
-        Route::get('/create', [PostController::class, 'create'])->name('post.create');
+Route::get('/create', [PostController::class, 'create'])->name('post.create');
         Route::post('/store', [PostController::class, 'store'])->name('post.store');
         Route::get('/trashed', [PostController::class, 'trashed'])->name('post.trashed');
         Route::post('/trashed/{id}/restore', [PostController::class, 'restore'])->name('post.restore');
@@ -446,5 +445,3 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 Route::fallback(function () {
     return response()->view('client.404', [], 404);
 });
-
-

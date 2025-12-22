@@ -3,7 +3,10 @@
 @section('title', 'Trang chủ')
 
 @section('content')
+
 <main class="main">
+
+
 
     <!-- Hero Section -->
     <section class="hero py-1">
@@ -20,8 +23,8 @@
                     @php $product = $products->first(); @endphp
                     @if($product)
                         <a href="{{ route('product.show', $product->slug) }}">
-                            <img src="{{ asset('storage/' . $heroBanners->first()->image) }}" 
-                                class="d-block w-100 rounded" 
+                            <img src="{{ asset('storage/' . $heroBanners->first()->image) }}"
+                                class="d-block w-100 rounded"
                                 alt="Hero Banner">
                         </a>
                     @endif
@@ -119,7 +122,11 @@
 
     </div>
 </section>
-
+ @if(session('error'))
+<script>
+    alert(@json(session('error')));
+</script>
+@endif
 </main>
 
 <script>
@@ -225,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function(){
 @endsection
 <style>
       #heroCarousel .carousel-item {
-    height: 400px; 
+    height: 400px;
     overflow: hidden;
 }
 
