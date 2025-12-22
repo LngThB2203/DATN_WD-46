@@ -30,9 +30,9 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Nội dung <span class="text-danger">*</span></label>
-                                <textarea class="form-control @error('content') is-invalid @enderror" id="content"
-                                    name="content" rows="12"
-                                    placeholder="Nhập nội dung tin nhắn...">{{ old('content') }}</textarea>
+                                <textarea class="form-control @error('message') is-invalid @enderror" id="content"
+    name="message" rows="12"
+    placeholder="Nhập nội dung tin nhắn...">{{ old('message') }}</textarea>
                                 @error('content')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror

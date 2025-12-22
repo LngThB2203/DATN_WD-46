@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DiscountController as AdminDiscountController;
 use App\Http\Controllers\Admin\InventoryExportController;
-use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
@@ -35,6 +34,7 @@ use App\Http\Controllers\Client\WishlistController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -326,11 +326,15 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     });
 
     // Newsletters
+
     Route::prefix('newsletters')->name('admin.newsletters.')->group(function () {
         Route::get('/list', [AdminNewsletterController::class, 'index'])->name('list');
-        Route::get('/send', [AdminNewsletterController::class, 'send'])->name('send');
-        Route::post('/send', [AdminNewsletterController::class, 'sendMail'])->name('sendMail');
+        Route::get('/send', [AdminNewsletterController::class, 'send'])->name('send');          // Hiển thị form
+        Route::post('/send', [AdminNewsletterController::class, 'sendMail'])->name('sendMail'); // Xử lý gửi
         Route::delete('/delete/{id}', [AdminNewsletterController::class, 'destroy'])->name('delete');
+        Route::get('/trashed', [AdminNewsletterController::class, 'trashed'])->name('trashed');
+        Route::patch('/restore/{id}', [AdminNewsletterController::class, 'restore'])->name('restore');
+        Route::delete('/forceDelete/{id}', [AdminNewsletterController::class, 'forceDelete'])->name('forceDelete');
     });
 
     // Purchases
