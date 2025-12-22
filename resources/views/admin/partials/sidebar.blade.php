@@ -32,7 +32,7 @@
 
             <!-- Thùng rác -->
             <li class="nav-item">
-                <a class="nav-link" href="{{ route('admin.trash.index') }}">
+                <a class="nav-link" href="#">
                     <span class="nav-icon">
                         <iconify-icon icon="solar:trash-bin-trash-bold-duotone"></iconify-icon>
                     </span>
@@ -196,7 +196,7 @@
                             <a class="sub-nav-link" href="{{ route('inventories.received-orders') }}">Tồn kho</a>
                         </li>
                         <li class="sub-nav-item">
-                            <a class="sub-nav-link" href="{{ route('inventories.transactions') }}">Lịch sử nhập/xuất</a>
+                            <a class="sub-nav-link" href="#">Lịch sử nhập/xuất</a>
                         </li>
                     </ul>
                 </div>
