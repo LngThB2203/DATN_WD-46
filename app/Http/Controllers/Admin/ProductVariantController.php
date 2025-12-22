@@ -35,16 +35,22 @@ class ProductVariantController extends Controller
         ]);
     }
 
-    public function create()
-    {
-        return view('admin.variants.create', [
-            'products'       => Product::all(),
-            'sizes'          => VariantSize::all(),
-            'scents'         => VariantScent::all(),
-            'concentrations' => VariantConcentration::all(),
-        ]);
+    public function create(Request $request)
+{
+    // BẮT BUỘC có product_id
+    if (!$request->filled('product_id')) {
+        abort(404);
     }
 
+    $product = Product::findOrFail($request->product_id);
+
+    return view('admin.variants.create', [
+        'product'        => $product,   
+        'sizes'          => VariantSize::all(),
+        'scents'         => VariantScent::all(),
+        'concentrations' => VariantConcentration::all(),
+    ]);
+}
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -78,8 +84,10 @@ class ProductVariantController extends Controller
 
         ProductVariant::create($data);
 
-        return redirect()->route('variants.index', ['page' => $request->input('page', 1)])
-            ->with('success', 'Tạo biến thể thành công!');
+        return redirect()
+    ->route('products.show', $data['product_id'])
+    ->with('success', 'Tạo biến thể thành công!');
+
     }
 
     public function edit(ProductVariant $variant)
@@ -132,8 +140,10 @@ class ProductVariantController extends Controller
 
         $variant->update($data);
 
-        return redirect()->route('variants.index', request()->query())
-            ->with('success', 'Cập nhật biến thể thành công!');
+        return redirect()
+    ->route('products.show', $data['product_id'])
+    ->with('success', 'Sửa biến thể thành công!');
+
     }
 
     public function destroy(Request $request, ProductVariant $variant)

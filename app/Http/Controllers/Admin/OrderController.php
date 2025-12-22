@@ -146,31 +146,9 @@ class OrderController extends Controller
             'details.variant.concentration',
             'warehouse',
         ])->findOrFail($id);
-        
-        // Kiểm tra xem đơn hàng đã thanh toán chưa
-        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
-
-        // Tự động gán kho nếu chưa có và có kho đủ hàng
-        if (! $order->warehouse_id && $order->details->isNotEmpty()) {
-            try {
-                $this->autoAssignWarehouse($order);
-                // Reload lại order từ database với tất cả relationships
-                $order = Order::with([
-                    'user',
-                    'discount',
-                    'payment',
-                    'shipment',
-                    'details.product.galleries',
-                    'details.product',
-                    'details.variant.size',
-                    'details.variant.scent',
-                    'details.variant.concentration',
-                    'warehouse',
-                ])->findOrFail($id);
-            } catch (\Exception $e) {
-                // Nếu không có kho nào đủ hàng, vẫn cho phép xem đơn hàng
-                // Admin vẫn có thể chuyển trạng thái hoặc chọn kho thủ công
-            }
+        if (! $order->warehouse_id) {
+            $this->autoAssignWarehouse($order);
+            $order->refresh();
         }
 
         // Lấy danh sách kho có đủ sản phẩm (để admin có thể đổi kho nếu cần)

@@ -109,7 +109,7 @@
                                                         <input type="hidden" name="cart_item_id" value="{{ $item['cart_item_id'] }}">
                                                         <div class="d-flex gap-2 align-items-center">
                                                             <button type="button" class="btn btn-sm btn-outline-secondary quantity-decrease">-</button>
-                                                            <input type="number" name="quantity" class="form-control form-control-sm text-center quantity-input" value="{{ $item['quantity'] ?? 1 }}" min="1" max="100" style="width: 70px;">
+                                                            <input type="number" name="quantity" class="form-control form-control-sm text-center quantity-input" value="{{ $item['quantity'] ?? 1 }}" min="1" max="10" style="width: 70px;">
                                                             <button type="button" class="btn btn-sm btn-outline-secondary quantity-increase">+</button>
                                                         </div>
                                                     </form>
@@ -129,6 +129,10 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <div class="mt-2 small text-muted">
+                                Mỗi sản phẩm được mua tối đa 10 đơn vị trong một đơn hàng. Nếu cần mua số lượng lớn hơn, vui lòng liên hệ với chúng tôi!
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -138,8 +142,8 @@
                 <div class="card">
                     <div class="card-header fw-semibold">Tóm tắt đơn hàng</div>
                     <div class="card-body" id="cartSummary"
-                        data-shipping-fee="{{ (int)($cart['shipping_fee'] ?? 30000) }}"
-                        data-discount-total="{{ (int)($cart['discount_total'] ?? 0) }}">
+                         data-shipping-fee="{{ (int)($cart['shipping_fee'] ?? 30000) }}"
+                         data-discount-total="{{ request()->routeIs('checkout.*') ? (int)($cart['discount_total'] ?? 0) : 0 }}">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Tạm tính</span>
                             <span id="selectedSubtotal">{{ number_format($cart['subtotal'] ?? 0, 0, ',', '.') }}
@@ -150,11 +154,11 @@
                             <span id="selectedShipping">{{ number_format($cart['shipping_fee'] ?? 0, 0, ',', '.') }}
                                 VNĐ</span>
                         </div>
-                        @if(($cart['discount_total'] ?? 0) > 0)
-                        <div class="d-flex justify-content-between mb-2 text-success">
-                            <span>Giảm giá</span>
-                            <span>-{{ number_format($cart['discount_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
-                        </div>
+                        @if(request()->routeIs('checkout.*') && (($cart['discount_total'] ?? 0) > 0))
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Giảm giá</span>
+                                <span>-{{ number_format($cart['discount_total'] ?? 0, 0, ',', '.') }} VNĐ</span>
+                            </div>
                         @endif
                         <hr>
                         <div class="d-flex justify-content-between fw-semibold mb-3">
@@ -248,12 +252,22 @@
 
     // Quantity input AJAX update
     document.querySelectorAll('.quantity-input').forEach(input => {
+        const rowForInput = input.closest('.cart-item-row');
+        if (rowForInput) {
+            // Lưu số lượng ban đầu để có thể revert khi backend báo lỗi
+            rowForInput.dataset.quantity = input.value;
+        }
+
         let updateTimeout;
         input.addEventListener('change', function(e) {
             e.stopPropagation();
             const form = this.closest('.cart-update-form');
             const row = this.closest('.cart-item-row');
             if (!form) return;
+
+            const previousQuantity = row ? parseInt(row.dataset.quantity) || 1 : 1;
+
+            // Cập nhật tạm số lượng mới để tính lại tổng
             if (row) row.dataset.quantity = this.value;
             calculateSelectedTotal();
 
@@ -286,11 +300,35 @@
                         }
                         calculateSelectedTotal();
                     } else {
-                        input.value = row ? row.dataset.quantity : 1;
+                        // Backend chặn (ví dụ >10 hoặc vượt tồn kho) -> revert về số lượng cũ
+                        if (row) {
+                            row.dataset.quantity = previousQuantity;
+                            const price = parseFloat(row.dataset.price) || 0;
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length >= 5) {
+                                const subtotalCell = cells[4].querySelector('strong');
+                                if (subtotalCell) subtotalCell.textContent = (price * previousQuantity).toLocaleString('vi-VN') + ' VNĐ';
+                            }
+                        }
+                        input.value = previousQuantity;
+                        calculateSelectedTotal();
                         if (window.showNotification) window.showNotification(data.message || 'Có lỗi xảy ra!', 'error');
                     }
                 })
-                .catch(() => { input.value = row ? row.dataset.quantity : 1; })
+                .catch(() => {
+                    // Lỗi mạng/API -> revert về số lượng cũ
+                    if (row) {
+                        row.dataset.quantity = previousQuantity;
+                        const price = parseFloat(row.dataset.price) || 0;
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 5) {
+                            const subtotalCell = cells[4].querySelector('strong');
+                            if (subtotalCell) subtotalCell.textContent = (price * previousQuantity).toLocaleString('vi-VN') + ' VNĐ';
+                        }
+                    }
+                    input.value = previousQuantity;
+                    calculateSelectedTotal();
+                })
                 .finally(() => {
                     input.disabled = false;
                     if (submitBtn) submitBtn.disabled = false;

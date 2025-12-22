@@ -107,6 +107,27 @@ class CheckoutController extends Controller
             return back()->withErrors(['cart' => 'Giỏ hàng trống']);
         }
 
+        // Lấy danh sách item được chọn trong đơn
+        $selectedCartItems = collect($cart['items'])->filter(function ($item) use ($selectedItems) {
+            return empty($selectedItems) || in_array($item['cart_item_id'], $selectedItems);
+        })->values();
+
+        // 1) Tối đa 10 dòng sản phẩm trong một đơn hàng
+        if ($selectedCartItems->count() > 10) {
+            return back()->withErrors([
+                'cart' => 'Bạn chỉ có thể mua tối đa 10 dòng sản phẩm trong mỗi đơn hàng.',
+            ]);
+        }
+
+        // 2) Mỗi dòng sản phẩm tối đa 10 chiếc (phòng trường hợp dữ liệu cũ vượt 10)
+        foreach ($selectedCartItems as $item) {
+            if ((int) ($item['quantity'] ?? 0) > 10) {
+                return back()->withErrors([
+                    'cart' => 'Mỗi sản phẩm trong đơn hàng chỉ được mua tối đa 10 chiếc.',
+                ]);
+            }
+        }
+
         // ===== ONLINE =====
         if ($validated['payment_method'] === 'online') {
 
@@ -114,7 +135,10 @@ class CheckoutController extends Controller
 
             $request->session()->put('pending_order', [
                 'customer'      => $validated,
-                'cart'          => $cart,
+                'cart'          => array_merge($cart, [
+                    'discount_id' => $request->session()->get('cart.discount_id'),
+                    'discount_code' => $request->session()->get('cart.code'),
+                ]),
                 'user_id'       => optional($request->user())->id,
                 'selectedItems' => $selectedItems,
                 'vnp_txn_ref'   => $vnpTxnRef,
@@ -124,7 +148,8 @@ class CheckoutController extends Controller
         }
 
         // ===== COD =====
-        DB::transaction(function () use ($validated, $cart, $request, $selectedItems) {
+        $lastOrderId = null;
+        DB::transaction(function () use ($validated, $cart, $request, $selectedItems, &$lastOrderId) {
 
             $order = Order::create([
                 'user_id'               => optional($request->user())->id,
@@ -134,6 +159,7 @@ class CheckoutController extends Controller
                 'subtotal'              => $cart['subtotal'],
                 'shipping_cost'         => $cart['shipping_fee'],
                 'discount_total'        => $cart['discount_total'],
+                'discount_id'           => $request->session()->get('cart.discount_id') ?? null,
                 'grand_total'           => $cart['grand_total'],
                 'customer_name'         => $validated['customer_name'],
                 'customer_email'        => $validated['customer_email'],
@@ -141,6 +167,13 @@ class CheckoutController extends Controller
                 'shipping_address_line' => $validated['shipping_address_line'],
                 'customer_note'         => $validated['customer_note'] ?? null,
             ]);
+
+            // tăng số lượt dùng mã (nếu có)
+            if ($order->discount_id) {
+                Discount::where('id', $order->discount_id)->increment('used_count');
+            }
+
+            $lastOrderId = $order->id;
 
             foreach ($cart['items'] as $item) {
                 if (!in_array($item['cart_item_id'], $selectedItems)) continue;
@@ -171,8 +204,9 @@ class CheckoutController extends Controller
             $this->removePaidItemsFromCart($request, $selectedItems);
         });
 
-        return redirect()->route('orders.index')
-            ->with('success', 'Đặt hàng thành công');
+        return redirect()->route('order.confirmation')
+            ->with('success', 'Đặt hàng thành công')
+            ->with('last_order_id', $lastOrderId);
     }
 
     private function redirectToVNPay(array $cart, Request $request, string $txnRef)
@@ -226,15 +260,27 @@ class CheckoutController extends Controller
             $sessionCart['discount_code']  = null;
         }
 
+        $maxPerItem = 10;
+
         $items = collect($sessionCart['items'])->filter(
             fn($i) => empty($selectedItems) || in_array($i['cart_item_id'], $selectedItems)
-        )->map(function ($i) {
-            $i['quantity'] = max(1, (int)$i['quantity']);
-            $i['subtotal'] = $i['quantity'] * $i['price'];
+        )->map(function ($i) use ($maxPerItem) {
+            // Chuẩn hóa quantity: tối thiểu 1, tối đa 10 để tránh dữ liệu cũ vượt giới hạn hiển thị
+            $qty = (int) ($i['quantity'] ?? 1);
+            $qty = max(1, min($maxPerItem, $qty));
+
+            $i['quantity'] = $qty;
+            $i['subtotal'] = $qty * $i['price'];
             return $i;
         });
 
         $subtotal = $items->sum('subtotal');
+        
+        // Only apply discount if a discount_id is set; otherwise reset discount_total to 0
+        $discountTotal = 0;
+        if ($request->session()->has('cart.discount_id') && $request->session()->get('cart.discount_id')) {
+            $discountTotal = $sessionCart['discount_total'] ?? 0;
+        }
 
         return [
             'items'          => $items->values()->all(),
@@ -244,6 +290,22 @@ class CheckoutController extends Controller
             'grand_total'    => max($subtotal + $sessionCart['shipping_fee'] - $sessionCart['discount_total'], 0),
             'discount_id'    => $sessionCart['discount_id'] ?? null,
         ];
+    }
+
+    public function confirmation(Request $request)
+    {
+        $orderId = session('last_order_id') ?? $request->session()->get('last_order_id');
+        $order = null;
+        if ($orderId) {
+            $order = Order::with([
+                'details.product',
+                'details.variant.size',
+                'details.variant.scent',
+                'details.variant.concentration'
+            ])->find($orderId);
+        }
+
+        return view('client.order-confirmation', compact('order'));
     }
 
     private function removePaidItemsFromCart(Request $request, array $paidItemIds): void

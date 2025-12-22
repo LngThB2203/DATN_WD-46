@@ -379,6 +379,50 @@ class DiscountController extends Controller
         ]);
     }
 
+    /**
+     * Remove/unapply discount from the current cart (client API)
+     */
+    public function remove(Request $request)
+    {
+        $sessionCart = $request->session()->get('cart', [
+            'items'          => [],
+            'shipping_fee'   => 30000,
+            'discount_total' => 0,
+        ]);
+
+        $items = collect($sessionCart['items'] ?? [])->map(function ($item) {
+            $item['quantity'] = max(1, (int) ($item['quantity'] ?? 1));
+            $item['price']    = (float) ($item['price'] ?? 0);
+            $item['subtotal'] = $item['quantity'] * $item['price'];
+            return $item;
+        });
+
+        $subtotal    = $items->sum('subtotal');
+        $shippingFee = (float) ($sessionCart['shipping_fee'] ?? 0);
+
+        // Remove discount-related fields
+        unset($sessionCart['discount_id']);
+        $sessionCart['discount_total'] = 0;
+        $sessionCart['code'] = null;
+        $sessionCart['items'] = $items->all();
+        $sessionCart['subtotal'] = $subtotal;
+        $sessionCart['grand_total'] = max(($subtotal + $shippingFee), 0);
+
+        $request->session()->put('cart', $sessionCart);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã bỏ mã giảm giá.',
+            'cart'    => [
+                'subtotal'       => $sessionCart['subtotal'],
+                'shipping_fee'   => $shippingFee,
+                'discount_total' => 0,
+                'grand_total'    => $sessionCart['grand_total'],
+                'code'           => null,
+            ],
+        ]);
+    }
+
     public function saveForUser(Request $request)
     {
         $request->validate([

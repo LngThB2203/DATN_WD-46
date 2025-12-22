@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\OrderStatusHelper;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
@@ -24,7 +25,7 @@ class OrderReviewController extends Controller
             return false;
         }
 
-        if ($order->order_status !== 'completed') {
+        if (OrderStatusHelper::mapOldStatus($order->order_status) !== OrderStatusHelper::COMPLETED) {
             return false;
         }
 
