@@ -73,7 +73,32 @@
 
 <script>
 $(document).ready(function() {
-    $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
+    // Lấy CSRF token từ meta tag hoặc từ Laravel
+    function getCsrfToken() {
+        const metaToken = $('meta[name="csrf-token"]').attr('content');
+        if (metaToken) return metaToken;
+        
+        // Fallback: lấy từ cookie hoặc tạo mới
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith('XSRF-TOKEN=')) {
+                return decodeURIComponent(cookie.substring('XSRF-TOKEN='.length));
+            }
+        }
+        return null;
+    }
+
+    // Setup CSRF token cho tất cả AJAX requests
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+        $.ajaxSetup({ 
+            headers: { 
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            } 
+        });
+    }
 
     $("#chat-toggle").on("click", function(e) {
         e.stopPropagation();
@@ -107,10 +132,20 @@ $(document).ready(function() {
         $("#chat-messages").append(`<div id="${loaderId}" class="bot-msg typing"><span></span><span></span><span></span></div>`);
         scrollBottom();
 
+        // Lấy CSRF token mới cho mỗi request
+        const currentToken = getCsrfToken() || '{{ csrf_token() }}';
+
         $.ajax({
             url: '/chat/send',
             method: 'POST',
-            data: { message: msg },
+            headers: {
+                'X-CSRF-TOKEN': currentToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            data: { 
+                message: msg,
+                _token: currentToken
+            },
             success: function(res) {
                 $(`#${loaderId}`).remove();
                 if (res && res.bot) {
@@ -123,7 +158,14 @@ $(document).ready(function() {
                 $(`#${loaderId}`).remove();
                 console.error('Chat error:', { xhr: xhr, status: status, error: error });
                 let errorMsg = 'Hệ thống đang bận, bạn vui lòng thử lại sau nhé!';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
+                
+                if (xhr.status === 419) {
+                    errorMsg = 'Phiên làm việc đã hết hạn. Vui lòng tải lại trang và thử lại!';
+                    // Tự động reload sau 2 giây
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 2000);
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMsg = xhr.responseJSON.message;
                 } else if (xhr.status === 0) {
                     errorMsg = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng!';
