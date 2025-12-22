@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -12,12 +13,26 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductVariantController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $variants = ProductVariant::with(['product', 'size', 'scent', 'concentration'])
-            ->orderBy('product_id', 'desc')->paginate(15);
+            ->orderBy('product_id', 'desc')
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('admin.variants.index', compact('variants'));
+        // Lọc theo gender
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->gender);
+        }
+
+        $variants = $query->orderBy('product_id', 'desc')->paginate(15)->withQueryString();
+
+        return view('admin.variants.index', [
+            'variants'       => $variants,
+            'sizes'          => VariantSize::all(),
+            'scents'         => VariantScent::all(),
+            'concentrations' => VariantConcentration::all(),
+        ]);
     }
 
     public function create()
@@ -43,13 +58,28 @@ class ProductVariantController extends Controller
             'gender'           => 'required|in:male,female,unisex',
         ]);
 
+        $exists = ProductVariant::where([
+            'product_id'       => $data['product_id'],
+            'size_id'          => $data['size_id'],
+            'scent_id'         => $data['scent_id'],
+            'concentration_id' => $data['concentration_id'],
+            'gender'           => $data['gender'],
+        ])->exists();
+
+        if ($exists) {
+            return back()
+                ->withErrors(['variant' => 'Biến thể này đã tồn tại'])
+                ->withInput();
+        }
+
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('variants', 'public');
         }
 
         ProductVariant::create($data);
 
-        return redirect()->route('variants.index')->with('success', 'Tạo biến thể thành công!');
+        return redirect()->route('variants.index', ['page' => $request->input('page', 1)])
+            ->with('success', 'Tạo biến thể thành công!');
     }
 
     public function edit(ProductVariant $variant)
@@ -77,6 +107,22 @@ class ProductVariantController extends Controller
             'gender'           => 'required|in:male,female,unisex',
         ]);
 
+        $exists = ProductVariant::where([
+            'product_id'       => $data['product_id'],
+            'size_id'          => $data['size_id'],
+            'scent_id'         => $data['scent_id'],
+            'concentration_id' => $data['concentration_id'],
+            'gender'           => $data['gender'],
+        ])
+        ->where('id', '!=', $variant->id)
+        ->exists();
+
+        if ($exists) {
+            return back()
+                ->withErrors(['variant' => 'Biến thể này đã tồn tại'])
+                ->withInput();
+        }
+
         if ($request->hasFile('image')) {
             if ($variant->image && Storage::disk('public')->exists($variant->image)) {
                 Storage::disk('public')->delete($variant->image);
@@ -86,17 +132,46 @@ class ProductVariantController extends Controller
 
         $variant->update($data);
 
-        return redirect()->route('variants.index')->with('success', 'Cập nhật thành công!');
+        return redirect()->route('variants.index', request()->query())
+            ->with('success', 'Cập nhật biến thể thành công!');
     }
 
-    public function destroy(ProductVariant $variant)
+    public function destroy(Request $request, ProductVariant $variant)
     {
+        // Soft delete
+        $variant->delete();
+
+        return redirect()->route('variants.index')->with('success', 'Biến thể đã được xóa (có thể khôi phục)!');
+    }
+
+    public function forceDelete($id)
+    {
+        $variant = ProductVariant::withTrashed()->findOrFail($id);
+
         if ($variant->image && Storage::disk('public')->exists($variant->image)) {
             Storage::disk('public')->delete($variant->image);
         }
 
-        $variant->delete();
+        $variant->forceDelete();
 
-        return redirect()->route('variants.index')->with('success', 'Đã xóa biến thể!');
+        return redirect()->route('variants.trashed')->with('success', 'Biến thể đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $variant = ProductVariant::withTrashed()->findOrFail($id);
+        $variant->restore();
+
+        return redirect()->route('variants.trashed')->with('success', 'Biến thể đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = ProductVariant::onlyTrashed()->with(['product', 'size', 'scent', 'concentration']);
+
+        $variants = $query->orderBy('deleted_at', 'desc')->paginate(15);
+
+        return redirect()->route('variants.index', ['page' => $request->input('page', 1)])
+            ->with('success', 'Đã xóa biến thể!');
     }
 }

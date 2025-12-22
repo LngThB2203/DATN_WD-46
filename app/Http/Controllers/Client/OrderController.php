@@ -71,6 +71,9 @@ class OrderController extends Controller
     {
         $order = Order::with('payment')->findOrFail($id);
 
+        // Kiểm tra đơn hàng đã thanh toán chưa
+        $isPaid = ($order->payment && $order->payment->status === 'paid') || $order->payment_method !== null;
+        
         // Kiểm tra quyền truy cập
         if ($request->user()) {
             if ($order->user_id != $request->user()->id) {
@@ -151,9 +154,9 @@ class OrderController extends Controller
     
     //Xác nhận nhận hàng
     public function confirmReceived(Request $request, $id)
-    {
-        $order = Order::where('user_id', $request->user()->id)
-                      ->findOrFail($id);
+{
+    $order = Order::where('user_id', $request->user()->id)
+                  ->findOrFail($id);
 
         // Map trạng thái để check
         $mappedStatus = \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status);
@@ -163,12 +166,12 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Chỉ có thể xác nhận đơn hàng đã được giao.');
         }
 
-        $order->update([
+    $order->update([
             'order_status' => \App\Helpers\OrderStatusHelper::COMPLETED,
-            'completed_at' => now(),
-        ]);
+        'completed_at' => now(),
+    ]);
 
-        return redirect()->back()->with('success', 'Cảm ơn bạn! Đơn hàng đã được xác nhận.');
-    }
+    return redirect()->back()->with('success', 'Cảm ơn bạn! Đơn hàng đã được xác nhận.');
+}
 
 }

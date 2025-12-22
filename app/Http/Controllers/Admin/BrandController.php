@@ -70,16 +70,55 @@ class BrandController extends Controller
 
     public function destroy(Brand $brand)
 {
-    // Kiểm tra sản phẩm trước khi xóa
-    if ($brand->products()->exists()) {
+        // Soft delete
+        $brand->delete();
+
         return redirect()->route('brand.index')
-            ->with('error', 'Không thể xóa thương hiệu vì vẫn còn sản phẩm liên kết!');
+            ->with('success', 'Thương hiệu đã được xóa (có thể khôi phục)!');
     }
 
-    $brand->delete();
+    public function forceDelete($id)
+    {
+        $brand = Brand::withTrashed()->findOrFail($id);
 
-    return redirect()->route('brand.index')
-        ->with('success', 'Xóa thương hiệu thành công!');
+        // Kiểm tra sản phẩm trước khi xóa cứng
+        if ($brand->products()->exists()) {
+            return redirect()->route('brand.trashed')
+                ->with('error', 'Không thể xóa vĩnh viễn thương hiệu vì vẫn còn sản phẩm liên kết!');
+    }
+
+        if ($brand->image && Storage::disk('public')->exists($brand->image)) {
+            Storage::disk('public')->delete($brand->image);
+        }
+
+        $brand->forceDelete();
+
+        return redirect()->route('brand.trashed')
+            ->with('success', 'Thương hiệu đã được xóa vĩnh viễn!');
+    }
+
+    public function restore($id)
+    {
+        $brand = Brand::withTrashed()->findOrFail($id);
+        $brand->restore();
+
+        return redirect()->route('brand.trashed')
+            ->with('success', 'Thương hiệu đã được khôi phục!');
+    }
+
+    public function trashed(Request $request)
+    {
+        $query = Brand::onlyTrashed();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $brands = $query->orderBy('deleted_at', 'desc')->paginate(10);
+        $brands->appends($request->only('search'));
+
+        return view('admin.brand.trashed', compact('brands'));
 }
 
     public function showProducts($id)

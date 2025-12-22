@@ -19,14 +19,14 @@
             <div class="col-xl-4 col-lg-5">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title mb-3">Product Images</h5>
+                        <h5 class="card-title mb-3">Hình ảnh</h5>
                         @if($product->galleries->count() > 0)
                             <div class="row">
                                 @foreach($product->galleries as $gallery)
                                     <div class="col-6 mb-3">
                                         <div class="position-relative">
-                                            <img src="{{ asset('storage/' . $gallery->image_path) }}" 
-                                                 alt="{{ $gallery->alt_text }}" 
+                                            <img src="{{ asset('storage/' . $gallery->image_path) }}"
+                                                 alt="{{ $gallery->alt_text }}"
                                                  class="img-fluid rounded border"
                                                  style="width: 100%; height: 150px; object-fit: cover;">
                                             @if($gallery->is_primary)
@@ -39,7 +39,7 @@
                         @else
                             <div class="text-center text-muted">
                                 <i class="bx bx-image fs-48 mb-3"></i>
-                                <p>No images available</p>
+                                <p>Không có ảnh</p>
                             </div>
                         @endif
                     </div>
@@ -49,26 +49,26 @@
             <div class="col-xl-8 col-lg-7">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title">Product Information</h4>
+                        <h4 class="card-title">Thông tin sản phẩm</h4>
                         <div class="d-flex gap-2">
                             <a href="{{ route('products.edit', $product) }}" class="btn btn-primary btn-sm">
-                                <i class="bx bx-edit"></i> Edit Product
+                                <i class="bx bx-edit"></i> Sửa sản phẩm
                             </a>
                             <a href="{{ route('products.index') }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="bx bx-arrow-back"></i> Back to List
+                                <i class="bx bx-arrow-back"></i> Danh sách
                             </a>
                         </div>
                                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong>Product Name:</strong>
+                                <strong>Tên sản phẩm:</strong>
                             </div>
                             <div class="col-sm-9">
                                 {{ $product->name }}
                             </div>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <div class="col-sm-3">
                                 <strong>SKU:</strong>
@@ -80,7 +80,7 @@
 
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong>Category:</strong>
+                                <strong>Danh mục:</strong>
                             </div>
                             <div class="col-sm-9">
                                 {{ $product->category->category_name ?? 'N/A' }}
@@ -89,7 +89,7 @@
 
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong>Price:</strong>
+                                <strong>Giá:</strong>
                             </div>
                             <div class="col-sm-9">
                                 <span class="fw-bold text-primary fs-5">
@@ -111,32 +111,32 @@
                                 @endif
                             </div>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong>Status:</strong>
+                                <strong>Trạng thái:</strong>
                     </div>
                             <div class="col-sm-9">
                                 @if($product->status)
-                                    <span class="badge bg-success">Active</span>
+                                    <span class="badge bg-success">Hoạt động</span>
                                 @else
-                                    <span class="badge bg-danger">Inactive</span>
+                                    <span class="badge bg-danger">Không hoạt động</span>
                                 @endif
                     </div>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong>Created:</strong>
+                                <strong>Ngày tạo:</strong>
                         </div>
                             <div class="col-sm-9">
                                 {{ $product->created_at->format('d/m/Y H:i') }}
                             </div>
                         </div>
-                        
+
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong>Updated:</strong>
+                                <strong>Cập nhật vào:</strong>
                             </div>
                             <div class="col-sm-9">
                                 {{ $product->updated_at->format('d/m/Y H:i') }}
@@ -146,7 +146,7 @@
                         @if($product->description)
                         <div class="row">
                             <div class="col-sm-3">
-                                <strong>Description:</strong>
+                                <strong>Mô tả:</strong>
                             </div>
                             <div class="col-sm-9">
                                 <div class="border rounded p-3 bg-light">
