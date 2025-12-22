@@ -15,20 +15,20 @@ class OrderSuccessMail extends Mailable
 
     public function __construct(Order $order)
     {
-        // Load đầy đủ relations để hiển thị trong email
-        $this->order = $order->load([
-            'details.product.galleries',
-            'details.variant.size',
-            'details.variant.scent',
-            'details.variant.concentration',
-            'discount',
-            'payment'
-        ]);
+         $this->order = $order->load([
+        'details.product.galleries',
+        'details.variant.size',
+        'details.variant.scent',
+        'details.variant.concentration',
+    ]);
     }
 
-    public function build()
-    {
-        return $this->subject('Cảm ơn bạn đã đặt hàng tại 46 Perfume Shop')
-                    ->view('emails.order-confirmation');
-    }
+  public function build()
+{
+    return $this->subject('Xác nhận đơn hàng')
+        ->view('emails.order-confirmation')
+        ->with([
+            'order' => $this->order,
+        ]);
+}
 }

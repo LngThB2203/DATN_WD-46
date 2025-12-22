@@ -54,12 +54,6 @@ class ProductVariant extends Model
         return $this->warehouseStock()->sum('quantity');
     }
 
-    // Accessor tương thích cho code cũ dùng $variant->stock
-    public function getStockAttribute()
-    {
-        return $this->total_stock;
-    }
-
     public function getStockAttribute()
     {
         return $this->warehouseStock->sum('quantity');
