@@ -233,9 +233,7 @@
                                     @endif
                                 @endauth
 
-                                <div id="appliedDiscountInfo" class="mt-1 small text-success" style="{{ empty($cart['discount_code']) ? 'display:none;' : '' }}">
-                                    Đang áp dụng mã: <strong id="appliedDiscountCode">{{ $cart['discount_code'] ?? '' }}</strong>
-                                </div>
+
 
                                 <div class="mt-1 small">
                                     <a href="{{ route('client.vouchers.index') }}" class="text-decoration-underline">Xem kho voucher</a>
@@ -245,24 +243,32 @@
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Tạm tính</span>
-                                <span id="cartSubtotal">{{ number_format($cart['subtotal'] ?? 0) }} đ</span>
+                                <span id="checkoutSubtotal">{{ number_format($cart['subtotal'] ?? 0) }} đ</span>
                             </div>
+
+                            @php $discountShown = !empty($cart['discount_code']) ? ($cart['discount_total'] ?? 0) : 0; @endphp
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Giảm giá</span>
-                                <span id="cartDiscount">- {{ number_format($cart['discount_total'] ?? 0) }} đ</span>
+                                <span id="checkoutDiscount" data-code="{{ $cart['discount_code'] ?? '' }}" data-amount="{{ $discountShown }}">- {{ number_format($discountShown, 0, ',', '.') }} đ</span>
+                            </div>
+
+                            <div id="appliedCodeWrapper" class="mt-1 small text-success" style="{{ !empty($cart['discount_code']) ? '' : 'display:none' }}">
+                                Đang áp dụng mã: <strong id="appliedDiscountCode">{{ $cart['discount_code'] ?? '' }}</strong>
+                                <button type="button" id="removeDiscountBtn" class="btn btn-link btn-sm text-danger ms-2">Bỏ mã</button>
                             </div>
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Phí vận chuyển</span>
-                                <span id="cartShipping">{{ number_format($cart['shipping_fee'] ?? 0) }} đ</span>
+                                <span id="checkoutShipping">{{ number_format($cart['shipping_fee'] ?? 0) }} đ</span>
                             </div>
 
                             <hr>
 
+                            @php $displayTotal = ($cart['subtotal'] ?? 0) + ($cart['shipping_fee'] ?? 0) - $discountShown; @endphp
                             <div class="d-flex justify-content-between fw-semibold mb-3">
                                 <span>Tổng cộng</span>
-                                <span id="cartGrandTotal">{{ number_format($cart['grand_total'] ?? 0) }} đ</span>
+                                <span id="checkoutTotal">{{ number_format(max($displayTotal, 0), 0, ',', '.') }} đ</span>
                             </div>
 
                             <button class="btn btn-primary w-100" type="button" onclick="confirmOrder(this)">
@@ -304,10 +310,10 @@
     const messageEl = document.getElementById('discountMessage');
     const savedSelect = document.getElementById('savedVoucherSelect');
 
-    const subtotalEl = document.getElementById('cartSubtotal');
-    const discountEl = document.getElementById('cartDiscount');
-    const shippingEl = document.getElementById('cartShipping');
-    const grandTotalEl = document.getElementById('cartGrandTotal');
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const discountEl = document.getElementById('checkoutDiscount');
+    const shippingEl = document.getElementById('checkoutShipping');
+    const grandTotalEl = document.getElementById('checkoutTotal');
     const appliedInfoEl = document.getElementById('appliedDiscountInfo');
     const appliedCodeEl = document.getElementById('appliedDiscountCode');
 
@@ -350,29 +356,36 @@
                         messageEl.textContent = data.message || 'Áp dụng mã giảm giá thành công!';
                         messageEl.className = 'mt-2 small text-success';
 
-                        const cart = data.cart || {};
-                        const formatNumber = (value) => {
-                            const num = Number(value) || 0;
-                            return num.toLocaleString('vi-VN');
-                        };
+                        // Update summary on page without reload
+                        try {
+                            const cartInfo = data.cart || {};
+                            const subtotalEl = document.getElementById('checkoutSubtotal');
+                            const discountEl = document.getElementById('checkoutDiscount');
+                            const shippingEl = document.getElementById('checkoutShipping');
+                            const totalEl = document.getElementById('checkoutTotal');
 
-                        if (subtotalEl && typeof cart.subtotal !== 'undefined') {
-                            subtotalEl.textContent = formatNumber(cart.subtotal) + ' đ';
-                        }
-                        if (discountEl && typeof cart.discount_total !== 'undefined') {
-                            discountEl.textContent = '- ' + formatNumber(cart.discount_total) + ' đ';
-                        }
-                        if (shippingEl && typeof cart.shipping_fee !== 'undefined') {
-                            shippingEl.textContent = formatNumber(cart.shipping_fee) + ' đ';
-                        }
-                        if (grandTotalEl && typeof cart.grand_total !== 'undefined') {
-                            grandTotalEl.textContent = formatNumber(cart.grand_total) + ' đ';
+                            if (subtotalEl && cartInfo.subtotal !== undefined) subtotalEl.textContent = formatVND(cartInfo.subtotal);
+                            if (discountEl) discountEl.textContent = '- ' + formatVND(cartInfo.discount_total || 0);
+                            if (shippingEl && cartInfo.shipping_fee !== undefined) shippingEl.textContent = formatVND(cartInfo.shipping_fee);
+                            if (totalEl && cartInfo.grand_total !== undefined) totalEl.textContent = formatVND(cartInfo.grand_total);
+
+                            // Update discountCode and cartDiscount variables used by confirmOrder by setting data attributes
+                            const wrapper = document.getElementById('checkoutDiscount');
+                            if (wrapper) {
+                                wrapper.dataset.code = cartInfo.code || '';
+                                wrapper.dataset.amount = cartInfo.discount_total || 0;
+                            }
+
+                            // Show applied code block and set code text
+                            const appliedWrapper = document.getElementById('appliedCodeWrapper');
+                            const appliedCodeEl = document.getElementById('appliedDiscountCode');
+                            if (appliedWrapper) appliedWrapper.style.display = '';
+                            if (appliedCodeEl) appliedCodeEl.textContent = cartInfo.code || '';
+                        } catch (e) {
+                            // fallback: reload if dynamic update fails
+                            window.location.reload();
                         }
 
-                        if (appliedInfoEl && appliedCodeEl && cart.discount_code) {
-                            appliedInfoEl.style.display = '';
-                            appliedCodeEl.textContent = cart.discount_code;
-                        }
                     } else {
                         messageEl.textContent = (data && data.message) || 'Mã giảm giá không hợp lệ.';
                         messageEl.className = 'mt-2 small text-danger';
@@ -413,27 +426,148 @@
                 });
         });
     }
+
+    // Remove discount handler
+    const removeBtn = document.getElementById('removeDiscountBtn');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function () {
+            if (!confirm('Bạn có chắc muốn bỏ mã giảm giá?')) return;
+            const btn = this;
+            btn.disabled = true;
+            fetch('{{ route('api.remove-discount') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+                .then(res => res.json().then(data => ({ ok: res.ok, data })))
+                .then(({ ok, data }) => {
+                    if (ok && data.success) {
+                        const cartInfo = data.cart || {};
+                        if (messageEl) {
+                            messageEl.textContent = data.message || 'Đã bỏ mã giảm giá.';
+                            messageEl.className = 'mt-2 small text-success';
+                        }
+                        const subtotalEl = document.getElementById('checkoutSubtotal');
+                        const discountEl = document.getElementById('checkoutDiscount');
+                        const shippingEl = document.getElementById('checkoutShipping');
+                        const totalEl = document.getElementById('checkoutTotal');
+
+                        if (subtotalEl && cartInfo.subtotal !== undefined) subtotalEl.textContent = formatVND(cartInfo.subtotal);
+                        if (discountEl) {
+                            discountEl.textContent = '- ' + formatVND(cartInfo.discount_total || 0);
+                            discountEl.dataset.code = '';
+                            discountEl.dataset.amount = 0;
+                        }
+                        if (shippingEl && cartInfo.shipping_fee !== undefined) shippingEl.textContent = formatVND(cartInfo.shipping_fee);
+                        if (totalEl && cartInfo.grand_total !== undefined) totalEl.textContent = formatVND(cartInfo.grand_total);
+
+                        const appliedWrapper = document.getElementById('appliedCodeWrapper');
+                        if (appliedWrapper) appliedWrapper.style.display = 'none';
+                        const appliedCodeEl = document.getElementById('appliedDiscountCode');
+                        if (appliedCodeEl) appliedCodeEl.textContent = '';
+                    } else {
+                        if (messageEl) {
+                            messageEl.textContent = data.message || 'Không thể bỏ mã giảm giá.';
+                            messageEl.className = 'mt-2 small text-danger';
+                        }
+                    }
+                })
+                .catch(() => {
+                    if (messageEl) {
+                        messageEl.textContent = 'Có lỗi xảy ra khi bỏ mã giảm giá.';
+                        messageEl.className = 'mt-2 small text-danger';
+                    }
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                });
+        });
+    }
+
 })();
 
-function confirmOrder(btn) {
-    // Lấy giá và số lượng sản phẩm từ DOM (đã được cập nhật động)
-    const grandTotalEl = document.getElementById('cartGrandTotal');
-    const totalPrice = grandTotalEl ? grandTotalEl.textContent.trim() : '0 đ';
+const cartItems = @json($cart['items'] ?? []);
+const cartSubtotal = {{ $cart['subtotal'] ?? 0 }};
+const cartDiscount = {{ !empty($cart['discount_code']) ? (int)($cart['discount_total'] ?? 0) : 0 }};
+const cartShipping = {{ $cart['shipping_fee'] ?? 0 }};
+const cartTotal = {{ $cart['grand_total'] ?? 0 }};
+const discountCode = @json($cart['discount_code'] ?? null);
 
-    // Đếm số lượng sản phẩm từ danh sách items
-    const itemCount = document.querySelectorAll('.cart-item-row').length || {{ count($cart['items'] ?? []) }};
-    const productCount = itemCount + ' sản phẩm';
+function formatVND(amount) {
+    return new Intl.NumberFormat('vi-VN').format(Number(amount || 0)) + ' đ';
+}
+
+function parseNumberFromText(str) {
+    if (!str) return 0;
+    return Number(String(str).replace(/[^0-9]/g, '')) || 0;
+}
+
+function confirmOrder(btn) {
 
     let timerInterval;
     let countdown = 5;
 
+    if (!cartItems || !cartItems.length) {
+        Swal.fire('Giỏ hàng trống', '', 'warning');
+        return;
+    }
+
+    // Build table HTML for items
+    let itemsHtml = '<div style="text-align:left;">';
+    itemsHtml += '<table style="width:100%; border-collapse:collapse;">';
+    itemsHtml += '<thead><tr><th style="text-align:left; padding:6px 8px">Sản phẩm</th><th style="text-align:right; padding:6px 8px">Đơn giá</th><th style="text-align:right; padding:6px 8px">Số lượng</th><th style="text-align:right; padding:6px 8px">Thành tiền</th></tr></thead><tbody>';
+
+    cartItems.forEach(item => {
+        const name = item.name || 'Sản phẩm';
+        const qty = Number(item.quantity || 1);
+        const subtotal = Number(item.subtotal ?? (item.price * qty) ?? 0);
+        const unit = Number(item.price ?? (qty ? subtotal/qty : 0));
+        itemsHtml += `<tr><td style="padding:6px 8px; vertical-align:top">${name}</td><td style="padding:6px 8px; vertical-align:top; text-align:right">${formatVND(unit)}</td><td style="padding:6px 8px; vertical-align:top; text-align:right">${qty}</td><td style="padding:6px 8px; vertical-align:top; text-align:right">${formatVND(subtotal)}</td></tr>`;
+    });
+
+    itemsHtml += `</tbody></table>`;
+
+    // Read latest values from DOM (allow dynamic updates)
+    const subtotalText = document.getElementById('checkoutSubtotal')?.textContent || '';
+    const discountText = document.getElementById('checkoutDiscount')?.textContent || '';
+    const shippingText = document.getElementById('checkoutShipping')?.textContent || '';
+    const totalText = document.getElementById('checkoutTotal')?.textContent || '';
+
+    const currentSubtotal = parseNumberFromText(subtotalText);
+    const currentDiscount = parseNumberFromText(discountText); // discount shown with leading '-', parse digits only
+    const currentShipping = parseNumberFromText(shippingText);
+    const currentTotal = parseNumberFromText(totalText);
+
+    // Summary (subtotal, discount if any, shipping, total)
+    itemsHtml += `<div style="margin-top:12px; text-align:right">`;
+    itemsHtml += `<div>Tạm tính: ${formatVND(currentSubtotal)}</div>`;
+    if (currentDiscount > 0) {
+        // find code if available in data attribute
+        const discountEl = document.getElementById('checkoutDiscount');
+        const code = discountEl?.dataset?.code || '';
+        if (code) {
+            itemsHtml += `<div>Giảm giá (Mã: <strong>${code}</strong>): -${formatVND(currentDiscount)}</div>`;
+        } else {
+            itemsHtml += `<div>Giảm giá: -${formatVND(currentDiscount)}</div>`;
+        }
+    }
+    itemsHtml += `<div>Phí vận chuyển: ${formatVND(currentShipping)}</div>`;
+    itemsHtml += `<hr><div class="fw-semibold">Tổng: <b>${formatVND(currentTotal)}</b></div>`;
+    itemsHtml += `</div>`;
+    itemsHtml += '</div>';
+
     Swal.fire({
         title: 'Xác nhận đơn hàng',
-        html: `Bạn chắc chắn muốn đặt đơn hàng này?<br>Sản phẩm: <b>${productCount}</b><br>Tổng tiền: <b>${totalPrice}</b>`,
+        html: `Bạn chắc chắn muốn đặt các sản phẩm sau?<br>${itemsHtml}`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: `OK (${countdown})`,
         cancelButtonText: 'Hủy',
+        width: 680,
         didOpen: () => {
             const confirmBtn = Swal.getConfirmButton();
             confirmBtn.disabled = true;
