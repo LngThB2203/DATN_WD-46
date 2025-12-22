@@ -57,6 +57,26 @@ class StockService
         });
     }
 
+    // Xuất kho thủ công
+    public function export(
+        int $warehouseId,
+        int $productId,
+        ?int $variantId,
+        int $quantity,
+        string $referenceType,
+        ?int $referenceId = null,
+        ?string $note = null
+    ): void {
+        $this->exportFIFO(
+            $warehouseId,
+            $productId,
+            $variantId,
+            $quantity,
+            $referenceType,
+            $referenceId
+        );
+    }
+
     // Xuất kho chỉ qua đơn hàng
     public function exportByOrder($order): void
     {
