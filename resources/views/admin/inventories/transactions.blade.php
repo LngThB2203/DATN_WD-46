@@ -43,7 +43,7 @@
                             <th style="width: 150px;">Thời gian</th>
 
                             <th>Sản phẩm</th>
-                            <th>Biến thể</th>
+                            <th style="min-width: 200px;">Biến thể</th>
                             <th>Lô</th>
                             <th style="width: 100px;">Loại</th>
                             <th>Số lượng</th>
@@ -58,13 +58,40 @@
                             <td class="small">{{ $t->created_at->format('d-m-Y H:i:s') }}</td>
                 
                             <td class="text-start fw-bold text-primary">{{ $t->product->name ?? '-' }}</td>
-                            <td><code class="small">{{ $t->variant->sku ?? '-' }}</code></td>
+                            <td class="text-start">
+                                @if($t->variant)
+                                    <div class="d-flex flex-column gap-1">
+                                        @if($t->variant->size)
+                                            <span class="badge bg-secondary small">
+                                                Kích thước: {{ $t->variant->size->size_name }}
+                                            </span>
+                                        @endif
+                                        @if($t->variant->scent)
+                                            <span class="badge bg-info small">
+                                                Mùi hương: {{ $t->variant->scent->scent_name }}
+                                            </span>
+                                        @endif
+                                        @if($t->variant->concentration)
+                                            <span class="badge bg-warning text-dark small">
+                                                Nồng độ: {{ $t->variant->concentration->concentration_name }}
+                                            </span>
+                                        @endif
+                                        @if($t->variant->sku)
+                                            <code class="small text-muted mt-1">{{ $t->variant->sku }}</code>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-muted small">Không có biến thể</span>
+                                @endif
+                            </td>
                             <td><span class="text-muted small">{{ $t->batch_code ?? '-' }}</span></td>
                             <td>
                                 @if($t->type === 'import')
                                     <span class="badge bg-success-subtle text-success border border-success px-2">Nhập</span>
-                                @else
+                                @elseif($t->type === 'export')
                                     <span class="badge bg-danger-subtle text-danger border border-danger px-2">Xuất</span>
+                                @else
+                                    <span class="badge bg-secondary px-2">{{ ucfirst($t->type) }}</span>
                                 @endif
                             </td>
                             <td class="fw-bold {{ $t->quantity > 0 ? 'text-success' : 'text-danger' }}">
@@ -73,9 +100,13 @@
                             <td class="text-muted">{{ $t->before_quantity }}</td>
                             <td class="fw-bold text-dark bg-light">{{ $t->after_quantity }}</td>
                             <td>
-                                <span class="badge bg-secondary small text-uppercase">
-                                    {{ $t->reference_type }} #{{ $t->reference_id }}
-                                </span>
+                                @if($t->reference_type && $t->reference_id)
+                                    <span class="badge bg-secondary small text-uppercase">
+                                        {{ $t->reference_type }} #{{ $t->reference_id }}
+                                    </span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                         </tr>
                         @empty

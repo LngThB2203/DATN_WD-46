@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use App\Models\User;
 use App\Models\Customer;
 
@@ -25,13 +26,18 @@ class AuthController extends Controller
             'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
         ]);
 
-          $user = User::create([
-        'name'     => $request->name,
-        'email'    => $request->email,
-        'password' => bcrypt($request->password),
-        'role'     => 'user',
-        'status'   => 1, // active
-    ]);
+        $userData = [
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => bcrypt($request->password),
+            'role'     => 'user',
+        ];
+
+        if (Schema::hasColumn('users', 'status')) {
+            $userData['status'] = 1;
+        }
+
+        $user = User::create($userData);
      Customer::create([
         'user_id'          => $user->id,
         'membership_level' => 'Silver',

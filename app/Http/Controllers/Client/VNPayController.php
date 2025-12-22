@@ -2,7 +2,6 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
-use App\Mail\OrderSuccessMail;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -10,6 +9,8 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderSuccessMail;
+
 
 class VNPayController extends Controller
 {
@@ -97,12 +98,19 @@ class VNPayController extends Controller
                 'status'           => 'paid',
                 'paid_at'          => now(),
             ]);
+       $orderForMail = Order::with([
+    'details.product.galleries',
+    'details.variant.size',
+    'details.variant.scent',
+    'details.variant.concentration',
+])->find($order->id);
 
-            if (! empty($order->customer_email)) {
-                Mail::to($order->customer_email)->send(
-                    new OrderSuccessMail($order)
-                );
-            }
+Mail::to($order->customer_email)->send(
+    new OrderSuccessMail($orderForMail)
+);
+
+
+
             // Xóa sản phẩm đã thanh toán khỏi giỏ
             $cartId = session('cart_id');
             if ($cartId) {

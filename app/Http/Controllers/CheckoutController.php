@@ -91,28 +91,16 @@ class CheckoutController extends Controller
     }
          $user = $request->user();
 
-        // Nếu đã đăng nhập, bắt buộc lấy tên và email từ tài khoản
-        if ($user) {
-            $validated = $request->validate([
-                'customer_phone'        => 'required|string|max:20',
-                'shipping_address_line' => 'required|string|max:255',
-                'customer_note'         => 'nullable|string|max:1000',
-                'payment_method'        => 'required|in:cod,online',
-            ]);
-
-            // Lấy tên và email từ tài khoản
-            $validated['customer_name'] = $user->name;
-            $validated['customer_email'] = $user->email;
-        } else {
-            $validated = $request->validate([
-                'customer_name'         => 'required|string|max:150',
-                'customer_email'        => 'required|email|max:150',
-                'customer_phone'        => 'required|string|max:20',
-                'shipping_address_line' => 'required|string|max:255',
-                'customer_note'         => 'nullable|string|max:1000',
-                'payment_method'        => 'required|in:cod,online',
-            ]);
-        }
+        // Validation cho cả user đăng nhập và chưa đăng nhập
+        // Cho phép chỉnh sửa tên và email ngay cả khi đã đăng nhập
+        $validated = $request->validate([
+            'customer_name'         => 'required|string|max:150',
+            'customer_email'        => 'required|email|max:150',
+            'customer_phone'        => 'required|string|max:20',
+            'shipping_address_line' => 'required|string|max:255',
+            'customer_note'         => 'nullable|string|max:1000',
+            'payment_method'        => 'required|in:cod,online',
+        ]);
 
         $selectedItems = array_filter(array_map('intval',
             is_string($request->input('selected_items'))
@@ -213,12 +201,18 @@ class CheckoutController extends Controller
                 'amount'         => $order->grand_total,
                 'status'         => 'pending',
             ]);
-            // Gửi email xác nhận đơn hàng
-            if (!empty($order->customer_email)) {
-    Mail::to($order->customer_email)->send(
-        new OrderSuccessMail($order)
-    );
-}
+
+
+       $orderForMail = Order::with([
+    'details.product.galleries',
+    'details.variant.size',
+    'details.variant.scent',
+    'details.variant.concentration',
+])->find($order->id);
+
+Mail::to($order->customer_email)->send(
+    new OrderSuccessMail($orderForMail)
+);
 
             // Nếu đơn hàng có áp mã giảm giá, tăng số lượt đã dùng cho mã đó
             if ($order->discount_id) {
