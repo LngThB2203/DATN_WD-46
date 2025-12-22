@@ -115,7 +115,7 @@
                         <div class="col-lg-6 mb-3">
                             <label class="form-label">Ảnh hiện tại</label><br>
                             @if($variant->image)
-                                <img src="{{ asset('storage/'.$variant->image) }}" width="120" height="120" 
+                                <img src="{{ asset('storage/'.$variant->image) }}" width="120" height="120"
                                      class="rounded mb-2" style="object-fit: cover;">
                             @else
                                 <span class="text-muted">Không có ảnh</span>
@@ -134,7 +134,7 @@
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-check-circle me-1"></i> Cập nhật
                         </button>
-                        <a href="{{ route('variants.index') }}" class="btn btn-secondary">
+                        <a href="{{ route('products.show', $product) }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle me-1"></i> Hủy
                         </a>
                     </div>
