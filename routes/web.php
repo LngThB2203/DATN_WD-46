@@ -400,10 +400,8 @@ Route::prefix('admin')->middleware('auth')->group(function () {
     // Trash
     Route::get('/trash', [TrashController::class, 'index'])->name('admin.trash.index');
 
-    // Inventory Transactions
-    Route::get('/inventories/transactions', function () {
-        return view('admin.inventories.transactions');
-    })->name('inventories.transactions');
+    // Inventory Transactions (Lịch sử nhập xuất)
+    Route::get('/inventories/transactions', [StockTransactionController::class, 'index'])->name('inventories.transactions');
 });
 
 // Fallback 404 - luôn đặt cuối cùng
