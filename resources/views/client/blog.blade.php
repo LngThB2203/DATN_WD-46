@@ -3,10 +3,14 @@
 @section('title', 'Blog')
 
 @section('content')
-<section class="py-2">
-    <section class="py-2 border-bottom bg-light">
+<section class="py-3 border-bottom bg-light">
     <div class="container-fluid container-xl">
-       
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-decoration-none">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('blog.index') }}">Bài viết</a></li>
+            </ol>
+        </nav>
     </div>
 </section>
     <div class="container-fluid container-xl">

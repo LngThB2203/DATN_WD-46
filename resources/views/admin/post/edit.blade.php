@@ -1,34 +1,45 @@
 @extends('admin.layouts.admin')
 
 @section('content')
-<div class="container mt-4">
-    <h2>Sửa bài viết</h2>
-
-    <form method="POST" action="{{ route('post.update', $post->id) }}" enctype="multipart/form-data">
-    @csrf
-    @method('PUT')
-
-        <div class="mb-3">
-            <label>Tiêu đề</label>
-            <input type="text" name="title" class="form-control" value="{{ $post->title }}" required>
+<div class="page-content">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white border-bottom">
+            <h5 class="mb-0 text-primary">📝 <strong>Sửa bài viết</strong></h5>
         </div>
+        <div class="card-body">
+            <form method="POST" action="{{ route('post.update', $post->id) }}" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
 
-        <div class="mb-3">
-            <label>Ảnh đại diện</label><br>
-            @if ($post->image)
-                <img src="{{ asset('storage/' . $post->image) }}" width="100" class="mb-2"><br>
-            @endif
-            <input type="file" name="image" class="form-control">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tiêu đề</label>
+                    <input type="text" name="title" class="form-control" value="{{ $post->title }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold d-block">Ảnh đại diện hiện tại</label>
+                    <div class="p-2 border rounded d-inline-block bg-light mb-2">
+                        @if ($post->image)
+                            <img src="{{ asset('storage/' . $post->image) }}" width="150" class="img-thumbnail shadow-sm">
+                        @else
+                            <span class="text-muted small italic">Chưa có ảnh</span>
+                        @endif
+                    </div>
+                    <input type="file" name="image" class="form-control mt-2">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nội dung</label>
+                    <textarea name="content" id="content_summernote" class="form-control">{{ old('content', $post->content) }}</textarea>
+                </div>
+
+                <div class="border-top pt-3 text-end">
+                    <a href="{{ route('post.index') }}" class="btn btn-secondary px-4">Hủy</a>
+                    <button class="btn btn-primary px-4">Cập nhật ngay</button>
+                </div>
+            </form>
         </div>
-
-        <div class="mb-3">
-            <label for="content_summernote">Nội dung</label>
-            <textarea name="content" id="content_summernote" class="form-control">{{ old('content', $post->content) }}</textarea>
-        </div>
-
-        <button class="btn btn-success">Cập nhật</button>
-        <a href="{{ route('post.index') }}" class="btn btn-secondary">Hủy</a>
-    </form>
+    </div>
 </div>
 @endsection
 @push('styles')
