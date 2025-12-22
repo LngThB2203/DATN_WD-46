@@ -164,7 +164,7 @@ class OrderController extends Controller
         $availableWarehouses = $this->getAvailableWarehouses($order);
         $allWarehouses = Warehouse::orderBy('warehouse_name')->get();
 
-        return view('admin.orders.show', compact('order', 'isPaid', 'availableWarehouses', 'allWarehouses'));
+        return view('admin.orders.show', compact('order', 'availableWarehouses', 'allWarehouses'));
     }
 
     // Cập nhật trạng thái đơn hàng
