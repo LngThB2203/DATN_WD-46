@@ -49,6 +49,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php
+                                        $reviewBtnShownForProducts = [];
+                                    @endphp
                                     @foreach($order->details as $detail)
                                     <tr>
                                         <td>
@@ -71,7 +74,7 @@
                                                         $canReview = false;
                                                         if(auth()->check() && $detail->product) {
                                                             $user = auth()->user();
-                                                            if($order->user_id === $user->id && $order->order_status === 'completed' && $order->completed_at) {
+                                                            if($order->user_id === $user->id && \App\Helpers\OrderStatusHelper::mapOldStatus($order->order_status) === \App\Helpers\OrderStatusHelper::COMPLETED && $order->completed_at) {
                                                                 if(\Carbon\Carbon::now()->diffInDays($order->completed_at) <= 15) {
                                                                     $alreadyReviewed = \App\Models\Review::where('user_id', $user->id)
                                                                         ->where('product_id', $detail->product->id)
@@ -82,7 +85,10 @@
                                                             }
                                                         }
                                                     @endphp
-                                                    @if($canReview)
+                                                    @if($canReview && !in_array($detail->product->id, $reviewBtnShownForProducts, true))
+                                                        @php
+                                                            $reviewBtnShownForProducts[] = $detail->product->id;
+                                                        @endphp
                                                         <div class="mt-2">
                                                             <a href="{{ route('orders.review.form', [$order->id, $detail->product->id]) }}" class="btn btn-sm btn-outline-primary">
                                                                 ⭐ Đánh giá sản phẩm
