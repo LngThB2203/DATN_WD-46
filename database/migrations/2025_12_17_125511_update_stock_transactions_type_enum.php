@@ -8,15 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('stock_transactions', function (Blueprint $table) {
-            $table->enum('type', ['import', 'sale', 'cancel', 'adjust', 'export'])->change();
-        });
+        if (Schema::hasColumn('stock_transactions', 'type')) {
+            Schema::table('stock_transactions', function (Blueprint $table) {
+                $table->enum('type', ['import', 'sale', 'cancel', 'adjust', 'export'])->change();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('stock_transactions', function (Blueprint $table) {
-            $table->enum('type', ['import', 'sale', 'cancel', 'adjust'])->change();
-        });
+        if (Schema::hasColumn('stock_transactions', 'type')) {
+            Schema::table('stock_transactions', function (Blueprint $table) {
+                $table->enum('type', ['import', 'sale', 'cancel', 'adjust'])->change();
+            });
+        }
     }
 };

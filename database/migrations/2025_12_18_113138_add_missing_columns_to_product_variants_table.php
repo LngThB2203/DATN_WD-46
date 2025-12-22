@@ -10,9 +10,17 @@ return new class extends Migration
     {
         Schema::table('product_variants', function (Blueprint $table) {
 
-            $table->unsignedBigInteger('scent_id')->nullable()->after('size_id');
-            $table->unsignedBigInteger('concentration_id')->nullable()->after('scent_id');
-            $table->string('gender', 20)->nullable()->after('price_adjustment');
+            if (!Schema::hasColumn('product_variants', 'scent_id')) {
+                $table->unsignedBigInteger('scent_id')->nullable()->after('size_id');
+            }
+
+            if (!Schema::hasColumn('product_variants', 'concentration_id')) {
+                $table->unsignedBigInteger('concentration_id')->nullable()->after('scent_id');
+            }
+
+            if (!Schema::hasColumn('product_variants', 'gender')) {
+                $table->string('gender', 20)->nullable()->after('price_adjustment');
+            }
         });
     }
 

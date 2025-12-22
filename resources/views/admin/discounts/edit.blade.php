@@ -42,7 +42,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">Loại giảm giá <span class="text-danger">*</span></label>
-                                        <select name="discount_type" class="form-select @error('discount_type') is-invalid @enderror" required>
+                                        <select name="discount_type" id="discount_type" class="form-select @error('discount_type') is-invalid @enderror" required>
                                             <option value="">Chọn loại</option>
                                             <option value="percent" {{ old('discount_type', $discount->discount_type) == 'percent' ? 'selected' : '' }}>Phần trăm (%)</option>
                                             <option value="fixed" {{ old('discount_type', $discount->discount_type) == 'fixed' ? 'selected' : '' }}>Số tiền cố định</option>
@@ -53,7 +53,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">Giá trị giảm giá <span class="text-danger">*</span></label>
                                         <input type="number" name="discount_value" step="0.01" min="0" 
@@ -65,7 +65,19 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-4" id="maxDiscountGroup">
+                                    <div class="mb-3">
+                                        <label class="form-label">Giảm tối đa (VNĐ)</label>
+                                        <input type="number" name="max_discount_amount" step="0.01" min="0"
+                                               class="form-control @error('max_discount_amount') is-invalid @enderror"
+                                               value="{{ old('max_discount_amount', $discount->max_discount_amount) }}">
+                                        @error('max_discount_amount')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">Đơn hàng tối thiểu (VNĐ)</label>
                                         <input type="number" name="min_order_value" step="0.01" min="0" 
@@ -143,4 +155,28 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect = document.getElementById('discount_type');
+    const maxGroup   = document.getElementById('maxDiscountGroup');
+
+    if (!typeSelect || !maxGroup) return;
+
+    const maxInput = maxGroup.querySelector('input[name="max_discount_amount"]');
+
+    function toggleMaxDiscount() {
+        const isPercent = typeSelect.value === 'percent';
+        maxGroup.style.display = isPercent ? '' : 'none';
+        if (!isPercent && maxInput) {
+            maxInput.value = '';
+        }
+    }
+
+    typeSelect.addEventListener('change', toggleMaxDiscount);
+    toggleMaxDiscount();
+});
+</script>
+@endpush
 

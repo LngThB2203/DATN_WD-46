@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
 
 class Discount extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'code',
         'discount_type',
         'discount_value',
+        'max_discount_amount',
         'min_order_value',
         'start_date',
         'expiry_date',
@@ -22,6 +25,7 @@ class Discount extends Model
 
     protected $casts = [
         'discount_value' => 'decimal:2',
+        'max_discount_amount' => 'decimal:2',
         'min_order_value' => 'decimal:2',
         'start_date' => 'date',
         'expiry_date' => 'date',
@@ -86,7 +90,13 @@ class Discount extends Model
 
         if ($this->discount_type === 'percent') {
             $discount = ($orderValue * $this->discount_value) / 100;
-            // Don't allow discount to exceed order value
+
+            // Áp dụng giới hạn giảm tối đa nếu có
+            if ($this->max_discount_amount !== null) {
+                $discount = min($discount, (float) $this->max_discount_amount);
+            }
+
+            // Không cho giảm vượt quá giá trị đơn hàng
             return min($discount, $orderValue);
         } else {
             // Fixed amount

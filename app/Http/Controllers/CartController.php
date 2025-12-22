@@ -23,6 +23,7 @@ class CartController extends Controller
             'product_id' => 'required|exists:products,id',
             'variant_id' => 'nullable|exists:product_variants,id',
             'quantity'   => 'required|integer|min:1|max:100',
+            'buy_now'    => 'nullable|boolean',
         ]);
 
         try {
@@ -69,6 +70,14 @@ class CartController extends Controller
             $this->syncCartToSession($request, $cart);
 
             DB::commit();
+
+            // Nếu là flow "Mua ngay" thì chuyển thẳng tới trang thanh toán với item vừa thêm
+            if ($request->boolean('buy_now') && $item) {
+                return redirect()->route('checkout.index', [
+                    'selected_items' => $item->id,
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
         } catch (\Exception $e) {
             DB::rollBack();
